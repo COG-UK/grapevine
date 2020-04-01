@@ -1,0 +1,9 @@
+##### Where is the data? #####
+input_fasta: path/to/fasta
+output_path: analysis 
+
+##### Filter low coverage sequences #####
+low_coverage_threshold: 70
+
+##### Mapping reference #####
+reference_fasta: path/to/reference.fasta
