@@ -6,5 +6,5 @@ rule minimap2_to_reference:
         config["output_path"] + "/filtered_consensus_sequences.mapped.sam"
     shell:
         """
-        minimap2 -a --secondary=no {input.reference} {input.consensus} > {output}
+        minimap2 -a -x asm5 {input.reference} {input.consensus} > {output}
         """

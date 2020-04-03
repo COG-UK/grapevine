@@ -7,3 +7,7 @@ low_coverage_threshold: 70
 
 ##### Mapping reference #####
 reference_fasta: path/to/reference.fasta
+
+##### Trim coordinates #####
+trim_start: 0
+trim_end: 29903
