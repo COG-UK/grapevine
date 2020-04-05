@@ -1,13 +1,17 @@
 ##### Where is the data? #####
-input_fasta: path/to/fasta
+gisaid_input: path/to/gisaid_export
+omitted_file: path/to/omitted.txt
+uk_input: path/to/uk/sequences
 output_path: analysis 
 
-##### Filter low coverage sequences #####
-low_coverage_threshold: 70
+##### Filter thresholds #####
+min_covg: 95
+min_length: 29000
 
 ##### Mapping reference #####
-reference_fasta: path/to/reference.fasta
+reference_fasta: reference.fasta
 
 ##### Trim coordinates #####
-trim_start: 0
-trim_end: 29903
+trim_start: 265
+trim_end: 29674
+

@@ -1,4 +1,4 @@
-name: realtime-polio
+name: cog_uk
 channels:
   - bioconda
   - conda-forge
@@ -12,4 +12,4 @@ dependencies:
   - python=3.6
   - snakemake-minimal
   - pip:
-    - git+https://github.com/cov-ert/datafunk.git@v0.0.0
+    - git+https://github.com/cov-ert/datafunk.git@v0.0.3
