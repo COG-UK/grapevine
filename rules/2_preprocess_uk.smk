@@ -2,29 +2,14 @@ import datetime
 
 date = datetime.date.today()
 
-rule process_gisaid_download:
+rule uk_filter_short_sequences:
     input:
-        gisaid = config["gisaid_input"],
-        omitted = config["omitted_file"]
-    output:
-        temp(config["output_path"] + "/gisaid_filtered.fasta")
-    shell:
-        """
-        datafunk process_gisaid_sequence_data \
-          -i \"{input.gisaid}\" \
-          -o {output} \
-          -e \"{input.omitted}\" \
-          --exclude_uk
-        """
-
-rule gisaid_filter_short_sequences:
-    input:
-        fasta = rules.process_gisaid_download.output
+        fasta = config["uk_input"]
     params:
         min_covg = config["min_covg"],
         min_length = config["min_length"]
     output:
-        temp(config["output_path"] + "/gisaid_filtered.covg_length_fitered.fasta")
+        temp(config["output_path"] + "/uk_filtered.covg_length_fitered.fasta")
     shell:
         """
         datafunk filter_fasta_by_covg_and_length \
@@ -33,18 +18,18 @@ rule gisaid_filter_short_sequences:
           --min_length {params.min_length}
         """
 
-rule gisaid_minimap2_to_reference:
+rule uk_minimap2_to_reference:
     input:
         fasta = rules.filter_short_sequences.output,
         reference = config["reference_fasta"]
     output:
-        temp(config["output_path"] + "/gisaid_filtered.covg_length_fitered.mapped.sam")
+        temp(config["output_path"] + "/uk_filtered.covg_length_fitered.mapped.sam")
     shell:
         """
         minimap2 -a -x asm5 {input.reference} {input.fasta} > {output}
         """
 
-rule gisaid_remove_insertions_and_trim:
+rule uk_remove_insertions_and_trim:
     input:
         sam = rules.minimap2_to_reference.output,
         reference = config["reference_fasta"]
@@ -52,7 +37,7 @@ rule gisaid_remove_insertions_and_trim:
         trim_start = config["trim_start"],
         trim_end = config["trim_end"],
     output:
-        temp(config["output_path"] + "/gisaid_filtered_fixed_trimmed.fasta")
+        temp(config["output_path"] + "/uk_filtered_fixed_trimmed.fasta")
     shell:
         """
         datafunk sam_2_fasta \
@@ -63,13 +48,13 @@ rule gisaid_remove_insertions_and_trim:
           --prefix_ref
         """
 
-rule gisaid_filter_low_coverage_sequences:
+rule uk_filter_low_coverage_sequences:
     input:
         fasta = rules.remove_insertions_and_trim.output
     params:
         min_covg = config["min_covg"]
     output:
-        config["output_path"] + "/gisaid_%s_filtered.fasta" %date
+        config["output_path"] + "/uk_%s_filtered.fasta" %date
     shell:
         """
         datafunk filter_fasta_by_covg_and_length \

@@ -1,5 +1,9 @@
 configfile: workflow.current_basedir + "/config.yaml"
 
+import datetime
+
+date = datetime.date.today()
+
 ##### Configuration #####
 
 if config.get("output_path"):
@@ -11,7 +15,7 @@ else:
 
 rule all:
     input:
-        config["output_path"] + "/filtered_fixed_gisaid.fasta"
+        config["output_path"] + "/gisaid_%s_filtered.fasta" %date
 
 ##### Modules #####
 include: "rules/1_preprocess_gisaid.smk"
