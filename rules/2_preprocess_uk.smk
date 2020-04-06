@@ -20,7 +20,7 @@ rule uk_filter_short_sequences:
 
 rule uk_minimap2_to_reference:
     input:
-        fasta = rules.filter_short_sequences.output,
+        fasta = rules.uk_filter_short_sequences.output,
         reference = config["reference_fasta"]
     output:
         temp(config["output_path"] + "/uk_filtered.covg_length_fitered.mapped.sam")
@@ -31,7 +31,7 @@ rule uk_minimap2_to_reference:
 
 rule uk_remove_insertions_and_trim:
     input:
-        sam = rules.minimap2_to_reference.output,
+        sam = rules.uk_minimap2_to_reference.output,
         reference = config["reference_fasta"]
     params:
         trim_start = config["trim_start"],
@@ -50,7 +50,7 @@ rule uk_remove_insertions_and_trim:
 
 rule uk_filter_low_coverage_sequences:
     input:
-        fasta = rules.remove_insertions_and_trim.output
+        fasta = rules.uk_remove_insertions_and_trim.output
     params:
         min_covg = config["min_covg"]
     output:
