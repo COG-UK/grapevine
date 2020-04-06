@@ -21,10 +21,9 @@ rule gisaid_filter_short_sequences:
     input:
         fasta = rules.process_gisaid_download.output
     params:
-        min_covg = config["min_covg"],
         min_length = config["min_length"]
     output:
-        temp(config["output_path"] + "/gisaid_filtered.covg_length_fitered.fasta")
+        config["output_path"] + "/gisaid_filtered.covg_length_fitered.fasta"
     shell:
         """
         datafunk filter_fasta_by_covg_and_length \
@@ -35,10 +34,10 @@ rule gisaid_filter_short_sequences:
 
 rule gisaid_minimap2_to_reference:
     input:
-        fasta = rules.filter_short_sequences.output,
+        fasta = rules.gisaid_filter_short_sequences.output,
         reference = config["reference_fasta"]
     output:
-        temp(config["output_path"] + "/gisaid_filtered.covg_length_fitered.mapped.sam")
+        config["output_path"] + "/gisaid_filtered.covg_length_fitered.mapped.sam"
     shell:
         """
         minimap2 -a -x asm5 {input.reference} {input.fasta} > {output}
@@ -46,13 +45,13 @@ rule gisaid_minimap2_to_reference:
 
 rule gisaid_remove_insertions_and_trim:
     input:
-        sam = rules.minimap2_to_reference.output,
+        sam = rules.gisaid_minimap2_to_reference.output,
         reference = config["reference_fasta"]
     params:
         trim_start = config["trim_start"],
         trim_end = config["trim_end"],
     output:
-        temp(config["output_path"] + "/gisaid_filtered_fixed_trimmed.fasta")
+        config["output_path"] + "/gisaid_filtered.covg_length_fitered.trimmed.fasta"
     shell:
         """
         datafunk sam_2_fasta \
@@ -65,7 +64,7 @@ rule gisaid_remove_insertions_and_trim:
 
 rule gisaid_filter_low_coverage_sequences:
     input:
-        fasta = rules.remove_insertions_and_trim.output
+        fasta = rules.gisaid_remove_insertions_and_trim.output
     params:
         min_covg = config["min_covg"]
     output:
