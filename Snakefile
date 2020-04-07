@@ -15,7 +15,9 @@ else:
 
 rule all:
     input:
-        config["output_path"] + "/gisaid_%s_filtered.fasta" %date
+        config["output_path"] + "/gisaid_%s_filtered.fasta" %date,
+        config["output_path"] + "/uk_%s_filtered.fasta" %date
 
 ##### Modules #####
 include: "rules/1_preprocess_gisaid.smk"
+include: "rules/2_preprocess_uk.smk"

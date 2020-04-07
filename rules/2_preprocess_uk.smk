@@ -2,14 +2,28 @@ import datetime
 
 date = datetime.date.today()
 
+rule process_uk_download:
+    input:
+        uk = config["uk_input"],
+        omitted = config["omitted_file"]
+    output:
+        temp(config["output_path"] + "/uk_filtered.fasta")
+    shell:
+        """
+        datafunk process_gisaid_sequence_data \
+          -i \"{input.uk}\" \
+          -o {output} \
+          -e \"{input.omitted}\" \
+        """
+
 rule uk_filter_short_sequences:
     input:
-        fasta = config["uk_input"]
+        fasta = rules.process_uk_download.output
     params:
         min_covg = config["min_covg"],
         min_length = config["min_length"]
     output:
-        temp(config["output_path"] + "/uk_filtered.covg_length_fitered.fasta")
+        config["output_path"] + "/uk_filtered.covg_length_fitered.fasta"
     shell:
         """
         datafunk filter_fasta_by_covg_and_length \
@@ -23,7 +37,7 @@ rule uk_minimap2_to_reference:
         fasta = rules.uk_filter_short_sequences.output,
         reference = config["reference_fasta"]
     output:
-        temp(config["output_path"] + "/uk_filtered.covg_length_fitered.mapped.sam")
+        config["output_path"] + "/uk_filtered.covg_length_fitered.mapped.sam"
     shell:
         """
         minimap2 -a -x asm5 {input.reference} {input.fasta} > {output}
@@ -37,7 +51,7 @@ rule uk_remove_insertions_and_trim:
         trim_start = config["trim_start"],
         trim_end = config["trim_end"],
     output:
-        temp(config["output_path"] + "/uk_filtered_fixed_trimmed.fasta")
+        config["output_path"] + "/uk_filtered_fixed_trimmed.fasta"
     shell:
         """
         datafunk sam_2_fasta \
