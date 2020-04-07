@@ -5,15 +5,13 @@ date = datetime.date.today()
 rule process_uk_download:
     input:
         uk = config["uk_input"],
-        omitted = config["omitted_file"]
     output:
-        temp(config["output_path"] + "/uk_filtered.fasta")
+        config["output_path"] + "/uk_filtered.fasta"
     shell:
         """
         datafunk process_gisaid_sequence_data \
           -i \"{input.uk}\" \
-          -o {output} \
-          -e \"{input.omitted}\" \
+          -o {output}
         """
 
 rule uk_filter_short_sequences:
