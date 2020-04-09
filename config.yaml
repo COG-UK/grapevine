@@ -4,6 +4,9 @@ omitted_file: path/to/omitted.txt
 uk_input: path/to/uk/sequences
 output_path: analysis 
 
+##### GISAID parsing flags #####
+gisaid_download_flags: --exclude_uk
+
 ##### Filter thresholds #####
 min_covg: 95
 min_length: 29000
