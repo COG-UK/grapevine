@@ -5,7 +5,9 @@ date = datetime.date.today()
 rule process_gisaid_download:
     input:
         gisaid = config["gisaid_input"],
-        omitted = config["omitted_file"]
+        omitted = config["omitted_file"],
+    params:
+        flags = config["gisaid_flags"]
     output:
         temp(config["output_path"] + "/gisaid_filtered.fasta")
     shell:
@@ -14,7 +16,7 @@ rule process_gisaid_download:
           -i \"{input.gisaid}\" \
           -o {output} \
           -e \"{input.omitted}\" \
-          --exclude_uk
+          {params.flags}
         """
 
 rule gisaid_filter_short_sequences:
