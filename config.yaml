@@ -1,8 +1,9 @@
 ##### Where is the data? #####
 gisaid_input: path/to/gisaid_export
 omitted_file: path/to/omitted.txt
-uk_input: path/to/uk/sequences
-output_path: analysis 
+uk_input: /cephfs/covid/bham/artifacts/published/elan.latest.consensus.fasta
+uk_metadata: /cephfs/covid/bham/artifacts/published/majora.latest.metadata.tsv 
+output_path: /cephfs/covid/bham/raccoon-dog/ 
 
 ##### GISAID parsing flags #####
 gisaid_download_flags: --exclude_uk
