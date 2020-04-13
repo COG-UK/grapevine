@@ -1,7 +1,6 @@
 # grapevine
 snakemake pipelines to run all the funky funcs
 
-
 ## The pipeline
 
 1) Import CoG-UK consensus fasta file
