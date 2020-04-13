@@ -1,8 +1,10 @@
 ##### Where is the data? #####
-gisaid_input: path/to/gisaid_export
-omitted_file: path/to/omitted.txt
-uk_input: /cephfs/covid/bham/artifacts/published/elan.latest.consensus.fasta
-uk_metadata: /cephfs/covid/bham/artifacts/published/majora.latest.metadata.tsv 
+previous_gisaid_fasta: path/to/gisaid_export.fasta
+previous_gisaid_metadata: path/to/gisaid_export.csv
+previous_omitted_file: path/to/omitted.txt
+latest_gisaid_json: path/to/gisaid.json
+latest_uk_fasta: /cephfs/covid/bham/artifacts/published/elan.latest.consensus.fasta
+latest_uk_metadata: /cephfs/covid/bham/artifacts/published/majora.latest.metadata.tsv
 output_path: /cephfs/covid/bham/raccoon-dog/ 
 
 ##### GISAID parsing flags #####
