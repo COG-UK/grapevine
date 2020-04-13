@@ -16,9 +16,11 @@ config["output_path"] += "/%s/grapevine" %date
 
 rule all:
     input:
-        #config["output_path"] + "/1/gisaid_%s_filtered.fasta" %date,
-        config["output_path"] + "/1/uk_%s_filtered.fasta" %date
+        rules.gisaid_filter_low_coverage_sequences.output,
+        rules.gisaid_process_json.output.metadata,
+        rules.uk_filter_low_coverage_sequences.output,
+        #rules.uk_fix_headers.output.metadata
 
 ##### Modules #####
-#include: "rules/1_preprocess_gisaid.smk"
+include: "rules/0_preprocess_gisaid.smk"
 include: "rules/1_preprocess_uk.smk"
