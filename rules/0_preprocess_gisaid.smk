@@ -162,20 +162,36 @@ rule gisaid_pangolin:
         """
         pangolin {input.fasta}
         --threads {threads} \
-        --outdir {params.outdir} > {log} 2>&1 
+        --outdir {params.outdir} > {log} 2>&1
         """
 
-# rule gisaid_add_pangolin_lineages_to_metadata:
-#
+rule gisaid_add_pangolin_lineages_to_metadata:
+    input:
+        metadata = rules.gisaid_extract_new.output.metadata,
+        lineages = rules.gisaid_pangolin.output
+    output:
+        metadata = config["output_path"] + "/0/gisaid_latest.unify_headers.new.lineages.csv"
+    log:
+        config["output_path"] + "/logs/0_gisaid_add_pangolin_lineages_to_metadata.log"
+    shell:
+        """
+        fastafunk add_columns \
+          --in-metadata {input.metadata} \
+          --in-data {input.lineages} \
+          --index-column header \
+          --new-columns lineage \
+          --out-metadata {output.metadata} &> {log}
+        """
+
 # rule gisaid_combine_previous_and_new:
 #     input:
-#         previous_fasta =
-#         previous_metadata =
-#         new_fasta =
-#         new_metadata =
+#         previous_fasta = config["previous_gisaid_fasta"],
+#         previous_metadata = config["previous_gisaid_metadata"],
+#         new_fasta = rules.gisaid_filter_low_coverage_sequences.output,
+#         new_metadata = rules.gisaid_add_pangolin_lineages_to_metadata.output
 #     output:
-#         fasta =
-#         metadata =
+#         fasta = config["output_path"] + "/0/gisaid_latest.unify_headers.combined.fasta"
+#         metadata = config["output_path"] + "/0/gisaid_latest.unify_headers.combined.csv"
 #     shell:
 #         """
 #         fastafunk merge
@@ -193,6 +209,21 @@ rule gisaid_pangolin:
 #         """
 #         fastafunk remove
 #         """
+
+rule gisaid_counts_by_country:
+    input:
+        metadata = rules.gisaid_unify_headers.output.metadata
+    output:
+        config["output_path"] + "/0/gisaid_counts_by_country.log"
+    log:
+        config["output_path"] + "/logs/0_gisaid_counts_by_country.log"
+    shell:
+        """
+        fastafunk count \
+          --in-metadata {input.metadata} \
+          --group-column edin_admin_0 \
+          --log-file {output} &> {log}
+        """
 
 rule gisaid_summarize_preprocess:
     input:
@@ -214,12 +245,12 @@ rule gisaid_summarize_preprocess:
         config["output_path"] + "/logs/0_summary_preprocess_gisaid.log"
     shell:
         """
-        echo "Number of sequences in previous GISAID fasta: $(cat {input.previous_fasta} | grep ">" | wc -l)"
-        echo "Number of sequences in latest GISAID download: $(cat {input.latest_fasta} | grep ">" | wc -l)"
-        echo "Number of sequences after matching headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)"
-        echo "Number of new sequences: $(cat {input.new_fasta} | grep ">" | wc -l)"
-        echo "Number of sequences after removing sequences <29000bps: $(cat {input.removed_short_fasta} | grep ">" | wc -l)"
-        echo "Number of sequences after trimming and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)"
+        echo "Number of sequences in previous GISAID fasta: $(cat {input.previous_fasta} | grep ">" | wc -l)" >> {log}
+        echo "Number of sequences in latest GISAID download: $(cat {input.latest_fasta} | grep ">" | wc -l)" >> {log}
+        echo "Number of sequences after matching headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)" >> {log}
+        echo "Number of new sequences: $(cat {input.new_fasta} | grep ">" | wc -l)" >> {log}
+        echo "Number of sequences after removing sequences <29000bps: $(cat {input.removed_short_fasta} | grep ">" | wc -l)" >> {log}
+        echo "Number of sequences after trimming and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)" >> {log}
 
         num_seqs=$(cat {input.final_fasta} | grep ">" | wc -l)
         cp {input.final_fasta} {params.prefix}$num_seqs.fasta
