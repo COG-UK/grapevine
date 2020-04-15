@@ -8,7 +8,7 @@ latest_uk_metadata: /cephfs/covid/bham/artifacts/published/majora.latest.metadat
 output_path: /cephfs/covid/bham/raccoon-dog/ 
 
 ##### GISAID parsing flags #####
-gisaid_download_flags: --exclude_uk
+gisaid_flags: --exclude_uk --exclude_undated
 
 ##### Filter thresholds #####
 min_covg: 95
