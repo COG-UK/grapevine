@@ -2,27 +2,47 @@ import datetime
 
 date = datetime.date.today()
 
-rule uk_annotate_to_remove_duplicates:
+rule uk_unify_headers:
     input:
         fasta = config["latest_uk_fasta"],
+        metadata = config["latest_uk_metadata"]
     output:
-        temp(annotate_metadata = config["output_path"] + "/1/coguk.annotated.csv"),
-        temp(annotate_fasta = config["output_path"] + "/1/coguk.annotated.fasta")
+        fasta = temp(config["output_path"] + "/1/uk_latest.unify_headers.fasta"),
+        metadata = temp(config["output_path"] + "/1/uk_latest.unify_headers.csv")
+    log:
+        config["output_path"] + "/logs/1_uk_unify_headers.log"
+    shell:
+        """
+        datafunk set_uniform_header \
+          --input_fasta {input.fasta} \
+          --input_metadata {input.metadata} \
+          --output_fasta {output.fasta} \
+          --output_metadata {output.metadata} \
+          --log {log} \
+          --cog_uk
+        """
+
+rule uk_annotate_to_remove_duplicates:
+    input:
+        fasta = rules.uk_unify_headers.output.fasta
+        metadata = rules.uk_unify_headers.output.metadata
+    output:
+        annotate_metadata = config["output_path"] + "/1/uk_%s_filtered.csv" %date,
     log:
         config["output_path"] + "/logs/1_uk_annotate_to_remove_duplicates.log"
     shell:
         """
         fastafunk annotate \
           --in-fasta {input.fasta} \
+          --in-metadata {input.metadata}
           --out-metadata {output.annotate_metadata} \
-          --out-fasta {output.annotate_fasta} \
           --log-file {log} \
           --add-cov-id
         """
 
 rule uk_remove_duplicates:
     input:
-        fasta = config["latest_uk_fasta"],
+        fasta = rules.uk_unify_headers.output.fasta,
         metadata = rules.uk_annotate_to_remove_duplicates.output.annotate_metadata
     output:
         temp(subsample_fasta = config["output_path"] + "/1/coguk.deduplicated.fasta")
@@ -40,24 +60,9 @@ rule uk_remove_duplicates:
           --select-by-min-column gaps &> {log}
         """
 
-rule uk_fix_headers:
-    input:
-        uk = rules.uk_remove_duplicates.output.subsample_fasta
-    output:
-        fasta = temp(config["output_path"] + "/1/coguk.deduplicated.fixed_headers.fasta"),
-        #metadata = config["output_path"] + "/1/uk_%s_filtered.csv" %date
-    log:
-        config["output_path"] + "/logs/1_uk_fix_headers.log"
-    shell:
-        """
-        datafunk process_gisaid_sequence_data \
-          -i \"{input.uk}\" \
-          -o {output.fasta} &> {log}
-        """
-
 rule uk_filter_short_sequences:
     input:
-        fasta = rules.uk_fix_headers.output
+        fasta = rules.uk_remove_duplicates.output
     params:
         min_covg = config["min_covg"],
         min_length = config["min_length"]
@@ -78,7 +83,7 @@ rule uk_minimap2_to_reference:
         fasta = rules.uk_filter_short_sequences.output,
         reference = config["reference_fasta"]
     output:
-        temp(config["output_path"] + "/1/coguk.deduplicated.fixed_headers.covg_length_fitered.mapped.sam")
+        temp(config["output_path"] + "/1/coguk.deduplicated.fixed_headers.length_fitered.mapped.sam")
     log:
         config["output_path"] + "/logs/1_uk_minimap2_to_reference.log"
     shell:
@@ -94,7 +99,7 @@ rule uk_remove_insertions_and_trim:
         trim_start = config["trim_start"],
         trim_end = config["trim_end"],
     output:
-        temp(config["output_path"] + "/1/coguk.deduplicated.fixed_headers.covg_length_fitered.trimmed.fasta")
+        temp(config["output_path"] + "/1/coguk.deduplicated.fixed_headers.length_fitered.trimmed.fasta")
     log:
         config["output_path"] + "/logs/1_uk_remove_insertions_and_trim.log"
     shell:
