@@ -10,7 +10,7 @@ if config.get("output_path"):
     config["output_path"] = config["output_path"].rstrip("/")
 else:
     config["output_path"] = "analysis"
-config["output_path"] += "/%s/grapevine" %date 
+config["output_path"] += "/%s" %date
 
 ##### Target rules #####
 

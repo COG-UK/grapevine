@@ -8,7 +8,7 @@ date = datetime.date.today()
 
 if config.get("output_path"):
     config["output_path"] = config["output_path"].rstrip("/")
-config["output_path"] += "/%s/grapevine" %date 
+config["output_path"] += "/%s" %date
 
 ##### Target rules #####
 
@@ -16,6 +16,7 @@ rule all:
     input:
         fasta = config["output_path"] + "/0/gisaid_%s.fasta" %date,
         metadata = config["output_path"] + "/0/gisaid_%s.csv" %date,
+        counts = config["output_path"] + "/0/gisaid_counts_by_country.csv",
         lineages = config["output_path"] + "/0/pangolin/lineage_report.csv"
 
 
