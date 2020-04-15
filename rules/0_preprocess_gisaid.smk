@@ -214,7 +214,7 @@ rule gisaid_counts_by_country:
     input:
         metadata = rules.gisaid_unify_headers.output.metadata
     output:
-        config["output_path"] + "/0/gisaid_counts_by_country.csv"
+        config["output_path"] + "/GISAID/unclean.gisaid_counts_by_country.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_counts_by_country.log"
     shell:
@@ -236,7 +236,7 @@ rule gisaid_summarize_preprocess:
         final_fasta = rules.gisaid_filter_low_coverage_sequences.output,
         final_metadata = rules.gisaid_unify_headers.output.metadata
     params:
-        prefix = config["output_path"] + "/gisaid_%s_" %date,
+        prefix = config["output_path"] + "/GISAID/gisaid_%s_" %date,
         prefix_hack = config["output_path"] + "/0/gisaid_%s" %date
     output:
         fasta = config["output_path"] + "/0/gisaid_%s.fasta" %date,
