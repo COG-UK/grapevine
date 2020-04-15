@@ -6,11 +6,12 @@ channels:
 dependencies:
   - biopython=1.74
   - coreutils=8.25
+  - iqtree
   - mafft
   - minimap2=2.17
   - pip=19.3.1
   - python=3.6
-  - snakemake-minimal
+  - snakemake-minimal=5.13
   - pip:
     - git+https://github.com/cov-ert/datafunk.git@v0.0.5a
     - git+https://github.com/cov-ert/fastafunk.git@v0.0.2
