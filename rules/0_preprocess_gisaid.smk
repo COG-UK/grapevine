@@ -214,7 +214,7 @@ rule gisaid_counts_by_country:
     input:
         metadata = rules.gisaid_unify_headers.output.metadata
     output:
-        config["output_path"] + "/0/gisaid_counts_by_country.log"
+        config["output_path"] + "/0/gisaid_counts_by_country.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_counts_by_country.log"
     shell:
