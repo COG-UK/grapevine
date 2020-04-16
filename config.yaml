@@ -15,7 +15,7 @@ min_covg: 95
 min_length: 29000
 
 ##### Mapping reference #####
-reference_fasta: reference.fasta
+reference_fasta: workflow.current_basedir + "/reference.fasta"
 
 ##### Trim coordinates #####
 trim_start: 265
