@@ -5,7 +5,7 @@ previous_omitted_file: /cephfs/covid/bham/raccoon-dog/previous/GISAID/omitted.tx
 latest_gisaid_json: GISAID/export.json
 latest_uk_fasta: /cephfs/covid/bham/artifacts/published/elan.latest.consensus.fasta
 latest_uk_metadata: /cephfs/covid/bham/artifacts/published/majora.latest.metadata.tsv
-output_path: /cephfs/covid/bham/raccoon-dog/ 
+output_path:
 
 ##### GISAID parsing flags #####
 gisaid_flags: --exclude_uk --exclude_undated
