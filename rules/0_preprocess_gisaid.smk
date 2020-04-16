@@ -195,7 +195,8 @@ rule gisaid_add_epi_week:
         datafunk add_epi_week \
         --input_metadata {input.metadata} \
         --output_metadata {output.metadata} \
-        --date_column covv_collection_date &> {log}
+        --date_column covv_collection_date \
+        --epi_column_name edin_epi_week &> {log}
         """
 
 rule gisaid_combine_previous_and_new:
