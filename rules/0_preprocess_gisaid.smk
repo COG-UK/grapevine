@@ -87,7 +87,7 @@ rule gisaid_filter_short_sequences:
     params:
         min_length = config["min_length"]
     output:
-        config["output_path"] + "/0/gisaid_latest.unify_headers.new.length_fitered.fasta"
+        fasta = config["output_path"] + "/0/gisaid_latest.unify_headers.new.length_fitered.fasta"
     log:
         config["output_path"] + "/logs/0_gisaid_filter_short_sequences.log"
     shell:
@@ -100,10 +100,10 @@ rule gisaid_filter_short_sequences:
 
 rule gisaid_minimap2_to_reference:
     input:
-        fasta = rules.gisaid_filter_short_sequences.output,
+        fasta = rules.gisaid_filter_short_sequences.output.fasta,
         reference = config["reference_fasta"]
     output:
-        config["output_path"] + "/0/gisaid_latest.unify_headers.new.length_fitered.mapped.sam"
+        sam = config["output_path"] + "/0/gisaid_latest.unify_headers.new.length_fitered.mapped.sam"
     log:
         config["output_path"] + "/logs/0_gisaid_minimap2_to_reference.log"
     shell:
@@ -113,13 +113,13 @@ rule gisaid_minimap2_to_reference:
 
 rule gisaid_remove_insertions_and_trim:
     input:
-        sam = rules.gisaid_minimap2_to_reference.output,
+        sam = rules.gisaid_minimap2_to_reference.output.sam,
         reference = config["reference_fasta"]
     params:
         trim_start = config["trim_start"],
         trim_end = config["trim_end"],
     output:
-        config["output_path"] + "/0/gisaid_latest.unify_headers.new.length_fitered.trimmed.fasta"
+        fasta = config["output_path"] + "/0/gisaid_latest.unify_headers.new.length_fitered.trimmed.fasta"
     log:
         config["output_path"] + "/logs/0_gisaid_remove_insertions_and_trim.log"
     shell:
@@ -133,11 +133,11 @@ rule gisaid_remove_insertions_and_trim:
 
 rule gisaid_filter_low_coverage_sequences:
     input:
-        fasta = rules.gisaid_remove_insertions_and_trim.output
+        fasta = rules.gisaid_remove_insertions_and_trim.output.fasta
     params:
         min_covg = config["min_covg"]
     output:
-        config["output_path"] + "/0/gisaid_latest.unify_headers.new.length_fitered.trimmed.low_covg_filtered.fasta"
+        fasta = config["output_path"] + "/0/gisaid_latest.unify_headers.new.length_fitered.trimmed.low_covg_filtered.fasta"
     log:
         config["output_path"] + "/logs/0_gisaid_filter_low_coverage_sequences.log"
     shell:
@@ -150,17 +150,17 @@ rule gisaid_filter_low_coverage_sequences:
 
 rule gisaid_pangolin:
     input:
-        fasta = rules.gisaid_filter_low_coverage_sequences.output
+        fasta = rules.gisaid_filter_low_coverage_sequences.output.fasta
     params:
         outdir = config["output_path"] + "/0/pangolin"
     output:
-        config["output_path"] + "/0/pangolin/lineage_report.csv"
+        lineages = config["output_path"] + "/0/pangolin/lineage_report.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_pangolin.log"
     threads: 8
     shell:
         """
-        pangolin {input.fasta}
+        pangolin {input.fasta} \
         --threads {threads} \
         --outdir {params.outdir} > {log} 2>&1
         """
@@ -168,7 +168,7 @@ rule gisaid_pangolin:
 rule gisaid_add_pangolin_lineages_to_metadata:
     input:
         metadata = rules.gisaid_extract_new.output.metadata,
-        lineages = rules.gisaid_pangolin.output
+        lineages = rules.gisaid_pangolin.output.lineages
     output:
         metadata = config["output_path"] + "/0/gisaid_latest.unify_headers.new.lineages.csv"
     log:
@@ -179,23 +179,45 @@ rule gisaid_add_pangolin_lineages_to_metadata:
           --in-metadata {input.metadata} \
           --in-data {input.lineages} \
           --index-column header \
-          --new-columns lineage \
+          --new-columns lineage bootstrap \
           --out-metadata {output.metadata} &> {log}
         """
 
-# rule gisaid_combine_previous_and_new:
-#     input:
-#         previous_fasta = config["previous_gisaid_fasta"],
-#         previous_metadata = config["previous_gisaid_metadata"],
-#         new_fasta = rules.gisaid_filter_low_coverage_sequences.output,
-#         new_metadata = rules.gisaid_add_pangolin_lineages_to_metadata.output
-#     output:
-#         fasta = config["output_path"] + "/0/gisaid_latest.unify_headers.combined.fasta"
-#         metadata = config["output_path"] + "/0/gisaid_latest.unify_headers.combined.csv"
-#     shell:
-#         """
-#         fastafunk merge
-#         """
+rule gisaid_add_epi_week:
+    input:
+        metadata = rules.gisaid_add_pangolin_lineages_to_metadata.output.metadata
+    output:
+        metadata = config["output_path"] + "/0/gisaid_latest.unify_headers.new.lineages.epi_week.csv"
+    log:
+        config["output_path"] + "/logs/0_gisaid_add_epi_week.log"
+    shell:
+        """
+        datafunk add_epi_week \
+        --input_metadata {input.metadata} \
+        --output_metadata {output.metadata} \
+        --date_column covv_collection_date &> {log}
+        """
+
+rule gisaid_combine_previous_and_new:
+    input:
+        previous_fasta = config["previous_gisaid_fasta"],
+        previous_metadata = config["previous_gisaid_metadata"],
+        new_fasta = rules.gisaid_filter_low_coverage_sequences.output.fasta,
+        new_metadata = rules.gisaid_add_epi_week.output.metadata
+    output:
+        fasta = config["output_path"] + "/0/gisaid_latest.unify_headers.combined.fasta",
+        metadata = config["output_path"] + "/0/gisaid_latest.unify_headers.combined.csv"
+    log:
+        config["output_path"] + "/logs/0_gisaid_combine_previous_and_new.log"
+    shell:
+        """
+        fastafunk merge \
+          --in-fasta {input.previous_fasta} {input.new_fasta} \
+          --in-metadata {input.previous_metadata} {input.new_metadata} \
+          --out-fasta {output.fasta} \
+          --out-metadata {output.metadata} \
+          --log-file {log}
+        """
 #
 # rule gisaid_omit_sequences:
 #     input:

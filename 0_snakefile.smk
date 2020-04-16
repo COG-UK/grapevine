@@ -8,7 +8,7 @@ date = datetime.date.today()
 
 if config.get("output_path"):
     config["output_path"] = config["output_path"].rstrip("/")
-config["output_path"] += "/%s" %date
+config["output_path"] += "/analysis"
 
 ##### Target rules #####
 
