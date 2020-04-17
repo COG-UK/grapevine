@@ -63,7 +63,7 @@ rule gisaid_process_json:
 
 rule gisaid_remove_duplicates:
     input:
-        fasta = rules.gisaid_process_json.output.fasta
+        fasta = rules.gisaid_process_json.output.fasta,
         metadata = rules.gisaid_process_json.output.metadata
     output:
         fasta = config["output_path"] + "/0/gisaid_latest.deduplicated.fasta",
