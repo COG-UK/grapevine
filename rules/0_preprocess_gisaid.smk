@@ -202,8 +202,9 @@ rule gisaid_add_pangolin_lineages_to_metadata:
         fastafunk add_columns \
           --in-metadata {input.metadata} \
           --in-data {input.lineages} \
-          --index-column header \
-          --new-columns lineage bootstrap \
+          --index-column sequence_name \
+          --join-on taxon \
+          --new-columns lineage UFbootstrap \
           --out-metadata {output.metadata} &> {log}
         """
 
@@ -226,20 +227,15 @@ rule gisaid_combine_previous_and_new:
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --log-file {log}
+
+        if [ -f info/to_omit_gisaid.txt ]; then
+            fastafunk remove \
+              --in-fasta {output.fasta} \
+              --in-metadata info/to_omit_gisaid.txt \
+              --out-fasta tmp.fa
+            mv tmp.fa {output.fasta}
+        fi
         """
-#
-# rule gisaid_omit_sequences:
-#     input:
-#         fasta =
-#         metadata =
-#         omitted =
-#     output:
-#         fasta =
-#         metadata =
-#     shell:
-#         """
-#         fastafunk remove
-#         """
 
 rule gisaid_counts_by_country:
     input:
