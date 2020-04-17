@@ -27,23 +27,73 @@ rule gisaid_process_json:
         config["output_path"] + "/logs/0_gisaid_process_json.log"
     shell:
         """
-        datafunk process_gisaid_sequence_data \
-          --input \"{input.json}\" \
-          --output {output.fasta} \
-          --exclude \"{input.omitted}\" \
-          {params.flags}
+#         datafunk process_gisaid_sequence_data \
+#           --input \"{input.json}\" \
+#           --output {output.fasta} \
+#           --exclude \"{input.omitted}\" \
+#           {params.flags}
+#
+#         datafunk gisaid_json_2_metadata \
+#           --new \"{input.json}\" \
+#           --csv \"{input.metadata}\" \
+#           --output {output.metadata} \
+#           --exclude \"{input.omitted}\" \
 
-        datafunk gisaid_json_2_metadata \
-          --new \"{input.json}\" \
-          --csv \"{input.metadata}\" \
-          --output {output.metadata} \
-          --exclude \"{input.omitted}\" \
+        datafunk process_gisaid_data \
+          --input-json \"{input.json}\" \
+          --input-metadata \"{input.metadata}\" \
+          --exclude-file \"{input.omitted}\" \
+          --output-fasta {output.fasta} \
+          --output-metadata {output.metadata} \
+          {params.flags} &> {log}
+        """
+
+# rule gisaid_add_headers:
+#     input:
+#         fasta = rules.gisaid_process_json.output.fasta
+#         metadata = rules.gisaid_process_json.output.metadata
+#      output:
+#         fasta = config["output_path"] + "/0/gisaid_latest.headers.fasta",
+#         metadata = config["output_path"] + "/0/gisaid_latest.headers.csv"
+#     log:
+#         config["output_path"] + "/logs/0_gisaid_process_json.log"
+#     shell:
+#         """
+#         """
+
+rule gisaid_remove_duplicates:
+    input:
+        fasta = rules.gisaid_process_json.output.fasta
+        metadata = rules.gisaid_process_json.output.metadata
+    output:
+        fasta = config["output_path"] + "/0/gisaid_latest.deduplicated.fasta",
+        annotated_metadata = temp(config["output_path"] + "/0/gisaid_latest.annotated.csv"),
+        metadata = config["output_path"] + "/0/gisaid_latest.deduplicated.csv",
+    log:
+        config["output_path"] + "/logs/0_gisaid_remove_duplicates.log"
+    shell:
+        """
+        fastafunk annotate \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata}
+          --out-metadata {output.annotated_metadata} \
+          --index-column header &> {log}
+
+        fastafunk subsample \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.annotated_metadata} \
+          --group-column covv_virus_name \
+          --index-column edin_header \
+          --out-fasta {output.fasta} \
+          --sample-size 1 \
+          --out-metadata {output.metadata} \
+          --select-by-min-column gaps &>> {log}
         """
 
 rule gisaid_unify_headers:
     input:
-        fasta = rules.gisaid_process_json.output.fasta,
-        metadata = rules.gisaid_process_json.output.metadata
+        fasta = rules.gisaid_remove_duplicates.output.fasta,
+        metadata = rules.gisaid_remove_duplicates.output.metadata
     output:
         fasta = config["output_path"] + "/0/gisaid_latest.unify_headers.fasta",
         metadata = config["output_path"] + "/0/gisaid_latest.unify_headers.csv"
@@ -157,7 +207,7 @@ rule gisaid_pangolin:
         lineages = config["output_path"] + "/0/pangolin/lineage_report.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_pangolin.log"
-    threads: 8
+    threads: 32
     shell:
         """
         pangolin {input.fasta} \
