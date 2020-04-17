@@ -67,27 +67,20 @@ rule gisaid_remove_duplicates:
         metadata = rules.gisaid_process_json.output.metadata
     output:
         fasta = config["output_path"] + "/0/gisaid_latest.deduplicated.fasta",
-        annotated_metadata = temp(config["output_path"] + "/0/gisaid_latest.annotated.csv"),
         metadata = config["output_path"] + "/0/gisaid_latest.deduplicated.csv",
     log:
         config["output_path"] + "/logs/0_gisaid_remove_duplicates.log"
     shell:
         """
-        fastafunk annotate \
-          --in-fasta {input.fasta} \
-          --in-metadata {input.metadata}
-          --out-metadata {output.annotated_metadata} \
-          --index-column header &> {log}
-
         fastafunk subsample \
           --in-fasta {input.fasta} \
-          --in-metadata {input.annotated_metadata} \
+          --in-metadata {input.metadata} \
           --group-column covv_virus_name \
           --index-column edin_header \
           --out-fasta {output.fasta} \
           --sample-size 1 \
           --out-metadata {output.metadata} \
-          --select-by-min-column gaps &>> {log}
+          --select-by-min-column covv_collection_date &>> {log}
         """
 
 rule gisaid_unify_headers:
