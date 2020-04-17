@@ -4,8 +4,8 @@ date = datetime.date.today()
 
 rule split_based_on_lineages:
     input:
-        #fasta =,
-        #metadata =,
+        fasta = rules.combine_gisaid_and_cog.output.fasta,
+        metadata = rules.combine_gisaid_and_cog.output.metadata,
         lineage = config["lineage_splits"]
     output:
     log:
@@ -14,9 +14,12 @@ rule split_based_on_lineages:
         """
         lineages=$(cat {input.lineage} | cut -f1 --delim "," | tr '\n' '  ')
         fastafunk split \
-          #--in-fasta {input.fasta} \
-          #--in-metadata {input.metadata} \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata} \
           --index-column sequence_name \
           --index-field lineage \
           --lineage $lineages \
+
+
+        #snakemake --snakefile --cores 8
         """
