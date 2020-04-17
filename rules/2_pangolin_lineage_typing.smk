@@ -14,10 +14,10 @@ rule uk_pangolin:
     params:
         outdir = config["output_path"] + "/2/pangolin"
     output:
-        config["output_path"] + "/2/pangolin/lineage_report.csv"
+        lineages = config["output_path"] + "/2/pangolin/lineage_report.csv"
     log:
         config["output_path"] + "/logs/2_uk_pangolin.log"
-    threads: 8
+    threads: 32
     shell:
         """
         pangolin {input.fasta} \
@@ -25,5 +25,20 @@ rule uk_pangolin:
         --outdir {params.outdir}
         """
 
-# rule uk_add_pangolin_lineages_to_metadata:
-#
+rule uk_add_pangolin_lineages_to_metadata:
+    input:
+        metadata = rules.uk_remove_duplicates.output.metadata,
+        lineages = rules.uk_pangolin.output.lineages
+    output:
+        metadata = config["output_path"] + "/2/uk_with_lineages.csv"
+    log:
+        config["output_path"] + "/logs/0_gisaid_add_pangolin_lineages_to_metadata.log"
+    shell:
+        """
+        fastafunk add_columns \
+          --in-metadata {input.metadata} \
+          --in-data {input.lineages} \
+          --index-column sequence_name \
+          --new-columns lineage bootstrap \
+          --out-metadata {output.metadata} &> {log}
+        """
