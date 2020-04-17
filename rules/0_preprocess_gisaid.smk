@@ -63,7 +63,7 @@ rule gisaid_process_json:
 
 rule gisaid_add_epi_week:
     input:
-        metadata = rrules.gisaid_process_json.output.metadata
+        metadata = rules.gisaid_process_json.output.metadata
     output:
         metadata = config["output_path"] + "/0/gisaid_latest.epi_week.csv"
     log:
