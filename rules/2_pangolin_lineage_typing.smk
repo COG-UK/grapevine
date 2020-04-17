@@ -60,7 +60,8 @@ rule uk_add_pangolin_lineages_to_metadata:
           --in-metadata {input.metadata} \
           --in-data {input.lineages} \
           --index-column sequence_name \
-          --new-columns lineage bootstrap \
+          --join-on taxon \
+          --new-columns lineage UFbootstrap \
           --out-metadata {output.metadata} &> {log}
         """
 
