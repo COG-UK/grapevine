@@ -61,10 +61,26 @@ rule gisaid_process_json:
 #         """
 #         """
 
+rule gisaid_add_epi_week:
+    input:
+        metadata = rrules.gisaid_process_json.output.metadata
+    output:
+        metadata = config["output_path"] + "/0/gisaid_latest.epi_week.csv"
+    log:
+        config["output_path"] + "/logs/0_gisaid_add_epi_week.log"
+    shell:
+        """
+        datafunk add_epi_week \
+        --input_metadata {input.metadata} \
+        --output_metadata {output.metadata} \
+        --date_column covv_collection_date \
+        --epi_column_name edin_epi_week &> {log}
+        """
+
 rule gisaid_remove_duplicates:
     input:
         fasta = rules.gisaid_process_json.output.fasta,
-        metadata = rules.gisaid_process_json.output.metadata
+        metadata = rules.gisaid_add_epi_week.output.metadata
     output:
         fasta = config["output_path"] + "/0/gisaid_latest.deduplicated.fasta",
         metadata = config["output_path"] + "/0/gisaid_latest.deduplicated.csv",
@@ -80,7 +96,7 @@ rule gisaid_remove_duplicates:
           --out-fasta {output.fasta} \
           --sample-size 1 \
           --out-metadata {output.metadata} \
-          --select-by-min-column covv_collection_date &>> {log}
+          --select-by-min-column edin_epi_week &> {log}
         """
 
 rule gisaid_unify_headers:
@@ -226,28 +242,14 @@ rule gisaid_add_pangolin_lineages_to_metadata:
           --out-metadata {output.metadata} &> {log}
         """
 
-rule gisaid_add_epi_week:
-    input:
-        metadata = rules.gisaid_add_pangolin_lineages_to_metadata.output.metadata
-    output:
-        metadata = config["output_path"] + "/0/gisaid_latest.unify_headers.new.lineages.epi_week.csv"
-    log:
-        config["output_path"] + "/logs/0_gisaid_add_epi_week.log"
-    shell:
-        """
-        datafunk add_epi_week \
-        --input_metadata {input.metadata} \
-        --output_metadata {output.metadata} \
-        --date_column covv_collection_date \
-        --epi_column_name edin_epi_week &> {log}
-        """
+
 
 rule gisaid_combine_previous_and_new:
     input:
         previous_fasta = config["previous_gisaid_fasta"],
         previous_metadata = config["previous_gisaid_metadata"],
         new_fasta = rules.gisaid_filter_low_coverage_sequences.output.fasta,
-        new_metadata = rules.gisaid_add_epi_week.output.metadata
+        new_metadata = rules.gisaid_add_pangolin_lineages_to_metadata.output.metadata
     output:
         fasta = config["output_path"] + "/0/gisaid_latest.unify_headers.combined.fasta",
         metadata = config["output_path"] + "/0/gisaid_latest.unify_headers.combined.csv"
