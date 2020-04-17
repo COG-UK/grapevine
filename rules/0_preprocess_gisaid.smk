@@ -2,19 +2,8 @@ import datetime
 
 date = datetime.date.today()
 
-#rule gisaid_download_new_json:
-#    input:
-#    output:
-#        json = config["output_path"] + "/0/gisaid_dump.json"
-#    log:
-#        config["output_path"] + "/logs/0_gisaid_download_new_json.log"
-#    shell:
-#        """
-#        """
-
 rule gisaid_process_json:
     input:
-        #json = rules.gisaid_download_new_json.output.json
         json = config["latest_gisaid_json"],
         metadata = config["previous_gisaid_metadata"],
         omitted = config["previous_omitted_file"],
@@ -27,18 +16,6 @@ rule gisaid_process_json:
         config["output_path"] + "/logs/0_gisaid_process_json.log"
     shell:
         """
-#         datafunk process_gisaid_sequence_data \
-#           --input \"{input.json}\" \
-#           --output {output.fasta} \
-#           --exclude \"{input.omitted}\" \
-#           {params.flags}
-#
-#         datafunk gisaid_json_2_metadata \
-#           --new \"{input.json}\" \
-#           --csv \"{input.metadata}\" \
-#           --output {output.metadata} \
-#           --exclude \"{input.omitted}\" \
-
         datafunk process_gisaid_data \
           --input-json \"{input.json}\" \
           --input-metadata \"{input.metadata}\" \
@@ -47,19 +24,6 @@ rule gisaid_process_json:
           --output-metadata {output.metadata} \
           {params.flags} &> {log}
         """
-
-# rule gisaid_add_headers:
-#     input:
-#         fasta = rules.gisaid_process_json.output.fasta
-#         metadata = rules.gisaid_process_json.output.metadata
-#      output:
-#         fasta = config["output_path"] + "/0/gisaid_latest.headers.fasta",
-#         metadata = config["output_path"] + "/0/gisaid_latest.headers.csv"
-#     log:
-#         config["output_path"] + "/logs/0_gisaid_process_json.log"
-#     shell:
-#         """
-#         """
 
 rule gisaid_add_epi_week:
     input:
@@ -242,8 +206,6 @@ rule gisaid_add_pangolin_lineages_to_metadata:
           --out-metadata {output.metadata} &> {log}
         """
 
-
-
 rule gisaid_combine_previous_and_new:
     input:
         previous_fasta = config["previous_gisaid_fasta"],
@@ -297,12 +259,13 @@ rule gisaid_summarize_preprocess:
     input:
         previous_fasta = config["previous_gisaid_fasta"],
         latest_fasta = rules.gisaid_process_json.output.fasta,
+        deduplicated_fasta = rules.gisaid_remove_duplicates.output.fasta,
         unify_headers_fasta = rules.gisaid_unify_headers.output.fasta,
         new_fasta = rules.gisaid_extract_new.output.fasta,
         removed_short_fasta = rules.gisaid_filter_short_sequences.output,
         removed_low_covg_fasta = rules.gisaid_filter_low_coverage_sequences.output,
-        final_fasta = rules.gisaid_filter_low_coverage_sequences.output,
-        final_metadata = rules.gisaid_unify_headers.output.metadata
+        final_fasta = rules.gisaid_combine_previous_and_new.output.fasta,
+        final_metadata = rules.gisaid_combine_previous_and_new.output.metadata
     params:
         prefix = config["output_path"] + "/GISAID/gisaid_%s_" %date,
         prefix_hack = config["output_path"] + "/0/gisaid_%s" %date
@@ -315,10 +278,12 @@ rule gisaid_summarize_preprocess:
         """
         echo "Number of sequences in previous GISAID fasta: $(cat {input.previous_fasta} | grep ">" | wc -l)" >> {log}
         echo "Number of sequences in latest GISAID download: $(cat {input.latest_fasta} | grep ">" | wc -l)" >> {log}
+        echo "Number of deduplicated sequences: $(cat {input.latest_fasta} | grep ">" | wc -l)" >> {log}
         echo "Number of sequences after matching headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)" >> {log}
         echo "Number of new sequences: $(cat {input.new_fasta} | grep ">" | wc -l)" >> {log}
         echo "Number of sequences after removing sequences <29000bps: $(cat {input.removed_short_fasta} | grep ">" | wc -l)" >> {log}
         echo "Number of sequences after trimming and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)" >> {log}
+        echo "Number of sequences after merging old and new metadata tables: $(cat {input.final_fasta} | grep ">" | wc -l)" >> {log}
 
         num_seqs=$(cat {input.final_fasta} | grep ">" | wc -l)
         cp {input.final_fasta} {params.prefix}$num_seqs.fasta
