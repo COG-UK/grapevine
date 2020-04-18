@@ -158,9 +158,9 @@ rule uk_summarize_preprocess:
         config["output_path"] + "/logs/1_summary_preprocess_uk.log"
     shell:
         """
-        echo "Number of sequences in raw UK fasta: $(cat {input.raw_fasta} | grep ">" | wc -l)"
-        echo "Number of sequences in raw UK fasta after unifying headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)"
-        echo "Number of sequences after deduplication: $(cat {input.deduplicated_fasta} | grep ">" | wc -l)"
-        echo "Number of sequences after removing sequences <29000bps: $(cat {input.removed_short_fasta} | grep ">" | wc -l)"
-        echo "Number of sequences after trimming and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)"
+        echo "Number of sequences in raw UK fasta: $(cat {input.raw_fasta} | grep ">" | wc -l)" &> {log}
+        echo "Number of sequences in raw UK fasta after unifying headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)" &>> {log}
+        echo "Number of sequences after deduplication: $(cat {input.deduplicated_fasta} | grep ">" | wc -l)" &>> {log}
+        echo "Number of sequences after removing sequences <29000bps: $(cat {input.removed_short_fasta} | grep ">" | wc -l)" &>> {log}
+        echo "Number of sequences after trimming and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)" &>> {log}
         """
