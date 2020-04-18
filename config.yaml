@@ -3,7 +3,7 @@ previous_gisaid_fasta: /cephfs/covid/bham/raccoon-dog/previous/GISAID/gisaid.fas
 previous_gisaid_metadata: /cephfs/covid/bham/raccoon-dog/previous/GISAID/gisaid.csv
 previous_omitted_file: /cephfs/covid/bham/raccoon-dog/previous/GISAID/omissions.txt
 previous_uk_fasta: /cephfs/covid/bham/raccoon-dog/previous/COG/cog.fasta
-previous_uk_metadata: /cephfs/covid/bham/raccoon-dog/previous/COG/cog.tsv
+previous_uk_metadata: /cephfs/covid/bham/raccoon-dog/previous/COG/cog.csv
 latest_gisaid_json: GISAID/export.json
 latest_uk_fasta: /cephfs/covid/bham/artifacts/published/elan.latest.consensus.fasta
 latest_uk_metadata: /cephfs/covid/bham/artifacts/published/majora.latest.metadata.tsv
