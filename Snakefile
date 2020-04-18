@@ -15,11 +15,14 @@ else:
 
 rule all:
     input:
-        rules.gisaid_filter_low_coverage_sequences.output,
-        rules.gisaid_process_json.output.metadata,
-        rules.uk_filter_low_coverage_sequences.output,
-        #rules.uk_fix_headers.output.metadata
+        rules.combine_gisaid_and_cog.output.fasta,
+        rules.combine_gisaid_and_cog.output.metadata,
+        config["output_path"] + "/logs/4_split_based_on_lineages.log"
 
 ##### Modules #####
 include: "rules/0_preprocess_gisaid.smk"
 include: "rules/1_preprocess_uk.smk"
+include: "rules/2_pangolin_lineage_typing.smk"
+include: "rules/3_combine_gisaid_and_uk.smk"
+include: "rules/4_make_trees.smk"
+
