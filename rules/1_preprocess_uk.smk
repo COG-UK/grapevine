@@ -42,7 +42,7 @@ rule uk_add_epi_week:
 
 rule uk_annotate_to_remove_duplicates:
     input:
-        fasta = rules.uk_unify_headers.output.fasta
+        fasta = rules.uk_unify_headers.output.fasta,
         metadata = rules.uk_add_epi_week.output.metadata
     output:
         metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.annotated.csv"
