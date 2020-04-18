@@ -151,7 +151,8 @@ rule uk_filter_low_coverage_sequences:
 
 rule uk_summarize_preprocess:
     input:
-        raw_fasta = config["latest_uk_fasta"]
+        raw_fasta = config["latest_uk_fasta"],
+        unify_headers_fasta = rules.uk_unify_headers.output.fasta,
         deduplicated_fasta = rules.uk_remove_duplicates.output.fasta,
         removed_short_fasta = rules.uk_filter_short_sequences.output.fasta,
         removed_low_covg_fasta = rules.uk_filter_low_coverage_sequences.output.fasta
@@ -160,6 +161,7 @@ rule uk_summarize_preprocess:
     shell:
         """
         echo "Number of sequences in raw UK fasta: $(cat {input.raw_fasta} | grep ">" | wc -l)"
+        echo "Number of sequences in raw UK fasta after unifying headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)"
         echo "Number of sequences after deduplication: $(cat {input.deduplicated_fasta} | grep ">" | wc -l)"
         echo "Number of sequences after removing sequences <29000bps: $(cat {input.removed_short_fasta} | grep ">" | wc -l)"
         echo "Number of sequences after trimming and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)"
