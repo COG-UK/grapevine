@@ -50,7 +50,7 @@ rule uk_annotate_to_remove_duplicates:
         """
         fastafunk annotate \
           --in-fasta {input.fasta} \
-          --in-metadata {input.metadata}
+          --in-metadata {input.metadata} \
           --out-metadata {output.metadata} \
           --log-file {log} \
           --add-cov-id
