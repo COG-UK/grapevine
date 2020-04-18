@@ -70,7 +70,7 @@ rule uk_combine_previous_and_new:
         previous_fasta = config["previous_uk_fasta"],
         previous_metadata = config["previous_uk_metadata"],
         new_fasta = rules.uk_extract_new.output.fasta,
-        new_metadata = rules.uk_add_pangolin_lineages_to_metadata.metadata
+        new_metadata = rules.uk_add_pangolin_lineages_to_metadata.output.metadata
     output:
         fasta = config["output_path"] + "/2/uk.combined.fasta",
         metadata = config["output_path"] + "/2/uk.combined.csv"
