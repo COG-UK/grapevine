@@ -1,5 +1,3 @@
-configfile: workflow.current_basedir + "/config.yaml"
-
 import datetime
 
 date = datetime.date.today()
