@@ -226,6 +226,7 @@ rule gisaid_combine_previous_and_new:
           --in-metadata {input.previous_metadata} {input.new_metadata} \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
+          --index-column sequence_name \
           --log-file {log}
 
         if [ -f info/to_omit_gisaid.txt ]; then
