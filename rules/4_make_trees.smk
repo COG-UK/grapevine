@@ -10,8 +10,9 @@ rule split_based_on_lineages:
     params:
         path_to_script = workflow.current_basedir,
         output_path = config["output_path"],
-
+        prefix = config["output_path"] + "/4/lineage_"
     output:
+        config["output_path"] + "/4/lineage_"
     log:
         config["output_path"] + "/logs/4_split_based_on_lineages.log"
     shell:
@@ -22,16 +23,20 @@ rule split_based_on_lineages:
           --in-metadata {input.metadata} \
           --index-column sequence_name \
           --index-field lineage \
-          --lineage $lineages &> {log}
+          --lineage $lineages \
+          --out-folder {params.prefix} &> {log}
 
-
-        snakemake --nolock --snakefile {params.path_to_script}/rules/4_subroutine/process_lineage.smk \
-        --cores 8
-        --configfile {params.path_to_script}/rules/4_subroutine/ \
-        --config \
-        output_path={params.output_path} \
-        lineage_fasta={params.min_length} \
-        lineage={params.max_length} \
-        lineage_specific_outgroup={params.kraken_fasta} \
-        metadata={input.metadata} &>> {log}
+        while IFS=, read -r lineage lineage_specific_outgroup
+        do
+          snakemake --nolock \
+            --snakefile {params.path_to_script}/rules/4_subroutine/process_lineage.smk \
+            --cores 8 \
+            --configfile {params.path_to_script}/rules/4_subroutine/ \
+            --config \
+            output_path={params.output_path} \
+            lineage_fasta={params.prefix}$lineage.fasta \
+            lineage=$lineage \
+            lineage_specific_outgroup=$lineage_specific_outgroup \
+            metadata={input.metadata}
+        done &>> {log}
         """
