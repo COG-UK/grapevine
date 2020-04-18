@@ -143,7 +143,7 @@ rule gisaid_remove_insertions_and_trim:
         trim_start = config["trim_start"],
         trim_end = config["trim_end"],
     params:
-        insertions = config["output_path"] + "/0/gisaid_insertions.txt
+        insertions = config["output_path"] + "/0/gisaid_insertions.txt"
     output:
         fasta = config["output_path"] + "/0/gisaid_latest.unify_headers.new.length_fitered.trimmed.fasta"
     log:
