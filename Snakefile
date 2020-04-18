@@ -15,8 +15,8 @@ else:
 
 rule all:
     input:
-        rules.combine_gisaid_and_cog.output.fasta,
-        rules.combine_gisaid_and_cog.output.metadata,
+        config["output_path"] + "/3/cog_gisaid_%s.fasta" %date,
+        config["output_path"] + "/3/cog_gisaid_%s.csv" %date,
         config["output_path"] + "/logs/4_split_based_on_lineages.log"
 
 ##### Modules #####
