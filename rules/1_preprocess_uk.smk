@@ -116,6 +116,8 @@ rule uk_remove_insertions_and_trim:
     params:
         trim_start = config["trim_start"],
         trim_end = config["trim_end"],
+    params:
+        insertions = config["output_path"] + "/1/uk_insertions.txt
     output:
         fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.length_fitered.trimmed.fasta"
     log:
@@ -128,6 +130,7 @@ rule uk_remove_insertions_and_trim:
           -o {output.fasta} \
           -t [{params.trim_start}:{params.trim_end}] \
           --log_inserts &> {log}
+        mv insertions.txt {params.insertions}
         """
 
 rule uk_filter_low_coverage_sequences:

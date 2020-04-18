@@ -35,6 +35,7 @@ rule iq_tree:
         iqtree -m GTR+G -bb 1000 -czb \
         -o {params.lineage_specific_outgroup} \
         -s {input.lineage_fasta} &> {log}
+        mv {input.lineage_fasta}.treefile {output.tree}
         """
 
 rule annotate_tree:
