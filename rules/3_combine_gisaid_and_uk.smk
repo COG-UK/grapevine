@@ -9,7 +9,7 @@ rule combine_gisaid_and_cog:
         uk_fasta = rules.uk_combine_previous_and_new.output.fasta,
         uk_metadata = rules.uk_combine_previous_and_new.output.metadata
     params:
-        prefix = config["output_path"] + "/COG_GISAID/cog_gisaid_%s_" %date,
+        prefix = "COG_GISAID/cog_gisaid_%s_" %date,
     output:
         fasta = config["output_path"] + "/3/cog_gisaid_%s.fasta" %date,
         metadata = config["output_path"] + "/3/cog_gisaid_%s.csv" %date
@@ -25,6 +25,7 @@ rule combine_gisaid_and_cog:
           --index-column sequence_name \
           --log-file {log}
 
+        mkdir -p COG_GISAID
         num_seqs=$(cat {output.fasta} | grep ">" | wc -l)
         cp {output.fasta} {params.prefix}$num_seqs.fasta
         cp {output.metadata} {params.prefix}$num_seqs.csv

@@ -18,7 +18,7 @@ rule gisaid_process_json:
         """
         datafunk process_gisaid_data \
           --input-json \"{input.json}\" \
-          --input-metadata False \
+          --input-metadata {input.metadata} \
           --exclude-file \"{input.omitted}\" \
           --output-fasta {output.fasta} \
           --output-metadata {output.metadata} \
@@ -142,6 +142,8 @@ rule gisaid_remove_insertions_and_trim:
     params:
         trim_start = config["trim_start"],
         trim_end = config["trim_end"],
+    params:
+        insertions = config["output_path"] + "/0/gisaid_insertions.txt
     output:
         fasta = config["output_path"] + "/0/gisaid_latest.unify_headers.new.length_fitered.trimmed.fasta"
     log:
@@ -153,6 +155,8 @@ rule gisaid_remove_insertions_and_trim:
           -r {input.reference} \
           -o {output} \
           -t [{params.trim_start}:{params.trim_end}] \
+          --log_inserts &> {log}
+        mv insertions.txt {params.insertions}
         """
 
 rule gisaid_filter_low_coverage_sequences:
@@ -265,7 +269,7 @@ rule gisaid_summarize_preprocess:
         final_fasta = rules.gisaid_combine_previous_and_new.output.fasta,
         final_metadata = rules.gisaid_combine_previous_and_new.output.metadata
     params:
-        prefix = config["output_path"] + "/GISAID/gisaid_%s_" %date,
+        prefix = "GISAID/gisaid_%s_" %date,
         prefix_hack = config["output_path"] + "/0/gisaid_%s" %date
     output:
         fasta = config["output_path"] + "/0/gisaid_%s.fasta" %date,
