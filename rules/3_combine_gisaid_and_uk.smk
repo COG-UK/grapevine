@@ -22,6 +22,7 @@ rule combine_gisaid_and_cog:
           --in-metadata {input.gisaid_metadata} {input.uk_metadata} \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
+          --index-column sequence_name \
           --log-file {log}
 
         num_seqs=$(cat {output.fasta} | grep ">" | wc -l)
