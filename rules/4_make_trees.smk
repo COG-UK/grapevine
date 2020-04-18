@@ -11,8 +11,6 @@ rule split_based_on_lineages:
         path_to_script = workflow.current_basedir,
         output_path = config["output_path"],
         prefix = config["output_path"] + "/4/lineage_"
-    output:
-        config["output_path"] + "/4/lineage_"
     log:
         config["output_path"] + "/logs/4_split_based_on_lineages.log"
     shell:
