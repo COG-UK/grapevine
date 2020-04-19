@@ -17,7 +17,7 @@ rule all:
     input:
         config["output_path"] + "/3/cog_gisaid_%s.fasta" %date,
         config["output_path"] + "/3/cog_gisaid_%s.csv" %date,
-        config["output_path"] + "/logs/4_run_subroutine_on_lineage.log"
+        config["output_path"] + "/4/summary.txt"
 
 ##### Modules #####
 include: "rules/0_preprocess_gisaid.smk"
