@@ -16,10 +16,12 @@ OUTGROUPS = config["lineage_specific_outgroups"].split()
 
 outgroup_dict = {}
 for i,lin in enumerate(LINEAGES):
-    outgroup_dict[lin] = OUTGROUPS[i]
+    outgroup_dict[lin] = OUTGROUP[i]
+config["lineage_to_outgroup_map"] = outgroup_dict
 
 print("lineages", LINEAGES)
 print("outgroups", OUTGROUPS)
+print(config["lineage_to_outgroup_map"])
 
 ##### Target rules #####
 
@@ -32,7 +34,7 @@ rule iq_tree:
         lineage_fasta = config["output_path"] + "/4/lineage_{lineage}.fasta"
     params:
         lineage = "{lineage}",
-        outgroup = outgroup_dict["{params.lineage}"],
+        outgroup = config["lineage_to_outgroup_map"][{lineage}]
     output:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_%s_{lineage}.tree" %date
     log:

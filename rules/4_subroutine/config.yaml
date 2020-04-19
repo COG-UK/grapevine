@@ -1,4 +1,5 @@
 output_path:
 lineages:
 lineage_specific_outgroups:
+lineage_to_outgroup_map:
 metadata:
