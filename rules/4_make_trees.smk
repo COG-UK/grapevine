@@ -8,9 +8,9 @@ rule split_based_on_lineages:
         metadata = rules.combine_gisaid_and_cog.output.metadata,
         lineage = config["lineage_splits"]
     params:
-        path_to_script = workflow.current_basedir,
-        output_path = config["output_path"],
         prefix = config["output_path"] + "/4/lineage_"
+    output:
+        temp(config["output_path"] + "/4/split_done")
     log:
         config["output_path"] + "/logs/4_split_based_on_lineages.log"
     shell:
@@ -24,6 +24,24 @@ rule split_based_on_lineages:
           --lineage $lineages \
           --out-folder {params.prefix} &> {log}
 
+        touch {output}
+        """
+
+rule split_based_on_lineages:
+    input:
+        split_done = rules.split_based_on_lineages.output,
+        metadata = rules.combine_gisaid_and_cog.output.metadata,
+        lineage = config["lineage_splits"]
+    params:
+        path_to_script = workflow.current_basedir,
+        output_path = config["output_path"],
+        prefix = config["output_path"] + "/4/lineage_"
+    output:
+        outdir = config["output_path"] + "/4/"
+    log:
+        config["output_path"] + "/logs/4_split_based_on_lineages.log"
+    shell:
+        """
         while IFS=, read -r lineage lineage_specific_outgroup
         do
           snakemake --nolock \
