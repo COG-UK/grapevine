@@ -16,7 +16,7 @@ rule uk_extract_new:
         fasta = config["output_path"] + "/2/uk.new.fasta",
         metadata = config["output_path"] + "/2/uk.new.csv",
     log:
-        config["output_path"] + "/logs/2__extract_new.log"
+        config["output_path"] + "/logs/2_extract_new.log"
     shell:
         """
         fastafunk new \
@@ -78,7 +78,7 @@ rule uk_combine_previous_and_new:
         config["output_path"] + "/logs/2_uk_combine_previous_and_new.log"
     shell:
         """
-        fastafunk merge \
+        fastafunk fetch \
           --in-fasta {input.previous_fasta} {input.new_fasta} \
           --in-metadata {input.previous_metadata} {input.new_metadata} \
           --out-fasta {output.fasta} \
