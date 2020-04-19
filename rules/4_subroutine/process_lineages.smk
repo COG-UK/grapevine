@@ -37,11 +37,13 @@ rule iq_tree:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_%s_{lineage}.tree" %date
     log:
         config["output_path"] + "/logs/4_iq_tree_{lineage}.log"
+    threads: 8
     shell:
         """
         echo "{params.outgroup} {input.lineage_fasta} {params.lineage}"
         iqtree -m GTR+G -bb 1000 -czb \
         -o \"{params.outgroup}\" \
+        -nt {threads} \
         -s {input.lineage_fasta} &> {log}
         mv {input.lineage_fasta}.treefile {output.tree}
         """
