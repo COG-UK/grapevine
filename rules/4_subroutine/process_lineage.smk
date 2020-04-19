@@ -143,6 +143,7 @@ rule output_annotations:
         lineage = config["lineage"]
     output:
         traits = config["output_path"] + "/4/{params.lineage}/trees/traits.csv"
+        completed = config["output_path"] + "/4/summary.txt"
     log:
         config["output_path"] + "/logs/4_output_annotations_{params.lineage}.log"
     shell:
@@ -151,5 +152,7 @@ rule output_annotations:
           --traits country lineage uk_lineage acc_lineage \
           --input {input.tree} \
           --output {output.traits} &> {log}
+
+        echo "Lineage {params.lineage} complete" >> {output.completed}
         """
 
