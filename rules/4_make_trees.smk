@@ -42,8 +42,8 @@ rule run_subroutine_on_lineage:
         config["output_path"] + "/logs/4_run_subroutine_on_lineages.log"
     shell:
         """
-        lineages=$(cat {input.lineage} | cut -f1 -d",")
-        outgroups=$(cat {input.lineage} | cut -f2 -d",")
+        lineages=$(cat {input.lineage} | cut -f1 -d"," | tr '\n' '  ')
+        outgroups=$(cat {input.lineage} | cut -f2 -d"," | tr '\n' '  ')
         snakemake --nolock \
           --snakefile {params.path_to_script}/4_subroutine/process_lineage.smk \
           --cores 128 \
