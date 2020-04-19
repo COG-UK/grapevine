@@ -4,8 +4,10 @@ date = datetime.date.today()
 
 rule combine_gisaid_and_cog:
     input:
-        gisaid_fasta = rules.gisaid_summarize_preprocess.output.fasta,
-        gisaid_metadata = rules.gisaid_summarize_preprocess.output.fasta,
+        summary_gisaid = rules.gisaid_summarize_preprocess.log,
+        summary_uk = rules.uk_summarize_preprocess.log,
+        gisaid_fasta = rules.gisaid_combine_previous_and_new.output.fasta,
+        gisaid_metadata = rules.gisaid_combine_previous_and_new.output.metadata,
         uk_fasta = rules.uk_combine_previous_and_new.output.fasta,
         uk_metadata = rules.uk_combine_previous_and_new.output.metadata
     params:
