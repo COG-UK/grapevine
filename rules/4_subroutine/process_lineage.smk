@@ -14,18 +14,21 @@ else:
 LINEAGES = lineages.split()
 OUTGROUPS = lineage_specific_outgroups.split()
 
+print("lineages", LINEAGES)
+print("outgroups", OUTGROUPS)
+
 ##### Target rules #####
 
 rule all:
     input:
-        expand(tmp.{lineage}.{outgroup}.txt, zip, lineage=LINEAGES, outgroup=OUTGROUPS)
+        expand("tmp.{lineage}.{outgroup}.txt", zip, lineage=LINEAGES, outgroup=OUTGROUPS)
 
 rule make_file:
     params:
         lineage = "{lineage}"
         outgroup = "{outgroup}"
     output:
-        tmp.{lineage}.{outgroup}.txt
+        "tmp.{lineage}.{outgroup}.txt"
     shell:
         """
         touch {output}
