@@ -15,7 +15,7 @@ LINEAGES = config["lineages"].split()
 OUTGROUPS = config["lineage_specific_outgroups"].split()
 
 outgroup_dict = {}
-for i,lin in LINEAGES:
+for i,lin in enumerate(LINEAGES):
     outgroup_dict[lin] = OUTGROUPS[i]
 
 print("lineages", LINEAGES)
