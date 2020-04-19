@@ -20,7 +20,7 @@ rule combine_gisaid_and_cog:
     shell:
         """
         fastafunk fetch \
-          --in-fasta {input.gisaid_} {input.uk_fasta} \
+          --in-fasta {input.gisaid_fasta} {input.uk_fasta} \
           --in-metadata {input.gisaid_metadata} {input.uk_metadata} \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
