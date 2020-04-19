@@ -50,8 +50,8 @@ rule run_subroutine_on_lineage:
           --configfile {params.path_to_script}/rules/4_subroutine/config.yaml \
           --config \
           output_path={params.output_path} \
-          lineages=$lineages \
-          lineage_specific_outgroups=$outgroups \
+          lineages="$lineages" \
+          lineage_specific_outgroups="$outgroups" \
           metadata={input.metadata} &> {log}
         """
 
