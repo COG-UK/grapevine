@@ -16,7 +16,7 @@ OUTGROUPS = config["lineage_specific_outgroups"].split()
 
 outgroup_dict = {}
 for i,lin in enumerate(LINEAGES):
-    outgroup_dict[lin] = OUTGROUP[i]
+    outgroup_dict[lin] = OUTGROUPS[i]
 config["lineage_to_outgroup_map"] = outgroup_dict
 
 print("lineages", LINEAGES)
