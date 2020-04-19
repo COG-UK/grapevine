@@ -39,6 +39,7 @@ rule iq_tree:
         config["output_path"] + "/logs/4_iq_tree_{lineage}.log"
     shell:
         """
+        echo "{params.outgroup} {input.lineage_fasta} {params.lineage}"
         iqtree -m GTR+G -bb 1000 -czb \
         -o {params.outgroup} \
         -s {input.lineage_fasta} &> {log}
