@@ -27,7 +27,7 @@ rule split_based_on_lineages:
         touch {output}
         """
 
-rule run_subroutine_on_lineage:
+rule run_subroutine_on_lineages:
     input:
         split_done = rules.split_based_on_lineages.output,
         metadata = rules.combine_gisaid_and_cog.output.metadata,
@@ -45,7 +45,7 @@ rule run_subroutine_on_lineage:
         lineages=$(cat {input.lineage} | cut -f1 -d"," | tr '\n' '  ')
         outgroups=$(cat {input.lineage} | cut -f2 -d"," | tr '\n' '  ')
         snakemake --nolock \
-          --snakefile {params.path_to_script}/4_subroutine/process_lineage.smk \
+          --snakefile {params.path_to_script}/4_subroutine/process_lineages.smk \
           --cores 128 \
           --configfile {params.path_to_script}/4_subroutine/config.yaml \
           --config \
