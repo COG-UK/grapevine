@@ -11,8 +11,8 @@ if config.get("output_path"):
 else:
     config["output_path"] = "analysis"
 
-LINEAGES = lineages.split()
-OUTGROUPS = lineage_specific_outgroups.split()
+LINEAGES = config["lineages"].split()
+OUTGROUPS = config["lineage_specific_outgroups"].split()
 
 print("lineages", LINEAGES)
 print("outgroups", OUTGROUPS)
