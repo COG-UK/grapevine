@@ -30,9 +30,9 @@ rule iq_tree:
         lineage = "{lineage}",
         outgroup = "{outgroup}",
     output:
-        tree = config["output_path"] + "/4/{params.lineage}/cog_gisaid_%s_{params.lineage}.tree" %date
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_%s_{lineage}.tree" %date
     log:
-        config["output_path"] + "/logs/4_iq_tree_{params.lineage}.log"
+        config["output_path"] + "/logs/4_iq_tree_{lineage}.log"
     shell:
         """
         iqtree -m GTR+G -bb 1000 -czb \
@@ -49,9 +49,9 @@ rule annotate_tree:
         lineage = "{lineage}",
         outgroup = "{outgroup}",
     output:
-        tree = config["output_path"] + "/4/{params.lineage}/cog_gisaid_%s_{params.lineage}.annotated.tree" %date
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_%s_{lineage}.annotated.tree" %date
     log:
-        config["output_path"] + "/logs/4_annotate_{params.lineage}.log"
+        config["output_path"] + "/logs/4_annotate_{lineage}.log"
     shell:
         """
         clusterfunk annotate_tips \
@@ -72,9 +72,9 @@ rule ancestral_reconstruction:
         lineage = "{lineage}",
         outgroup = "{outgroup}",
     output:
-        tree = config["output_path"] + "/4/{params.lineage}/cog_gisaid_%s_{params.lineage}.annotated.acc.tree" %date
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_%s_{lineage}.annotated.acc.tree" %date
     log:
-        config["output_path"] + "/logs/4_ancestral_reconstruction_{params.lineage}.log"
+        config["output_path"] + "/logs/4_ancestral_reconstruction_{lineage}.log"
     shell:
         """
         clusterfunk ancestral_reconstruction \
@@ -92,9 +92,9 @@ rule push_lineage_to_tips:
         lineage = "{lineage}",
         outgroup = "{outgroup}",
     output:
-        tree = config["output_path"] + "/4/{params.lineage}/cog_gisaid_%s_{params.lineage}.annotated.acc.uk_lineages.tree" %date
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_%s_{lineage}.annotated.acc.uk_lineages.tree" %date
     log:
-        config["output_path"] + "/logs/4_push_lineage_to_tips_{params.lineage}.log"
+        config["output_path"] + "/logs/4_push_lineage_to_tips_{lineage}.log"
     shell:
         """
         clusterfunk push_annotations_to_tips \
@@ -111,9 +111,9 @@ rule label_introductions:
         lineage = "{lineage}",
         outgroup = "{outgroup}",
     output:
-        tree = config["output_path"] + "/4/{params.lineage}/cog_gisaid_%s_{params.lineage}.annotated.acc.uk_lineages.labelled.tree" %date
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_%s_{lineage}.annotated.acc.uk_lineages.labelled.tree" %date
     log:
-        config["output_path"] + "/logs/4_label_introductions_{params.lineage}.log"
+        config["output_path"] + "/logs/4_label_introductions_{lineage}.log"
     shell:
         """
         clusterfunk label_transitions \
@@ -132,9 +132,9 @@ rule cut_out_trees:
         lineage = "{lineage}",
         outgroup = "{outgroup}",
     output:
-        outdir = config["output_path"] + "/4/{params.lineage}/trees"
+        outdir = config["output_path"] + "/4/{lineage}/trees"
     log:
-        config["output_path"] + "/logs/4_cut_out_trees_{params.lineage}.log"
+        config["output_path"] + "/logs/4_cut_out_trees_{lineage}.log"
     shell:
         """
         clusterfunk prune \
@@ -151,9 +151,9 @@ rule output_annotations:
         lineage = "{lineage}",
         outgroup = "{outgroup}",
     output:
-        traits = config["output_path"] + "/4/{params.lineage}/trees/traits.csv"
+        traits = config["output_path"] + "/4/{lineage}/trees/traits.csv"
     log:
-        config["output_path"] + "/logs/4_output_annotations_{params.lineage}.log"
+        config["output_path"] + "/logs/4_output_annotations_{lineage}.log"
     shell:
         """
         clusterfunk extract_annotations \
