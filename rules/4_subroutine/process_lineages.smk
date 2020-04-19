@@ -34,7 +34,7 @@ rule iq_tree:
         lineage_fasta = config["output_path"] + "/4/lineage_{lineage}.fasta"
     params:
         lineage = "{lineage}",
-        outgroup = config["lineage_to_outgroup_map"][{lineage}]
+        outgroup = config["lineage_to_outgroup_map"]["{lineage}"]
     output:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_%s_{lineage}.tree" %date
     log:
