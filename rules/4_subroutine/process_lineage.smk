@@ -25,8 +25,8 @@ rule all:
 
 rule make_file:
     params:
-        lineage = "{lineage}"
-        outgroup = "{outgroup}"
+        lineage = "{lineage}",
+        outgroup = "{outgroup}",
     output:
         "tmp.{lineage}.{outgroup}.txt"
     shell:

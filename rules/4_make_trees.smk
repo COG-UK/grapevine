@@ -47,7 +47,7 @@ rule run_subroutine_on_lineage:
         snakemake --nolock \
           --snakefile {params.path_to_script}/4_subroutine/process_lineage.smk \
           --cores 128 \
-          --configfile {params.path_to_script}/rules/4_subroutine/config.yaml \
+          --configfile {params.path_to_script}/4_subroutine/config.yaml \
           --config \
           output_path={params.output_path} \
           lineages="$lineages" \
