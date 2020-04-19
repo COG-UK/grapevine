@@ -27,7 +27,7 @@ rule split_based_on_lineages:
         touch {output}
         """
 
-rule split_based_on_lineages:
+rule run_subroutine_on_lineage:
     input:
         split_done = rules.split_based_on_lineages.output,
         metadata = rules.combine_gisaid_and_cog.output.metadata,
@@ -39,7 +39,7 @@ rule split_based_on_lineages:
     output:
         outdir = config["output_path"] + "/4/"
     log:
-        config["output_path"] + "/logs/4_split_based_on_lineages.log"
+        config["output_path"] + "/logs/4_run_subroutine_on_lineage.log"
     shell:
         """
         while IFS=, read -r lineage lineage_specific_outgroup
@@ -54,5 +54,5 @@ rule split_based_on_lineages:
             lineage=$lineage \
             lineage_specific_outgroup=$lineage_specific_outgroup \
             metadata={input.metadata}
-        done &>> {log}
+        done &> {log}
         """
