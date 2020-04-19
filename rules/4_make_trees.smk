@@ -39,20 +39,33 @@ rule run_subroutine_on_lineage:
     output:
         config["output_path"] + "/4/summary.txt"
     log:
-        config["output_path"] + "/logs/4_run_subroutine_on_lineage.log"
+        config["output_path"] + "/logs/4_run_subroutine_on_lineages.log"
     shell:
-        """
-        while IFS=, read -r lineage lineage_specific_outgroup
-        do
-          snakemake --nolock \
-            --snakefile {params.path_to_script}/rules/4_subroutine/process_lineage.smk \
-            --cores 8 \
-            --configfile {params.path_to_script}/rules/4_subroutine/ \
-            --config \
-            output_path={params.output_path} \
-            lineage_fasta={params.prefix}$lineage.fasta \
-            lineage=$lineage \
-            lineage_specific_outgroup=$lineage_specific_outgroup \
-            metadata={input.metadata}
-        done &> {log}
-        """
+    """
+    lineages=$(cat /cephfs/covid/bham/raccoon-dog/2020-04-17/info/lineage_splits.csv | cut -f1 -d",")
+    outgroups=$(cat /cephfs/covid/bham/raccoon-dog/2020-04-17/info/lineage_splits.csv | cut -f2 -d",")
+    snakemake --nolock \
+      --snakefile {params.path_to_script}/rules/4_subroutine/process_lineage.smk \
+      --cores 128 \
+      --configfile {params.path_to_script}/rules/4_subroutine/ \
+      --config \
+      output_path={params.output_path} \
+      lineages=$lineages \
+      lineage_specific_outgroups=$outgroups \
+      metadata={input.metadata} &> {log}
+    """
+#         """
+#         while IFS=, read -r lineage lineage_specific_outgroup
+#         do
+#           snakemake --nolock \
+#             --snakefile {params.path_to_script}/rules/4_subroutine/process_lineage.smk \
+#             --cores 8 \
+#             --configfile {params.path_to_script}/rules/4_subroutine/ \
+#             --config \
+#             output_path={params.output_path} \
+#             lineage_fasta={params.prefix}$lineage.fasta \
+#             lineage=$lineage \
+#             lineage_specific_outgroup=$lineage_specific_outgroup \
+#             metadata={input.metadata}
+#         done &> {log}
+#         """
