@@ -16,7 +16,7 @@ OUTGROUPS = config["lineage_specific_outgroups"].split()
 
 lineage_to_outgroup_map = {}
 for i,lin in enumerate(LINEAGES):
-    lineage_to_outgroup_map[lin] = OUTGROUPS[i]
+    lineage_to_outgroup_map[lin] = OUTGROUPS[i].replace("/","_")
 
 print("lineages", LINEAGES)
 print("outgroups", OUTGROUPS)
@@ -41,7 +41,7 @@ rule iq_tree:
         """
         echo "{params.outgroup} {input.lineage_fasta} {params.lineage}"
         iqtree -m GTR+G -bb 1000 -czb \
-        -o {params.outgroup} \
+        -o \"{params.outgroup}\" \
         -s {input.lineage_fasta} &> {log}
         mv {input.lineage_fasta}.treefile {output.tree}
         """
