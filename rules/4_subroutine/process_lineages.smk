@@ -25,11 +25,10 @@ rule all:
 
 rule iq_tree:
     input:
-        lineage_fasta = config["lineage_fasta"]
+        lineage_fasta = config["output_path"] + "/4/lineage_{lineage}.fasta"
     params:
         lineage = "{lineage}",
         outgroup = "{outgroup}",
-        lineage_fasta = config["output_path"] + "/4/lineage_{lineage}.fasta"
     output:
         tree = config["output_path"] + "/4/{params.lineage}/cog_gisaid_%s_{params.lineage}.tree" %date
     log:
@@ -38,8 +37,8 @@ rule iq_tree:
         """
         iqtree -m GTR+G -bb 1000 -czb \
         -o {params.outgroup} \
-        -s {params.lineage_fasta} &> {log}
-        mv {params.lineage_fasta}.treefile {output.tree}
+        -s {input.lineage_fasta} &> {log}
+        mv {input.lineage_fasta}.treefile {output.tree}
         """
 
 rule annotate_tree:
