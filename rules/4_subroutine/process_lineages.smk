@@ -21,7 +21,7 @@ print("outgroups", OUTGROUPS)
 
 rule all:
     input:
-        expand(config["output_path"] + "/4/{params.lineage}/trees/traits.csv", zip, lineage=LINEAGES, outgroup=OUTGROUPS)
+        expand(config["output_path"] + "/4/{lineage}/trees/traits.csv", zip, lineage=LINEAGES, outgroup=OUTGROUPS)
 
 rule iq_tree:
     input:
