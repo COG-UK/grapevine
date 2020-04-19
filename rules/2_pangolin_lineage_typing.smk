@@ -43,7 +43,7 @@ rule uk_pangolin:
         """
         pangolin {input.fasta} \
         --threads {threads} \
-        --outdir {params.outdir}
+        --outdir {params.outdir} > {log} 2>&1
         """
 
 rule uk_add_pangolin_lineages_to_metadata:
