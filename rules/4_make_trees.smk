@@ -41,19 +41,21 @@ rule run_subroutine_on_lineage:
     log:
         config["output_path"] + "/logs/4_run_subroutine_on_lineages.log"
     shell:
-    """
-    lineages=$(cat /cephfs/covid/bham/raccoon-dog/2020-04-17/info/lineage_splits.csv | cut -f1 -d",")
-    outgroups=$(cat /cephfs/covid/bham/raccoon-dog/2020-04-17/info/lineage_splits.csv | cut -f2 -d",")
-    snakemake --nolock \
-      --snakefile {params.path_to_script}/rules/4_subroutine/process_lineage.smk \
-      --cores 128 \
-      --configfile {params.path_to_script}/rules/4_subroutine/ \
-      --config \
-      output_path={params.output_path} \
-      lineages=$lineages \
-      lineage_specific_outgroups=$outgroups \
-      metadata={input.metadata} &> {log}
-    """
+        """
+        lineages=$(cat {input.lineage} | cut -f1 -d",")
+        outgroups=$(cat {input.lineage} | cut -f2 -d",")
+        snakemake --nolock \
+          --snakefile {params.path_to_script}/rules/4_subroutine/process_lineage.smk \
+          --cores 128 \
+          --configfile {params.path_to_script}/rules/4_subroutine/ \
+          --config \
+          output_path={params.output_path} \
+          lineages=$lineages \
+          lineage_specific_outgroups=$outgroups \
+          metadata={input.metadata} &> {log}
+        """
+
+
 #         """
 #         while IFS=, read -r lineage lineage_specific_outgroup
 #         do
