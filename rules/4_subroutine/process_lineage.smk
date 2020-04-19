@@ -11,20 +11,25 @@ if config.get("output_path"):
 else:
     config["output_path"] = "analysis"
 
+LINEAGES = lineages.split()
+OUTGROUPS = lineage_specific_outgroups.split()
+
 ##### Target rules #####
 
 rule all:
     input:
-        expand(tmp.{lineage}.{outgroup}.txt, zip, lineage=lineages, outgroup=lineage_specific_outgroups)
+        expand(tmp.{lineage}.{outgroup}.txt, zip, lineage=LINEAGES, outgroup=OUTGROUPS)
 
 rule make_file:
     params:
-        lineage = {lineage}
-        outgroup = {outgroup}
+        lineage = "{lineage}"
+        outgroup = "{outgroup}"
     output:
         tmp.{lineage}.{outgroup}.txt
     shell:
+        """
         touch {output}
+        """
 
 # rule all:
 #     input:
