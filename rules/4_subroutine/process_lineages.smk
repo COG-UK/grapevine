@@ -14,6 +14,10 @@ else:
 LINEAGES = config["lineages"].split()
 OUTGROUPS = config["lineage_specific_outgroups"].split()
 
+outgroup_dict = {}
+for i,lin in LINEAGES:
+    outgroup_dict[lin] = OUTGROUPS[i]
+
 print("lineages", LINEAGES)
 print("outgroups", OUTGROUPS)
 
@@ -21,14 +25,14 @@ print("outgroups", OUTGROUPS)
 
 rule all:
     input:
-        expand(config["output_path"] + "/4/{lineage}/trees/traits.csv", zip, lineage=LINEAGES, outgroup=OUTGROUPS)
+        expand(config["output_path"] + "/4/{lineage}/trees/traits.csv", lineage=LINEAGES)
 
 rule iq_tree:
     input:
         lineage_fasta = config["output_path"] + "/4/lineage_{lineage}.fasta"
     params:
         lineage = "{lineage}",
-        outgroup = "{outgroup}",
+        outgroup = outgroup_dict["{lineage}"],
     output:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_%s_{lineage}.tree" %date
     log:
@@ -47,7 +51,6 @@ rule annotate_tree:
         metadata = config["metadata"]
     params:
         lineage = "{lineage}",
-        outgroup = "{outgroup}",
     output:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_%s_{lineage}.annotated.tree" %date
     log:
@@ -70,7 +73,6 @@ rule ancestral_reconstruction:
         tree = rules.annotate_tree.output.tree
     params:
         lineage = "{lineage}",
-        outgroup = "{outgroup}",
     output:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_%s_{lineage}.annotated.acc.tree" %date
     log:
@@ -90,7 +92,6 @@ rule push_lineage_to_tips:
         tree = rules.ancestral_reconstruction.output.tree
     params:
         lineage = "{lineage}",
-        outgroup = "{outgroup}",
     output:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_%s_{lineage}.annotated.acc.uk_lineages.tree" %date
     log:
@@ -109,7 +110,6 @@ rule label_introductions:
         tree = rules.push_lineage_to_tips.output.tree
     params:
         lineage = "{lineage}",
-        outgroup = "{outgroup}",
     output:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_%s_{lineage}.annotated.acc.uk_lineages.labelled.tree" %date
     log:
@@ -130,7 +130,6 @@ rule cut_out_trees:
         tree = rules.label_introductions.output.tree
     params:
         lineage = "{lineage}",
-        outgroup = "{outgroup}",
     output:
         outdir = config["output_path"] + "/4/{lineage}/trees"
     log:
@@ -149,7 +148,6 @@ rule output_annotations:
         tree = rules.label_introductions.output.tree
     params:
         lineage = "{lineage}",
-        outgroup = "{outgroup}",
     output:
         traits = config["output_path"] + "/4/{lineage}/trees/traits.csv"
     log:
