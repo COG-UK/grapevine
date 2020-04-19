@@ -36,8 +36,7 @@ rule run_subroutine_on_lineage:
         path_to_script = workflow.current_basedir,
         output_path = config["output_path"],
         prefix = config["output_path"] + "/4/lineage_"
-    output:
-        outdir = config["output_path"] + "/4/"
+
     log:
         config["output_path"] + "/logs/4_run_subroutine_on_lineage.log"
     shell:
