@@ -78,7 +78,7 @@ rule uk_combine_previous_and_new:
         config["output_path"] + "/logs/2_uk_combine_previous_and_new.log"
     shell:
         """
-        fastafunk fetch \
+        fastafunk merge \
           --in-fasta {input.previous_fasta} {input.new_fasta} \
           --in-metadata {input.previous_metadata} {input.new_metadata} \
           --out-fasta {output.fasta} \
