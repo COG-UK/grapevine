@@ -43,9 +43,11 @@ rule iq_tree:
         echo "{params.outgroup} {input.lineage_fasta} {params.lineage}"
         iqtree -m GTR+G -bb 1000 -czb \
         -o \"{params.outgroup}\" \
-        -nt {threads} \
+        -cptime 300 \
+        -ntmax {threads} \
+        -redo \
         -s {input.lineage_fasta} &> {log}
-        mv {input.lineage_fasta}.treefile {output.tree}
+        cp {input.lineage_fasta}.treefile {output.tree}
         """
 
 rule annotate_tree:
