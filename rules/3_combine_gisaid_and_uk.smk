@@ -19,7 +19,7 @@ rule combine_gisaid_and_cog:
         config["output_path"] + "/logs/3_combine_gisaid_and_cog.log"
     shell:
         """
-        fastafunk fetch \
+        fastafunk merge \
           --in-fasta {input.gisaid_fasta} {input.uk_fasta} \
           --in-metadata {input.gisaid_metadata} {input.uk_metadata} \
           --out-fasta {output.fasta} \
