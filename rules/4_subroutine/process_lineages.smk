@@ -45,9 +45,8 @@ rule iq_tree:
         -o \"{params.outgroup}\" \
         -cptime 300 \
         -ntmax {threads} \
-        -redo \
         -s {input.lineage_fasta} &> {log}
-        cp {input.lineage_fasta}.treefile {output.tree}
+        mv {input.lineage_fasta}.treefile {output.tree}
         """
 
 rule annotate_tree:
