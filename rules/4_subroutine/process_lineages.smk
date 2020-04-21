@@ -34,7 +34,7 @@ rule iq_tree:
         lineage = "{lineage}",
         outgroup = lambda wildcards: lineage_to_outgroup_map[wildcards.lineage]
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_%s_{lineage}.tree" %date
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.tree"
     log:
         config["output_path"] + "/logs/4_iq_tree_{lineage}.log"
     threads: 8
@@ -56,7 +56,7 @@ rule annotate_tree:
     params:
         lineage = "{lineage}",
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_%s_{lineage}.annotated.tree" %date
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.tree"
     log:
         config["output_path"] + "/logs/4_annotate_{lineage}.log"
     shell:
@@ -79,7 +79,7 @@ rule ancestral_reconstruction:
     params:
         lineage = "{lineage}",
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_%s_{lineage}.annotated.acc.tree" %date
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.tree"
     log:
         config["output_path"] + "/logs/4_ancestral_reconstruction_{lineage}.log"
     shell:
@@ -98,14 +98,14 @@ rule push_lineage_to_tips:
     params:
         lineage = "{lineage}",
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_%s_{lineage}.annotated.acc.uk_lineages.tree" %date
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.uk_lineages.tree"
     log:
         config["output_path"] + "/logs/4_push_lineage_to_tips_{lineage}.log"
     shell:
         """
         clusterfunk push_annotations_to_tips \
           --traits uk_lineage \
-          --stop-where-trait country_uk=False
+          --stop-where-trait country_uk=False \
           --input {input.tree} \
           --output {output.tree} &> {log}
         """
@@ -115,8 +115,10 @@ rule label_introductions:
         tree = rules.push_lineage_to_tips.output.tree
     params:
         lineage = "{lineage}",
+        outdir = config["publish_path"] + "/COG_GISAID",
+        prefix = config["publish_path"] + "/COG_GISAID/cog_gisaid_%s" %date
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_%s_{lineage}.annotated.acc.uk_lineages.labelled.tree" %date
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.uk_lineages.labelled.tree"
     log:
         config["output_path"] + "/logs/4_label_introductions_{lineage}.log"
     shell:
@@ -128,6 +130,9 @@ rule label_introductions:
           --transition-prefix {params.lineage} \
           --input {input.tree} \
           --output {output.tree} &> {log}
+
+        mkdir -p {params.outdir}
+        cp {output.tree} {params.prefix}_lineage_{params.lineage}.tree
         """
 
 rule cut_out_trees:

@@ -1,3 +1,7 @@
+import datetime
+
+date = datetime.date.today()
+
 rule update_pangolin:
     output:
         temp("updated_pangolin")
@@ -85,4 +89,38 @@ rule uk_combine_previous_and_new:
           --out-metadata {output.metadata} \
           --index-column sequence_name \
           --log-file {log}
+        """
+
+rule uk_output_cog:
+    input:
+        fasta = rules.uk_combine_previous_and_new.output.fasta,
+        metadata = rules.uk_combine_previous_and_new.output.metadata
+    params:
+        outdir = config["publish_path"] + "/COG",
+        prefix = config["publish_path"] + "/COG/cog_%s" %s
+    output:
+        fasta = config["output_path"] + "/2/uk.combined.regularized.fasta",
+        metadata = config["output_path"] + "/2/uk.combined.regularized.csv"
+    log:
+        config["output_path"] + "/logs/2_uk_output_cog.log"
+    shell:
+        """
+        fastafunk fetch \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata} \
+          --index-column sequence_name \
+          --filter-column sequence_name collection_date epi_week \
+                          country adm1 adm2 outer_postcode \
+                          is_surveillance is_community is_hcw \
+                          is_travel_history travel_history lineage
+                          lineage_support uk_lineage \
+          --where-column epi_week=edin_epi_week country=adm0 lineage_support=ufbootstrap \
+          --out-fasta {output.fasta} \
+          --out-metadata {output.metadata} \
+          --log-file {log} \
+          --restrict
+
+        mkdir -p {params.outdir}
+        cp {output.fasta} {params.prefix}_alignment.fasta
+        cp {output.metadata} {params.prefix}_metadata.fasta
         """
