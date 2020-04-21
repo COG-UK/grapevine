@@ -37,7 +37,7 @@ rule iq_tree:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.tree"
     log:
         config["output_path"] + "/logs/4_iq_tree_{lineage}.log"
-    threads: 8
+    threads: 16
     shell:
         """
         echo "{params.outgroup} {input.lineage_fasta} {params.lineage}"
