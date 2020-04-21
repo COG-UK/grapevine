@@ -11,14 +11,19 @@ if config.get("output_path"):
 else:
     config["output_path"] = "analysis"
 
+if config.get("publish_path"):
+    config["publish_path"] = config["publish_path"].rstrip("/") + "/publish"
+else:
+    config["publish_path"] = "publish"
+
 ##### Target rules #####
 
 rule all:
     input:
-        fasta = config["output_path"] + "/0/gisaid_%s.fasta" %date,
-        metadata = config["output_path"] + "/0/gisaid_%s.csv" %date,
+        fasta = config["output_path"] + "/0/gisaid.regularized.fasta",
+        metadata = config["output_path"] + "/0/gisaid.regularized.csv",
+        config["output_path"] + "/logs/0_summary_preprocess_gisaid.log",
         counts = config["output_path"] + "/0/gisaid_counts_by_country.csv",
-        lineages = config["output_path"] + "/0/pangolin/lineage_report.csv"
 
 
 ##### Modules #####
