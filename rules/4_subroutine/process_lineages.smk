@@ -149,7 +149,7 @@ rule cut_out_trees:
         """
         clusterfunk prune \
           --extract \
-          --trait acc_introduction \
+          --trait acc_lineage \
           --input {input.tree} \
           --output {params.outdir} &> {log}
         touch {output}
@@ -168,7 +168,7 @@ rule output_annotations:
     shell:
         """
         clusterfunk extract_tip_annotations \
-          --traits country lineage uk_lineage acc_introduction \
+          --traits country lineage uk_lineage acc_lineage \
           --input {input.tree} \
           --output {output.traits} &> {log}
         """
