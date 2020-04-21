@@ -127,7 +127,7 @@ rule label_introductions:
           --trait country_uk \
           --to True \
           --transition-name acc_lineage \
-          --transition-prefix {params.lineage} \
+          --transition-prefix {params.lineage}_ \
           --input {input.tree} \
           --output {output.tree} &> {log}
 
