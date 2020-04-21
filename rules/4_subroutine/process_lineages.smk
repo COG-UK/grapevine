@@ -141,7 +141,7 @@ rule cut_out_trees:
     params:
         lineage = "{lineage}",
     output:
-        outdir = config["output_path"] + "/4/{lineage}/trees"
+        config["output_path"] + "/4/{lineage}/trees/cut_out_trees_done"
     log:
         config["output_path"] + "/logs/4_cut_out_trees_{lineage}.log"
     shell:
@@ -151,12 +151,13 @@ rule cut_out_trees:
           --trait acc_introduction \
           --input {input.tree} \
           --output {output.outdir} &> {log}
+        touch {output}
         """
 
 rule output_annotations:
     input:
         tree = rules.label_introductions.output.tree,
-        treedir = rules.cut_out_trees.output.outdir
+        trees_cut = rules.cut_out_trees.output
     params:
         lineage = "{lineage}",
     output:
