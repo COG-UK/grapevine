@@ -155,7 +155,8 @@ rule cut_out_trees:
 
 rule output_annotations:
     input:
-        tree = rules.label_introductions.output.tree
+        tree = rules.label_introductions.output.tree,
+        treedir = rules.cut_out_trees.output.outdir
     params:
         lineage = "{lineage}",
     output:
