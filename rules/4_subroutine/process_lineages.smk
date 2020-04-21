@@ -140,7 +140,8 @@ rule cut_out_trees:
         tree = rules.label_introductions.output.tree
     params:
         lineage = "{lineage}",
-        outdir = config["output_path"] + "/4/{lineage}/trees"
+        outdir = config["output_path"] + "/4/{lineage}/trees",
+        pubdir = config["publish_path"] + "/COG_GISAID/acc_lineages",
     output:
         config["output_path"] + "/4/{lineage}/trees/cut_out_trees_done"
     log:
@@ -153,6 +154,9 @@ rule cut_out_trees:
           --input {input.tree} \
           --output {params.outdir} &> {log}
         touch {output}
+
+        mkdir -p {params.pubdir}
+        cp {params.outdir}/*.tree {params.pubdir}/
         """
 
 rule output_annotations:
