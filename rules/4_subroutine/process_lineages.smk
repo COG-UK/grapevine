@@ -66,7 +66,8 @@ rule annotate_tree:
           --trait-columns lineage \
           country uk_lineage \
           --index-column sequence_name \
-          --where-trait country_uk=UK \
+          --boolean-for-trait country=UK-.* \
+          --boolean-trait-names country_uk \
           --input {input.tree} \
           --format newick \
           --output {output.tree} &> {log}
@@ -142,7 +143,7 @@ rule cut_out_trees:
         """
         clusterfunk prune \
           --extract \
-          --trait uk_lineage \
+          --trait acc_introduction \
           --input {input.tree} \
           --output {output.outdir} &> {log}
         """
@@ -158,8 +159,8 @@ rule output_annotations:
         config["output_path"] + "/logs/4_output_annotations_{lineage}.log"
     shell:
         """
-        clusterfunk extract_annotations \
-          --traits country lineage uk_lineage acc_lineage \
+        clusterfunk extract_tip_annotations \
+          --traits country lineage uk_lineage acc_introduction \
           --input {input.tree} \
           --output {output.traits} &> {log}
         """
