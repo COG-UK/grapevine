@@ -140,6 +140,7 @@ rule cut_out_trees:
         tree = rules.label_introductions.output.tree
     params:
         lineage = "{lineage}",
+        outdir = config["output_path"] + "/4/{lineage}/trees"
     output:
         config["output_path"] + "/4/{lineage}/trees/cut_out_trees_done"
     log:
@@ -150,7 +151,7 @@ rule cut_out_trees:
           --extract \
           --trait acc_introduction \
           --input {input.tree} \
-          --output {output.outdir} &> {log}
+          --output {params.outdir} &> {log}
         touch {output}
         """
 
