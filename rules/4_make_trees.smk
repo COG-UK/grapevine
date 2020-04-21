@@ -35,6 +35,7 @@ rule run_subroutine_on_lineages:
     params:
         path_to_script = workflow.current_basedir,
         output_path = config["output_path"],
+        publish_path = config["publish_path"],
         prefix = config["output_path"] + "/4/lineage_"
     output:
         config["output_path"] + "/4/summary.txt"
@@ -50,6 +51,7 @@ rule run_subroutine_on_lineages:
           --configfile {params.path_to_script}/4_subroutine/config.yaml \
           --config \
           output_path={params.output_path} \
+          publish_path={params.publish_path} \
           lineages="$lineages" \
           lineage_specific_outgroups="$outgroups" \
           metadata={input.metadata} &> {log}
