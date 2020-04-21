@@ -25,26 +25,9 @@ rule gisaid_process_json:
           {params.flags} &> {log}
         """
 
-# rule gisaid_add_epi_week:
-#     input:
-#         metadata = rules.gisaid_process_json.output.metadata
-#     output:
-#         metadata = config["output_path"] + "/0/gisaid_latest.epi_week.csv"
-#     log:
-#         config["output_path"] + "/logs/0_gisaid_add_epi_week.log"
-#     shell:
-#         """
-#         datafunk add_epi_week \
-#         --input_metadata {input.metadata} \
-#         --output_metadata {output.metadata} \
-#         --date_column covv_collection_date \
-#         --epi_column_name edin_epi_week &> {log}
-#         """
-
 rule gisaid_remove_duplicates:
     input:
         fasta = rules.gisaid_process_json.output.fasta,
-        #metadata = rules.gisaid_add_epi_week.output.metadata
         metadata = rules.gisaid_process_json.output.metadata
     output:
         fasta = config["output_path"] + "/0/gisaid_latest.deduplicated.fasta",
