@@ -22,7 +22,7 @@ rule all:
     input:
         fasta = config["output_path"] + "/0/gisaid.regularized.fasta",
         metadata = config["output_path"] + "/0/gisaid.regularized.csv",
-        config["output_path"] + "/logs/0_summary_preprocess_gisaid.log",
+        summary = config["output_path"] + "/logs/0_summary_preprocess_gisaid.log",
         counts = config["output_path"] + "/0/gisaid_counts_by_country.csv",
 
 
