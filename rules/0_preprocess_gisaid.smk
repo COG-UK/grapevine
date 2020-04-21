@@ -271,7 +271,7 @@ rule gisaid_output_gisaid:
         metadata = rules.gisaid_combine_previous_and_new.output.metadata
     params:
         outdir = config["publish_path"] + "/GISAID",
-        prefix = config["publish_path"] + "/GISAID/cog_%s" %s
+        prefix = config["publish_path"] + "/GISAID/cog_%s" %date
     output:
         fasta = config["output_path"] + "/0/gisaid.regularized.fasta",
         metadata = config["output_path"] + "/0/gisaid.regularized.csv"
