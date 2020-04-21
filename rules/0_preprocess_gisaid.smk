@@ -267,12 +267,6 @@ rule gisaid_summarize_preprocess:
         removed_low_covg_fasta = rules.gisaid_filter_low_coverage_sequences.output,
         final_fasta = rules.gisaid_combine_previous_and_new.output.fasta,
         final_metadata = rules.gisaid_combine_previous_and_new.output.metadata
-    params:
-        prefix = "GISAID/gisaid_%s_" %date,
-        prefix_hack = config["output_path"] + "/0/gisaid_%s" %date
-    output:
-        fasta = config["output_path"] + "/0/gisaid_%s.fasta" %date,
-        metadata = config["output_path"] + "/0/gisaid_%s.csv" %date
     log:
         config["output_path"] + "/logs/0_summary_preprocess_gisaid.log"
     shell:
@@ -286,9 +280,41 @@ rule gisaid_summarize_preprocess:
         echo "Number of sequences after trimming and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)" >> {log}
         echo "Number of sequences after merging old and new metadata tables: $(cat {input.final_fasta} | grep ">" | wc -l)" >> {log}
 
-        num_seqs=$(cat {input.final_fasta} | grep ">" | wc -l)
-        cp {input.final_fasta} {params.prefix}$num_seqs.fasta
-        cp {input.final_metadata} {params.prefix}$num_seqs.csv
-        cp {input.final_fasta} {params.prefix_hack}.fasta
-        cp {input.final_metadata} {params.prefix_hack}.csv
+        """
+
+rule gisaid_output_gisaid:
+    input:
+        fasta = rules.gisaid_combine_previous_and_new.output.fasta,
+        metadata = rules.gisaid_combine_previous_and_new.output.metadata
+    params:
+        outdir = config["publish_path"] + "/GISAID",
+        prefix = config["publish_path"] + "/GISAID/cog_%s" %s
+    output:
+        fasta = config["output_path"] + "/0/gisaid.regularized.fasta",
+        metadata = config["output_path"] + "/0/gisaid.regularized.csv"
+    log:
+        config["output_path"] + "/logs/0_gisaid_output_gisaid.log"
+    shell:
+        """
+        fastafunk fetch \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata} \
+          --index-column sequence_name \
+          --filter-column sequence_name collection_date epi_week \
+                          country adm1 adm2 outer_postcode \
+                          is_surveillance is_community is_hcw \
+                          is_travel_history travel_history lineage
+                          lineage_support uk_lineage \
+          --where-column collection_date=covv_collection_date epi_week=edin_epi_week \
+                         country=edin_admin_0 travel_history=edin_travel lineage_support=ufbootstrap \
+          --out-fasta {output.fasta} \
+          --out-metadata {output.metadata} \
+          --log-file {log} \
+          --restrict
+
+        mkdir -p {params.outdir}
+        cp {input.fasta} {params.prefix}_alignment.full.fasta
+        cp {input.metadata} {params.prefix}_metadata.full.fasta
+        cp {output.fasta} {params.prefix}_alignment.fasta
+        cp {output.metadata} {params.prefix}_metadata.fasta
         """
