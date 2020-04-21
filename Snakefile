@@ -11,6 +11,11 @@ if config.get("output_path"):
 else:
     config["output_path"] = "analysis"
 
+if config.get("publish_path"):
+    config["publish_path"] = config["publish_path"].rstrip("/") + "/publish"
+else:
+    config["publish_path"] = "publish"
+
 ##### Target rules #####
 
 rule all:

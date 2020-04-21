@@ -54,20 +54,3 @@ rule run_subroutine_on_lineages:
           lineage_specific_outgroups="$outgroups" \
           metadata={input.metadata} &> {log}
         """
-
-
-#         """
-#         while IFS=, read -r lineage lineage_specific_outgroup
-#         do
-#           snakemake --nolock \
-#             --snakefile {params.path_to_script}/rules/4_subroutine/process_lineage.smk \
-#             --cores 8 \
-#             --configfile {params.path_to_script}/rules/4_subroutine/ \
-#             --config \
-#             output_path={params.output_path} \
-#             lineage_fasta={params.prefix}$lineage.fasta \
-#             lineage=$lineage \
-#             lineage_specific_outgroup=$lineage_specific_outgroup \
-#             metadata={input.metadata}
-#         done &> {log}
-#         """
