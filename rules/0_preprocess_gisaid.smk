@@ -137,7 +137,31 @@ rule gisaid_remove_insertions_and_trim:
           -r {input.reference} \
           -o {output} \
           -t [{params.trim_start}:{params.trim_end}] \
-          --log_inserts &> {log}
+          --log-inserts &> {log}
+        mv insertions.txt {params.insertions}
+        """
+
+rule gisaid_remove_insertions_and_pad:
+    input:
+        sam = rules.gisaid_minimap2_to_reference.output.sam,
+        reference = config["reference_fasta"]
+    params:
+        trim_start = config["trim_start"],
+        trim_end = config["trim_end"],
+        insertions = config["output_path"] + "/0/gisaid_insertions.txt"
+    output:
+        fasta = config["output_path"] + "/0/gisaid_latest.unify_headers.new.length_fitered.padded.fasta"
+    log:
+        config["output_path"] + "/logs/0_gisaid_remove_insertions_and_pad.log"
+    shell:
+        """
+        datafunk sam_2_fasta \
+          -s {input.sam} \
+          -r {input.reference} \
+          -o {output} \
+          -t [{params.trim_start}:{params.trim_end}] \
+          --pad \
+          --log-inserts &> {log}
         mv insertions.txt {params.insertions}
         """
 
@@ -150,6 +174,23 @@ rule gisaid_filter_low_coverage_sequences:
         fasta = config["output_path"] + "/0/gisaid_latest.unify_headers.new.length_fitered.trimmed.low_covg_filtered.fasta"
     log:
         config["output_path"] + "/logs/0_gisaid_filter_low_coverage_sequences.log"
+    shell:
+        """
+        datafunk filter_fasta_by_covg_and_length \
+          -i {input.fasta} \
+          -o {output} \
+          --min_covg {params.min_covg} &> {log}
+        """
+
+rule gisaid_filter_low_coverage_sequences_padded:
+    input:
+        fasta = rules.gisaid_remove_insertions_and_pad.output.fasta
+    params:
+        min_covg = config["min_covg"]
+    output:
+        fasta = config["output_path"] + "/0/gisaid_latest.unify_headers.new.length_fitered.padded.low_covg_filtered.fasta"
+    log:
+        config["output_path"] + "/logs/0_gisaid_filter_low_coverage_sequences_padded.log"
     shell:
         """
         datafunk filter_fasta_by_covg_and_length \
