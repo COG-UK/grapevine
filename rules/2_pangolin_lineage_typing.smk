@@ -97,7 +97,7 @@ rule uk_output_cog:
         metadata = rules.uk_combine_previous_and_new.output.metadata
     params:
         outdir = config["publish_path"] + "/COG",
-        prefix = config["publish_path"] + "/COG/cog_%s" %s
+        prefix = config["publish_path"] + "/COG/cog_%s" %date
     output:
         fasta = config["output_path"] + "/2/uk.combined.regularized.fasta",
         metadata = config["output_path"] + "/2/uk.combined.regularized.csv"
