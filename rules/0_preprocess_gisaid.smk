@@ -59,10 +59,10 @@ rule gisaid_unify_headers:
     shell:
         """
         datafunk set_uniform_header \
-          --input_fasta {input.fasta} \
-          --input_metadata {input.metadata} \
-          --output_fasta {output.fasta} \
-          --output_metadata {output.metadata} \
+          --input-fasta {input.fasta} \
+          --input-metadata {input.metadata} \
+          --output-fasta {output.fasta} \
+          --output-metadata {output.metadata} \
           --log {log} \
           --gisaid
         """
@@ -102,7 +102,7 @@ rule gisaid_filter_short_sequences:
         datafunk filter_fasta_by_covg_and_length \
           -i {input.fasta} \
           -o {output} \
-          --min_length {params.min_length} &> {log}
+          --min-length {params.min_length} &> {log}
         """
 
 rule gisaid_minimap2_to_reference:
@@ -179,7 +179,7 @@ rule gisaid_filter_low_coverage_sequences:
         datafunk filter_fasta_by_covg_and_length \
           -i {input.fasta} \
           -o {output} \
-          --min_covg {params.min_covg} &> {log}
+          --min-covg {params.min_covg} &> {log}
         """
 
 rule gisaid_filter_low_coverage_sequences_padded:
@@ -196,7 +196,7 @@ rule gisaid_filter_low_coverage_sequences_padded:
         datafunk filter_fasta_by_covg_and_length \
           -i {input.fasta} \
           -o {output} \
-          --min_covg {params.min_covg} &> {log}
+          --min-covg {params.min_covg} &> {log}
         """
 
 rule gisaid_pangolin:
