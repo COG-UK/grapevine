@@ -10,9 +10,6 @@ latest_uk_metadata: /cephfs/covid/bham/artifacts/published/majora.latest.metadat
 output_path:
 publish_path:
 
-##### GISAID parsing flags #####
-gisaid_flags: --exclude-uk --exclude-undated
-
 ##### Filter thresholds #####
 min_covg: 95
 min_length: 29000

@@ -30,4 +30,3 @@ include: "rules/1_preprocess_uk.smk"
 include: "rules/2_pangolin_lineage_typing.smk"
 include: "rules/3_combine_gisaid_and_uk.smk"
 include: "rules/4_make_trees.smk"
-
