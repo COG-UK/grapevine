@@ -327,7 +327,7 @@ rule gisaid_output_gisaid:
           --filter-column sequence_name collection_date epi_week \
                           country adm1 adm2 outer_postcode \
                           is_surveillance is_community is_hcw \
-                          is_travel_history travel_history lineage
+                          is_travel_history travel_history lineage \
                           lineage_support uk_lineage \
           --where-column collection_date=covv_collection_date epi_week=edin_epi_week \
                          country=edin_admin_0 travel_history=edin_travel lineage_support=ufbootstrap \
