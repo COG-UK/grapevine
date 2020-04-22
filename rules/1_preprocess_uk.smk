@@ -14,12 +14,12 @@ rule uk_unify_headers:
     shell:
         """
         datafunk set_uniform_header \
-          --input_fasta {input.fasta} \
-          --input_metadata {input.metadata} \
-          --output_fasta {output.fasta} \
-          --output_metadata {output.metadata} \
+          --input-fasta {input.fasta} \
+          --input-metadata {input.metadata} \
+          --output-fasta {output.fasta} \
+          --output-metadata {output.metadata} \
           --log {log} \
-          --cog_uk
+          --cog-uk
         """
 
 rule uk_add_epi_week:
@@ -32,10 +32,10 @@ rule uk_add_epi_week:
     shell:
         """
         datafunk add_epi_week \
-        --input_metadata {input.metadata} \
-        --output_metadata {output.metadata} \
-        --date_column collection_date \
-        --epi_column_name edin_epi_week &> {log}
+        --input-metadata {input.metadata} \
+        --output-metadata {output.metadata} \
+        --date-column collection_date \
+        --epi-column-name edin_epi_week &> {log}
         """
 
 rule uk_annotate_to_remove_duplicates:
@@ -93,7 +93,7 @@ rule uk_filter_short_sequences:
         datafunk filter_fasta_by_covg_and_length \
           -i {input.fasta} \
           -o {output.fasta} \
-          --min_length {params.min_length} &> {log}
+          --min-length {params.min_length} &> {log}
         """
 
 rule uk_minimap2_to_reference:
@@ -128,7 +128,7 @@ rule uk_remove_insertions_and_trim:
           -r {input.reference} \
           -o {output.fasta} \
           -t [{params.trim_start}:{params.trim_end}] \
-          --log_inserts &> {log}
+          --log-inserts &> {log}
         mv insertions.txt {params.insertions}
         """
 
@@ -146,7 +146,7 @@ rule uk_filter_low_coverage_sequences:
         datafunk filter_fasta_by_covg_and_length \
           -i {input.fasta} \
           -o {output.fasta} \
-          --min_covg {params.min_covg} &> {log}
+          --min-covg {params.min_covg} &> {log}
         """
 
 rule uk_summarize_preprocess:
