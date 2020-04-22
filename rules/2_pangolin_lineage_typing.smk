@@ -97,7 +97,7 @@ rule uk_output_cog:
         metadata = rules.uk_combine_previous_and_new.output.metadata
     params:
         outdir = config["publish_path"] + "/COG",
-        prefix = config["publish_path"] + "/COG/cog_%s" %s
+        prefix = config["publish_path"] + "/COG/cog_%s" %date
     output:
         fasta = config["output_path"] + "/2/uk.combined.regularized.fasta",
         metadata = config["output_path"] + "/2/uk.combined.regularized.csv"
@@ -112,7 +112,7 @@ rule uk_output_cog:
           --filter-column sequence_name collection_date epi_week \
                           country adm1 adm2 outer_postcode \
                           is_surveillance is_community is_hcw \
-                          is_travel_history travel_history lineage
+                          is_travel_history travel_history lineage \
                           lineage_support uk_lineage \
           --where-column epi_week=edin_epi_week country=adm0 lineage_support=ufbootstrap \
           --out-fasta {output.fasta} \

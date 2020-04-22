@@ -61,10 +61,10 @@ rule gisaid_unify_headers:
     shell:
         """
         datafunk set_uniform_header \
-          --input_fasta {input.fasta} \
-          --input_metadata {input.metadata} \
-          --output_fasta {output.fasta} \
-          --output_metadata {output.metadata} \
+          --input-fasta {input.fasta} \
+          --input-metadata {input.metadata} \
+          --output-fasta {output.fasta} \
+          --output-metadata {output.metadata} \
           --log {log} \
           --gisaid
         """
@@ -104,7 +104,7 @@ rule gisaid_filter_short_sequences:
         datafunk filter_fasta_by_covg_and_length \
           -i {input.fasta} \
           -o {output} \
-          --min_length {params.min_length} &> {log}
+          --min-length {params.min_length} &> {log}
         """
 
 rule gisaid_minimap2_to_reference:
@@ -181,7 +181,7 @@ rule gisaid_filter_low_coverage_sequences:
         datafunk filter_fasta_by_covg_and_length \
           -i {input.fasta} \
           -o {output} \
-          --min_covg {params.min_covg} &> {log}
+          --min-covg {params.min_covg} &> {log}
         """
 
 rule gisaid_filter_low_coverage_sequences_padded:
@@ -198,7 +198,7 @@ rule gisaid_filter_low_coverage_sequences_padded:
         datafunk filter_fasta_by_covg_and_length \
           -i {input.fasta} \
           -o {output} \
-          --min_covg {params.min_covg} &> {log}
+          --min-covg {params.min_covg} &> {log}
         """
 
 rule gisaid_pangolin:
@@ -306,7 +306,7 @@ rule gisaid_summarize_preprocess:
         echo "Number of sequences after removing sequences <29000bps: $(cat {input.removed_short_fasta} | grep ">" | wc -l)" >> {log}
         echo "Number of sequences after trimming and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)" >> {log}
 
-        curl -X POST -H ‘Content-type: application/json’ --data ‘{“text”:$(cat ${log})}’ https://hooks.slack.com/services/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
+        curl -X POST -H ‘Content-type: application/json’ --data ‘{{“text”:$(cat {log})}}’ https://hooks.slack.com/services/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
         """
 
 rule gisaid_output_gisaid:
@@ -330,7 +330,7 @@ rule gisaid_output_gisaid:
           --filter-column sequence_name collection_date epi_week \
                           country adm1 adm2 outer_postcode \
                           is_surveillance is_community is_hcw \
-                          is_travel_history travel_history lineage
+                          is_travel_history travel_history lineage \
                           lineage_support uk_lineage \
           --where-column collection_date=covv_collection_date epi_week=edin_epi_week \
                          country=edin_admin_0 travel_history=edin_travel lineage_support=ufbootstrap \
@@ -353,5 +353,6 @@ rule gisaid_output_gisaid:
         cp {output.fasta} {params.prefix}_alignment.fasta
         cp {output.metadata} {params.prefix}_metadata.fasta
 
-        curl -X POST -H ‘Content-type: application/json’ --data ‘{“text”:$(cat ${log})}’ https://hooks.slack.com/services/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
+
+        curl -X POST -H ‘Content-type: application/json’ --data ‘{{“text”:$(tail -n6 {log})}}’ https://hooks.slack.com/services/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
         """
