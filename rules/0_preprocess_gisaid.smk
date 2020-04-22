@@ -242,8 +242,8 @@ rule gisaid_combine_previous_and_new:
         previous_fasta = config["previous_gisaid_fasta"],
         previous_metadata = config["previous_gisaid_metadata"],
         new_fasta = rules.gisaid_filter_low_coverage_sequences.output.fasta,
-        # new_metadata = rules.gisaid_add_pangolin_lineages_to_metadata.output.metadata
-        new_metadata = rules.gisaid_extract_new.output.metadata
+        new_metadata = rules.gisaid_add_pangolin_lineages_to_metadata.output.metadata
+        # new_metadata = rules.gisaid_extract_new.output.metadata
     output:
         fasta = config["output_path"] + "/0/gisaid_latest.unify_headers.combined.fasta",
         metadata = config["output_path"] + "/0/gisaid_latest.unify_headers.combined.csv"
