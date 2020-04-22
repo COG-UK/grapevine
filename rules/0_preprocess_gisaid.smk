@@ -7,8 +7,8 @@ rule gisaid_process_json:
         json = config["latest_gisaid_json"],
         metadata = config["previous_gisaid_metadata"],
         omitted = config["previous_omitted_file"],
-    params:
-        flags = config["gisaid_flags"]
+    # params:
+    #     flags = config["gisaid_flags"]
     output:
         fasta = config["output_path"] + "/0/gisaid_latest.fasta",
         metadata = config["output_path"] + "/0/gisaid_latest.csv"
@@ -22,7 +22,7 @@ rule gisaid_process_json:
           --exclude-file \"{input.omitted}\" \
           --output-fasta {output.fasta} \
           --output-metadata {output.metadata} \
-          {params.flags} &> {log}
+          --exclude-undated &> {log}
         """
 
 rule gisaid_remove_duplicates:
@@ -46,6 +46,8 @@ rule gisaid_remove_duplicates:
           --out-metadata {output.metadata} \
           --select-by-min-column edin_epi_week &> {log}
         """
+# ^^^ gives you a subsample_omit column in your metadata - True if omit it
+
 
 rule gisaid_unify_headers:
     input:
@@ -141,29 +143,29 @@ rule gisaid_remove_insertions_and_trim:
         mv insertions.txt {params.insertions}
         """
 
-rule gisaid_remove_insertions_and_pad:
-    input:
-        sam = rules.gisaid_minimap2_to_reference.output.sam,
-        reference = config["reference_fasta"]
-    params:
-        trim_start = config["trim_start"],
-        trim_end = config["trim_end"],
-        insertions = config["output_path"] + "/0/gisaid_insertions.txt"
-    output:
-        fasta = config["output_path"] + "/0/gisaid_latest.unify_headers.new.length_fitered.padded.fasta"
-    log:
-        config["output_path"] + "/logs/0_gisaid_remove_insertions_and_pad.log"
-    shell:
-        """
-        datafunk sam_2_fasta \
-          -s {input.sam} \
-          -r {input.reference} \
-          -o {output} \
-          -t [{params.trim_start}:{params.trim_end}] \
-          --pad \
-          --log-inserts &> {log}
-        mv insertions.txt {params.insertions}
-        """
+# rule gisaid_remove_insertions_and_pad:
+#     input:
+#         sam = rules.gisaid_minimap2_to_reference.output.sam,
+#         reference = config["reference_fasta"]
+#     params:
+#         trim_start = config["trim_start"],
+#         trim_end = config["trim_end"],
+#         insertions = config["output_path"] + "/0/gisaid_insertions.txt"
+#     output:
+#         fasta = config["output_path"] + "/0/gisaid_latest.unify_headers.new.length_fitered.padded.fasta"
+#     log:
+#         config["output_path"] + "/logs/0_gisaid_remove_insertions_and_pad.log"
+#     shell:
+#         """
+#         datafunk sam_2_fasta \
+#           -s {input.sam} \
+#           -r {input.reference} \
+#           -o {output} \
+#           -t [{params.trim_start}:{params.trim_end}] \
+#           --pad \
+#           --log-inserts &> {log}
+#         mv insertions.txt {params.insertions}
+#         """
 
 rule gisaid_filter_low_coverage_sequences:
     input:
@@ -240,7 +242,8 @@ rule gisaid_combine_previous_and_new:
         previous_fasta = config["previous_gisaid_fasta"],
         previous_metadata = config["previous_gisaid_metadata"],
         new_fasta = rules.gisaid_filter_low_coverage_sequences.output.fasta,
-        new_metadata = rules.gisaid_add_pangolin_lineages_to_metadata.output.metadata
+        # new_metadata = rules.gisaid_add_pangolin_lineages_to_metadata.output.metadata
+        new_metadata = rules.gisaid_extract_new.output.metadata
     output:
         fasta = config["output_path"] + "/0/gisaid_latest.unify_headers.combined.fasta",
         metadata = config["output_path"] + "/0/gisaid_latest.unify_headers.combined.csv"
