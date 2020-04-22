@@ -302,8 +302,8 @@ rule gisaid_summarize_preprocess:
         echo "Number of new sequences: $(cat {input.new_fasta} | grep ">" | wc -l)" >> {log}
         echo "Number of sequences after removing sequences <29000bps: $(cat {input.removed_short_fasta} | grep ">" | wc -l)" >> {log}
         echo "Number of sequences after trimming and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)" >> {log}
-        echo "Number of sequences after merging old and new metadata tables: $(cat {input.final_fasta} | grep ">" | wc -l)" >> {log}
 
+        curl -X POST -H ‘Content-type: application/json’ --data ‘{“text”:$(cat ${log})}’ https://hooks.slack.com/services/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
         """
 
 rule gisaid_output_gisaid:
@@ -336,9 +336,19 @@ rule gisaid_output_gisaid:
           --log-file {log} \
           --restrict
 
+        echo "Number of sequences in combined full GISAID fasta: $(cat {input.fasta} | grep ">" | wc -l)" >> {log}
+        echo "Number of lines in combined full GISAID metadata: $(cat {input.metadata} | wc -l)" >> {log}
+        echo "Published to {params.prefix}_alignment.full.fasta and {params.prefix}_metadata.full.fasta" >> {log}
+
+        echo "Number of non-omitted sequences in GISAID fasta: $(cat {output.fasta} | grep ">" | wc -l)" >> {log}
+        echo "Number of lines in regularized GISAID metadata: $(cat {output.metadata} | wc -l)" >> {log}
+        echo "Published to {params.prefix}_alignment.fasta and {params.prefix}_metadata.fasta" >> {log}
+
         mkdir -p {params.outdir}
         cp {input.fasta} {params.prefix}_alignment.full.fasta
         cp {input.metadata} {params.prefix}_metadata.full.fasta
         cp {output.fasta} {params.prefix}_alignment.fasta
         cp {output.metadata} {params.prefix}_metadata.fasta
+
+        curl -X POST -H ‘Content-type: application/json’ --data ‘{“text”:$(cat ${log})}’ https://hooks.slack.com/services/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
         """
