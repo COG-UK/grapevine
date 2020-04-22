@@ -350,5 +350,5 @@ rule gisaid_output_gisaid:
         cp {output.fasta} {params.prefix}_alignment.fasta
         cp {output.metadata} {params.prefix}_metadata.fasta
 
-        curl -X POST -H ‘Content-type: application/json’ --data ‘{{“text”:$(cat {log})}}’ https://hooks.slack.com/services/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
+        curl -X POST -H ‘Content-type: application/json’ --data ‘{{“text”:$(tail -n6 {log})}}’ https://hooks.slack.com/services/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
         """
