@@ -37,7 +37,7 @@ rule iq_tree:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.tree"
     log:
         config["output_path"] + "/logs/4_iq_tree_{lineage}.log"
-    threads: 64
+    threads: 40
     shell:
         """
         echo "{params.outgroup} {input.lineage_fasta} {params.lineage}"
@@ -47,10 +47,14 @@ rule iq_tree:
         -ntmax {threads} \
         -s {input.lineage_fasta} &> {log}
 
-        datafunk repair_names \
-          --fasta {input.lineage_fasta} \
-          --tree {input.lineage_fasta}.treefile \
-          --out {output.tree} &>> {log}
+        RESULT=$?
+        if [ $RESULT -eq 0 ]
+        then
+          datafunk repair_names \
+            --fasta {input.lineage_fasta} \
+            --tree {input.lineage_fasta}.treefile \
+            --out {output.tree} &>> {log}
+        fi
         """
 
 rule annotate_tree:
