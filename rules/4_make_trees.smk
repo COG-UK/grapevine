@@ -24,6 +24,8 @@ rule split_based_on_lineages:
           --lineage $lineages \
           --out-folder {params.prefix} &> {log}
 
+        curl -X POST -H "Content-type: application/json" -d '{{"text": "Ready for tree building"}}' https://hooks.slack.com/services/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
+
         touch {output}
         """
 
@@ -57,4 +59,24 @@ rule run_subroutine_on_lineages:
           metadata={input.metadata} &> {log}
 
         touch {output}
+        """
+
+rule summarize_make_trees:
+    input:
+        lineage = config["lineage_splits"],
+        trees_done = rules.run_subroutine_on_lineages.output,
+    params:
+        outdir = config["publish_path"] + "/COG_GISAID",
+    log:
+        config["output_path"] + "/logs/4_summarize_trees_done.log"
+    shell:
+        """
+        echo "> Trees have been published in {params.outdir}\n" >> {log}
+
+        echo '{{"text":"' > 4_data.json
+        echo "*Step 4: Construct and annotate trees completed*\n" >> 4_data.json
+        cat {log} >> 4_data.json
+        echo '"}}' >> 4_data.json
+        curl -X POST -H "Content-type: application/json" -d @1_data.json https://hooks.slack.com/services/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
+        rm 4_data.json
         """
