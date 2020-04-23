@@ -66,6 +66,7 @@ rule summarize_make_trees:
         lineage = config["lineage_splits"],
         trees_done = rules.run_subroutine_on_lineages.output,
     params:
+        webhook = config["webhook"],
         outdir = config["publish_path"] + "/COG_GISAID",
     log:
         config["output_path"] + "/logs/4_summarize_trees_done.log"
@@ -77,6 +78,6 @@ rule summarize_make_trees:
         echo "*Step 4: Construct and annotate trees completed*\n" >> 4_data.json
         cat {log} >> 4_data.json
         echo '"}}' >> 4_data.json
-        curl -X POST -H "Content-type: application/json" -d @1_data.json https://hooks.slack.com/services/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
+        curl -X POST -H "Content-type: application/json" -d @1_data.json {params.webhook}
         rm 4_data.json
         """
