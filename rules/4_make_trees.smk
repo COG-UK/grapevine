@@ -38,7 +38,7 @@ rule run_subroutine_on_lineages:
         publish_path = config["publish_path"],
         prefix = config["output_path"] + "/4/lineage_"
     output:
-        config["output_path"] + "/4/summary.txt"
+        config["output_path"] + "/4/trees_done"
     log:
         config["output_path"] + "/logs/4_run_subroutine_on_lineages.log"
     shell:
@@ -55,4 +55,6 @@ rule run_subroutine_on_lineages:
           lineages="$lineages" \
           lineage_specific_outgroups="$outgroups" \
           metadata={input.metadata} &> {log}
+
+        touch {output}
         """
