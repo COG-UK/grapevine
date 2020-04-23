@@ -6,8 +6,8 @@ rule combine_gisaid_and_cog:
     input:
         summary_gisaid = rules.gisaid_summarize_preprocess.log,
         summary_uk = rules.uk_summarize_preprocess.log,
-        gisaid_fasta = rules.gisaid_combine_previous_and_new.output.fasta,
-        gisaid_metadata = rules.gisaid_combine_previous_and_new.output.metadata,
+        gisaid_fasta = rules.gisaid_output_gisaid.output.fasta,
+        gisaid_metadata = rules.gisaid_output_gisaid.output.metadata,
         uk_fasta = rules.uk_output_cog.output.fasta,
         uk_metadata = rules.uk_output_cog.output.metadata
     params:

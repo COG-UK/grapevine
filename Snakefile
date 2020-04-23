@@ -20,9 +20,10 @@ else:
 
 rule all:
     input:
-        config["output_path"] + "/3/cog_gisaid_%s.fasta" %date,
-        config["output_path"] + "/3/cog_gisaid_%s.csv" %date,
-        config["output_path"] + "/4/summary.txt"
+        config["output_path"] + "/3/cog_gisaid.fasta",
+        config["output_path"] + "/3/cog_gisaid.csv",
+        config["output_path"] + "/4/split_done",
+        config["output_path"] + "/4/trees_done"
 
 ##### Modules #####
 include: "rules/0_preprocess_gisaid.smk"
