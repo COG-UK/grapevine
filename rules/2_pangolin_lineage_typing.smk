@@ -102,6 +102,7 @@ rule uk_summarize_pangolin:
         metadata = rules.uk_output_cog.output.metadata,
         full_metadata = rules.uk_add_pangolin_lineages_to_metadata.output.metadata
     params:
+        webhook = config["webhook"],
         outdir = config["publish_path"] + "/COG",
         prefix = config["publish_path"] + "/COG/cog_%s" %date
     log:
@@ -120,6 +121,6 @@ rule uk_summarize_pangolin:
         echo "*Step 2: COG-UK pangolin typing*\n" >> 2_data.json
         cat {log} >> 2_data.json
         echo '"}}' >> 2_data.json
-        curl -X POST -H "Content-type: application/json" -d @1_data.json https://hooks.slack.com/services/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
+        curl -X POST -H "Content-type: application/json" -d @1_data.json {params.webhook}
         rm 2_data.json
         """

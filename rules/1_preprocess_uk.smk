@@ -183,6 +183,7 @@ rule uk_summarize_preprocess:
         removed_low_covg_fasta = rules.uk_filter_low_coverage_sequences.output.fasta
         full_alignment = rules.uk_full_untrimmed_alignment.output.fasta
     params:
+        webhook = config["webhook"],
         outdir = config["publish_path"] + "/COG",
         prefix = config["publish_path"] + "/COG/cog_%s" %date
     log:
@@ -205,6 +206,6 @@ rule uk_summarize_preprocess:
         echo "*Step 1: COG-UK preprocessing complete*\n" >> 1_data.json
         cat {log} >> 1_data.json
         echo '"}}' >> 1_data.json
-        curl -X POST -H "Content-type: application/json" -d @1_data.json https://hooks.slack.com/services/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
+        curl -X POST -H "Content-type: application/json" -d @1_data.json {params.webhook}
         rm 1_data.json
         """
