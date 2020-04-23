@@ -36,6 +36,7 @@ rule summarize_combine:
         fasta = rules.combine_gisaid_and_cog.output.fasta,
         metadata = rules.combine_gisaid_and_cog.output.metadata,
     params:
+        webhook = config["webhook"],
         outdir = config["publish_path"] + "/COG_GISAID",
         prefix = config["publish_path"] + "/COG_GISAID/cog_gisaid_%s" %date,
     log:
@@ -52,6 +53,6 @@ rule summarize_combine:
         echo "*Step 3: Combine COG-UK and GISAID data*\n" >> 3_data.json
         cat {log} >> 3_data.json
         echo '"}}' >> 3_data.json
-        curl -X POST -H "Content-type: application/json" -d @1_data.json https://hooks.slack.com/services/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
+        curl -X POST -H "Content-type: application/json" -d @1_data.json {params.webhook}
         rm 3_data.json
         """
