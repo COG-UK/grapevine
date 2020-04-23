@@ -49,7 +49,7 @@ rule run_subroutine_on_lineages:
         outgroups=$(cat {input.lineage} | cut -f2 -d"," | tr '\n' '  ')
         snakemake --nolock \
           --snakefile {params.path_to_script}/4_subroutine/process_lineages.smk \
-          --cores 128 \
+          --cores 40 \
           --configfile {params.path_to_script}/4_subroutine/config.yaml \
           --config \
           output_path={params.output_path} \
