@@ -46,7 +46,11 @@ rule iq_tree:
         -cptime 300 \
         -ntmax {threads} \
         -s {input.lineage_fasta} &> {log}
-        mv {input.lineage_fasta}.treefile {output.tree}
+
+        datafunk repair_names \
+          --fasta {input.lineage_fasta} \
+          --tree {input.lineage_fasta}.treefile \
+          --out {output.tree} &>> {log}
         """
 
 rule annotate_tree:
