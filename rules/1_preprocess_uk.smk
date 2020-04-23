@@ -174,7 +174,7 @@ rule uk_full_untrimmed_alignment:
         mv removed.fa {output.fasta}
         """
 
-rule uk_summarize_preprocess:
+rule summarize_preprocess_uk:
     input:
         raw_fasta = config["latest_uk_fasta"],
         unify_headers_fasta = rules.uk_unify_headers.output.fasta,
@@ -187,7 +187,7 @@ rule uk_summarize_preprocess:
         outdir = config["publish_path"] + "/COG",
         prefix = config["publish_path"] + "/COG/cog_%s" %date
     log:
-        config["output_path"] + "/logs/1_summary_preprocess_uk.log"
+        config["output_path"] + "/logs/1_summarize_preprocess_uk.log"
     shell:
         """
         echo "> Number of sequences in raw UK fasta: $(cat {input.raw_fasta} | grep ">" | wc -l)\n" &> {log}
