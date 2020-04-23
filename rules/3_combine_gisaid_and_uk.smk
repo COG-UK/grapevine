@@ -31,7 +31,7 @@ rule combine_gisaid_and_cog:
         cp {output.metadata} {params.prefix}_metadata.csv
         """
 
-rule summarize_combine:
+rule summarize_combine_gisaid_and_cog:
     input:
         fasta = rules.combine_gisaid_and_cog.output.fasta,
         metadata = rules.combine_gisaid_and_cog.output.metadata,
@@ -40,7 +40,7 @@ rule summarize_combine:
         outdir = config["publish_path"] + "/COG_GISAID",
         prefix = config["publish_path"] + "/COG_GISAID/cog_gisaid_%s" %date,
     log:
-        config["output_path"] + "/logs/3_summarize_combine.log"
+        config["output_path"] + "/logs/3_summarize_combine_gisaid_and_cog.log"
     shell:
         """
         mkdir -p {params.outdir}

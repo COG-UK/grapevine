@@ -69,7 +69,7 @@ rule summarize_make_trees:
         webhook = config["webhook"],
         outdir = config["publish_path"] + "/COG_GISAID",
     log:
-        config["output_path"] + "/logs/4_summarize_trees_done.log"
+        config["output_path"] + "/logs/4_summarize_make_trees.log"
     shell:
         """
         echo "> Trees have been published in {params.outdir}\n" >> {log}
