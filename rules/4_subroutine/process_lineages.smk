@@ -141,7 +141,7 @@ rule cut_out_trees:
     params:
         lineage = "{lineage}",
         outdir = config["output_path"] + "/4/{lineage}/trees",
-        pubdir = config["publish_path"] + "/COG_GISAID/acc_lineages",
+        pubdir = config["publish_path"] + "/COG_GISAID/acc_lineages/{lineage}",
     output:
         config["output_path"] + "/4/{lineage}/trees/cut_out_trees_done"
     log:
