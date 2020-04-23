@@ -96,7 +96,7 @@ rule uk_output_cog:
           --restrict
         """
 
-rule uk_summarize_pangolin:
+rule summarize_pangolin_lineage_typing:
     input:
         fasta = rules.uk_output_cog.output.fasta,
         metadata = rules.uk_output_cog.output.metadata,
@@ -106,7 +106,7 @@ rule uk_summarize_pangolin:
         outdir = config["publish_path"] + "/COG",
         prefix = config["publish_path"] + "/COG/cog_%s" %date
     log:
-        config["output_path"] + "/logs/2_summary_pangolin.log"
+        config["output_path"] + "/logs/2_summarize_pangolin_lineage_typing.log"
     shell:
         """
         mkdir -p {params.outdir}

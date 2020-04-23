@@ -20,10 +20,10 @@ else:
 
 rule all:
     input:
-        config["output_path"] + "/3/cog_gisaid.fasta",
-        config["output_path"] + "/3/cog_gisaid.csv",
-        config["output_path"] + "/4/split_done",
-        config["output_path"] + "/4/trees_done"
+        config["output_path"] + "/logs/4_summarize_make_trees.log",
+        config["output_path"] + "/logs/3_summarize_combine_gisaid_and_cog.log",
+        config["output_path"] + "/logs/2_summarize_pangolin_lineage_typing.log",
+        config["output_path"] + "/logs/1_summarize_preprocess_uk.log",
 
 ##### Modules #####
 include: "rules/0_preprocess_gisaid.smk"
