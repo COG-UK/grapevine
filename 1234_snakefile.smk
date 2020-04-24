@@ -24,6 +24,25 @@ rule all:
         config["output_path"] + "/logs/3_summarize_combine_gisaid_and_cog.log",
         config["output_path"] + "/logs/2_summarize_pangolin_lineage_typing.log",
         config["output_path"] + "/logs/1_summarize_preprocess_uk.log",
+        config["output_path"] + "/snakejunk"
+
+rule clean_up:
+    input:
+        config["output_path"] + "/logs/4_summarize_make_trees.log",
+    output:
+        config["output_path"] + "/snakejunk"
+    shell:
+        """
+        mkdir -p {output}
+        mv slurm-*.out {output}/
+        for file in pre trace default.profraw
+        do
+          if [ -f "$file" ]
+          then
+            rm $file
+          fi
+        done
+        """
 
 ##### Modules #####
 include: "rules/1_preprocess_uk.smk"
