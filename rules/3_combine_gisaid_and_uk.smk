@@ -4,11 +4,8 @@ date = datetime.date.today()
 
 rule combine_gisaid_and_cog:
     input:
-        summary_gisaid = rules.gisaid_summarize_preprocess.log,
-        summary_uk = rules.uk_summarize_preprocess.log,
-        summary_uk_pangolin = rules.uk_summarize_pangolin.log,
-        gisaid_fasta = rules.gisaid_output_gisaid.output.fasta,
-        gisaid_metadata = rules.gisaid_output_gisaid.output.metadata,
+        gisaid_fasta = config["output_path"] + "/0/gisaid.regularized.fasta",
+        gisaid_metadata = config["output_path"] + "/0/gisaid.regularized.csv",
         uk_fasta = rules.uk_output_cog.output.fasta,
         uk_metadata = rules.uk_output_cog.output.metadata
     output:
