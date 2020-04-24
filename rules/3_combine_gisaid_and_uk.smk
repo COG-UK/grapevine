@@ -43,10 +43,11 @@ rule summarize_combine_gisaid_and_cog:
         echo "> Combined COG and GISAID trimmed alignments published to {params.prefix}_alignment.fasta\n" >> {log}
         echo "> Combined COG and GISAID restricted metadata published to {params.prefix}_metadata.csv\n" >> {log}
 
+        echo {params.webhook}
         echo '{{"text":"' > 3_data.json
         echo "*Step 3: Combine COG-UK and GISAID data*\n" >> 3_data.json
         cat {log} >> 3_data.json
         echo '"}}' >> 3_data.json
         curl -X POST -H "Content-type: application/json" -d @3_data.json {params.webhook}
-        rm 3_data.json
+        #rm 3_data.json
         """
