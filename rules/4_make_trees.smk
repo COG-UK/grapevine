@@ -4,6 +4,7 @@ date = datetime.date.today()
 
 rule split_based_on_lineages:
     input:
+        previous_stage = config["output_path"] + "/logs/3_summarize_combine_gisaid_and_cog.log",
         fasta = rules.combine_gisaid_and_cog.output.fasta,
         metadata = rules.combine_gisaid_and_cog.output.metadata,
         lineage = config["lineage_splits"]
