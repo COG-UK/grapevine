@@ -43,7 +43,7 @@ rule run_subroutine_on_lineages:
         config["output_path"] + "/4/trees_done"
     log:
         config["output_path"] + "/logs/4_run_subroutine_on_lineages.log"
-    threads: 80
+    threads: 16
     shell:
         """
         lineages=$(cat {input.lineage} | cut -f1 -d"," | tr '\n' '  ')
