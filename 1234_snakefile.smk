@@ -1,6 +1,7 @@
 configfile: workflow.current_basedir + "/config.yaml"
 
 import datetime
+import os
 
 date = datetime.date.today()
 
@@ -15,6 +16,7 @@ if config.get("publish_path"):
     config["publish_path"] = config["publish_path"].rstrip("/") + "/publish"
 else:
     config["publish_path"] = "publish"
+config["publish_path"] = os.path.abspath(config["publish_path"])
 
 ##### Target rules #####
 

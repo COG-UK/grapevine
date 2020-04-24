@@ -21,7 +21,7 @@ rule uk_unify_headers:
           --log {log} \
           --cog-uk
 
-        sed -i .tmp 's/United Kingdom/UK/g' {output.metadata}
+        sed --in-place=.tmp 's/United Kingdom/UK/g' {output.metadata}
         """
 
 rule uk_add_epi_week:
