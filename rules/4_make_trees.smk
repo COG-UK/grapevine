@@ -8,7 +8,8 @@ rule split_based_on_lineages:
         metadata = rules.combine_gisaid_and_cog.output.metadata,
         lineage = config["lineage_splits"]
     params:
-        prefix = config["output_path"] + "/4/lineage_"
+        prefix = config["output_path"] + "/4/lineage_",
+        webhook = config["webhook"]
     output:
         temp(config["output_path"] + "/4/split_done")
     log:
@@ -24,7 +25,14 @@ rule split_based_on_lineages:
           --lineage $lineages \
           --out-folder {params.prefix} &> {log}
 
-        curl -X POST -H "Content-type: application/json" -d '{{"text": "Ready for tree building"}}' https://hooks.slack.com/services/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
+        echo '{{"text":"' > 4_data.json
+        echo "*Step 4: Ready for tree building*\n" >> 4_data.json
+        num_lineages=$(cat {input.lineage} | wc -l)
+        num_lineages=$((num_lineages+1))
+        tail -n$num_lineages {log} >> 4_data.json
+        echo '"}}' >> 4_data.json
+        curl -X POST -H "Content-type: application/json" -d @4_data.json {params.webhook}
+        rm 4_data.json
 
         touch {output}
         """
@@ -79,6 +87,6 @@ rule summarize_make_trees:
         echo "*Step 4: Construct and annotate trees completed*\n" >> 4_data.json
         cat {log} >> 4_data.json
         echo '"}}' >> 4_data.json
-        curl -X POST -H "Content-type: application/json" -d @1_data.json {params.webhook}
+        curl -X POST -H "Content-type: application/json" -d @4_data.json {params.webhook}
         rm 4_data.json
         """
