@@ -4,6 +4,7 @@ date = datetime.date.today()
 
 rule combine_gisaid_and_cog:
     input:
+        previous_stage = config["output_path"] + "/logs/2_summarize_pangolin_lineage_typing.log",
         gisaid_fasta = config["output_path"] + "/0/gisaid.regularized.fasta",
         gisaid_metadata = config["output_path"] + "/0/gisaid.regularized.csv",
         uk_fasta = rules.uk_output_cog.output.fasta,

@@ -13,6 +13,7 @@ date = datetime.date.today()
 
 rule uk_extract_new:
     input:
+        previous_stage = config["output_path"] + "/logs/1_summarize_preprocess_uk.log",
         fasta = rules.uk_filter_low_coverage_sequences.output,
         metadata = rules.uk_remove_duplicates.output.metadata,
         previous_metadata = config["previous_uk_metadata"]
