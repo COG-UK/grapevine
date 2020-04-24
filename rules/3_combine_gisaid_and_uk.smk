@@ -46,6 +46,6 @@ rule summarize_combine_gisaid_and_cog:
         echo "*Step 3: Combine COG-UK and GISAID data*\n" >> 3_data.json
         cat {log} >> 3_data.json
         echo '"}}' >> 3_data.json
-        curl -X POST -H "Content-type: application/json" -d @1_data.json {params.webhook}
+        curl -X POST -H "Content-type: application/json" -d @3_data.json {params.webhook}
         rm 3_data.json
         """
