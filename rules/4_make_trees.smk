@@ -26,6 +26,8 @@ rule split_based_on_lineages:
           --lineage $lineages \
           --out-folder {params.prefix} &> {log}
 
+        echo {params.webhook}
+
         echo '{{"text":"' > 4_data.json
         echo "*Step 4: Ready for tree building*\n" >> 4_data.json
         num_lineages=$(cat {input.lineage} | wc -l)
@@ -33,7 +35,7 @@ rule split_based_on_lineages:
         tail -n$num_lineages {log} >> 4_data.json
         echo '"}}' >> 4_data.json
         curl -X POST -H "Content-type: application/json" -d @4_data.json {params.webhook}
-        rm 4_data.json
+        #rm 4_data.json
 
         touch {output}
         """

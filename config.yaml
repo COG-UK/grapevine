@@ -28,4 +28,4 @@ trim_end: 29674
 lineage_splits: input/lineage_splits.csv
 
 ##### Webhook to push to #####
-webhook: https://hooks.slack.com/services/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
+webhook:
