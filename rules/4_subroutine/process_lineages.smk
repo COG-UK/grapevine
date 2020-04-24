@@ -1,6 +1,7 @@
 configfile: workflow.current_basedir + "/config.yaml"
 
 import datetime
+import os
 
 date = datetime.date.today()
 
@@ -10,6 +11,12 @@ if config.get("output_path"):
     config["output_path"] = config["output_path"].rstrip("/")
 else:
     config["output_path"] = "analysis"
+
+if config.get("publish_path"):
+    config["publish_path"] = config["publish_path"].rstrip("/") + "/publish"
+else:
+    config["publish_path"] = "publish"
+config["publish_path"] = os.path.abspath(config["publish_path"])
 
 LINEAGES = config["lineages"].split()
 OUTGROUPS = config["lineage_specific_outgroups"].split()
@@ -38,10 +45,11 @@ rule iq_tree:
     log:
         config["output_path"] + "/logs/4_iq_tree_{lineage}.log"
     threads: 20
+    resources: cpus=2, mem_per_cpu=20000
     shell:
         """
         echo "{params.outgroup} {input.lineage_fasta} {params.lineage}"
-        iqtree -m GTR+G -bb 1000 -czb \
+        iqtree -m HKY -bb 1000 -czb \
         -o \"{params.outgroup}\" \
         -cptime 300 \
         -ntmax {threads} \
