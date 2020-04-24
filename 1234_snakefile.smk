@@ -24,10 +24,8 @@ rule all:
         config["output_path"] + "/logs/3_summarize_combine_gisaid_and_cog.log",
         config["output_path"] + "/logs/2_summarize_pangolin_lineage_typing.log",
         config["output_path"] + "/logs/1_summarize_preprocess_uk.log",
-        config["output_path"] + "/logs/0_gisaid_summarize_preprocess.log",
 
 ##### Modules #####
-include: "rules/0_preprocess_gisaid.smk"
 include: "rules/1_preprocess_uk.smk"
 include: "rules/2_pangolin_lineage_typing.smk"
 include: "rules/3_combine_gisaid_and_uk.smk"

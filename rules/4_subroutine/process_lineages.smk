@@ -74,7 +74,7 @@ rule annotate_tree:
           --trait-columns lineage \
           country uk_lineage \
           --index-column sequence_name \
-          --boolean-for-trait country=UK-.* \
+          --boolean-for-trait country='United Kingdom' \
           --boolean-trait-names country_uk \
           --input {input.tree} \
           --format newick \
@@ -161,10 +161,11 @@ rule cut_out_trees:
           --trait acc_lineage \
           --input {input.tree} \
           --output {params.outdir} &> {log}
-        touch {output}
 
         mkdir -p {params.pubdir}
         cp {params.outdir}/*.tree {params.pubdir}/
+
+        touch {output}
         """
 
 rule output_annotations:

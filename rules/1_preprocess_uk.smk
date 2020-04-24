@@ -128,7 +128,7 @@ rule uk_remove_insertions_and_trim_and_pad:
           -r {input.reference} \
           -o {output.fasta} \
           -t [{params.trim_start}:{params.trim_end}] \
-          --pad
+          --pad \
           --log-inserts &> {log}
         mv insertions.txt {params.insertions}
         """
