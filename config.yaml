@@ -25,7 +25,7 @@ trim_start: 265
 trim_end: 29674
 
 ##### File of lineages to split by #####
-lineage_splits: info/lineage_splits.csv
+lineage_splits: input/lineage_splits.csv
 
 ##### Webhook to push to #####
 webhook: https://hooks.slack.com/services/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

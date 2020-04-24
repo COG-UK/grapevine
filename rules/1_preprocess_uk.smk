@@ -182,7 +182,7 @@ rule summarize_preprocess_uk:
         unify_headers_fasta = rules.uk_unify_headers.output.fasta,
         deduplicated_fasta = rules.uk_remove_duplicates.output.fasta,
         removed_short_fasta = rules.uk_filter_short_sequences.output.fasta,
-        removed_low_covg_fasta = rules.uk_filter_low_coverage_sequences.output.fasta
+        removed_low_covg_fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
         full_alignment = rules.uk_full_untrimmed_alignment.output.fasta
     params:
         webhook = config["webhook"],
