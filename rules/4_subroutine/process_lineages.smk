@@ -44,7 +44,6 @@ rule iq_tree:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.tree"
     log:
         config["output_path"] + "/logs/4_iq_tree_{lineage}.log"
-    threads: 20
     resources: cpus=2, mem_per_cpu=20000
     shell:
         """
@@ -52,7 +51,7 @@ rule iq_tree:
         iqtree -m HKY -bb 1000 -czb \
         -o \"{params.outgroup}\" \
         -cptime 300 \
-        -ntmax {threads} \
+        -nt AUTO \
         -s {input.lineage_fasta} &> {log}
 
         RESULT=$?
