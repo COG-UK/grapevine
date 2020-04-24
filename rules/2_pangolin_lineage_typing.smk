@@ -2,14 +2,14 @@ import datetime
 
 date = datetime.date.today()
 
-rule update_pangolin:
-    output:
-        temp("updated_pangolin")
-    shell:
-        """
-        pip install --upgrade git+https://github.com/hCoV-2019/pangolin.git
-        touch updated_pangolin
-        """
+# rule update_pangolin:
+#     output:
+#         temp("updated_pangolin")
+#     shell:
+#         """
+#         pip install --upgrade git+https://github.com/hCoV-2019/pangolin.git
+#         touch updated_pangolin
+#         """
 
 rule uk_extract_new:
     input:
@@ -35,7 +35,7 @@ rule uk_extract_new:
 rule uk_pangolin:
     input:
         fasta = rules.uk_extract_new.output.fasta,
-        update = rules.update_pangolin.output
+        #update = rules.update_pangolin.output
     params:
         outdir = config["output_path"] + "/2/pangolin"
     output:
@@ -55,7 +55,7 @@ rule uk_add_pangolin_lineages_to_metadata:
         metadata = rules.uk_remove_duplicates.output.metadata,
         lineages = rules.uk_pangolin.output.lineages
     output:
-        metadata = config["output_path"] + "/2/uk_with_lineages.csv"
+        metadata = config["output_path"] + "/2/uk.with_lineages.csv"
     log:
         config["output_path"] + "/logs/2_uk_add_pangolin_lineages_to_metadata.log"
     shell:
@@ -74,8 +74,8 @@ rule uk_output_cog:
         fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
         metadata = rules.uk_add_pangolin_lineages_to_metadata.output.metadata
     output:
-        fasta = config["output_path"] + "/2/uk.combined.regularized.fasta",
-        metadata = config["output_path"] + "/2/uk.combined.regularized.csv"
+        fasta = config["output_path"] + "/2/uk.regularized.fasta",
+        metadata = config["output_path"] + "/2/uk.regularized.csv"
     log:
         config["output_path"] + "/logs/2_uk_output_cog.log"
     shell:
@@ -89,7 +89,7 @@ rule uk_output_cog:
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
                           lineage_support uk_lineage \
-          --where-column epi_week=edin_epi_week country=adm0 lineage_support=ufbootstrap \
+          --where-column epi_week=edin_epi_week country=UK lineage_support=ufbootstrap \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --log-file {log} \

@@ -22,10 +22,6 @@ rule combine_gisaid_and_cog:
           --out-metadata {output.metadata} \
           --index-column sequence_name \
           --log-file {log}
-
-        mkdir -p {params.outdir}
-        cp {output.fasta} {params.prefix}_alignment.fasta
-        cp {output.metadata} {params.prefix}_metadata.csv
         """
 
 rule summarize_combine_gisaid_and_cog:

@@ -37,7 +37,7 @@ rule iq_tree:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.tree"
     log:
         config["output_path"] + "/logs/4_iq_tree_{lineage}.log"
-    threads: 40
+    threads: 20
     shell:
         """
         echo "{params.outgroup} {input.lineage_fasta} {params.lineage}"
@@ -74,7 +74,7 @@ rule annotate_tree:
           --trait-columns lineage \
           country uk_lineage \
           --index-column sequence_name \
-          --boolean-for-trait country='United Kingdom' \
+          --boolean-for-trait country='UK' \
           --boolean-trait-names country_uk \
           --input {input.tree} \
           --format newick \

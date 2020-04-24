@@ -43,13 +43,14 @@ rule run_subroutine_on_lineages:
         config["output_path"] + "/4/trees_done"
     log:
         config["output_path"] + "/logs/4_run_subroutine_on_lineages.log"
+    threads: 80
     shell:
         """
         lineages=$(cat {input.lineage} | cut -f1 -d"," | tr '\n' '  ')
         outgroups=$(cat {input.lineage} | cut -f2 -d"," | tr '\n' '  ')
         snakemake --nolock \
           --snakefile {params.path_to_script}/4_subroutine/process_lineages.smk \
-          --cores 40 \
+          --cores {threads} \
           --configfile {params.path_to_script}/4_subroutine/config.yaml \
           --config \
           output_path={params.output_path} \
