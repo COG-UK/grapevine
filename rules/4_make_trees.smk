@@ -32,8 +32,8 @@ rule split_based_on_lineages:
         echo "*Step 4: Ready for tree building*\\n" >> 4a_data.json
         num_lineages=$(cat {input.lineage} | wc -l)
         num_lineages=$((num_lineages+1))
-        range={$num_lineages..1}
-        for i in $(eval echo ${range})
+        range={{$num_lineages..1}}
+        for i in $(eval echo ${{range}})
         do
           line=$(tail -n$i {log} | head -n1)
           echo ">$line\\n" >> 4a_data.json
