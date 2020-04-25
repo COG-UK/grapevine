@@ -75,7 +75,7 @@ rule uk_add_previous_uk_lineages_to_metadata:
 
         fastafunk add_columns \
           --in-metadata {input.metadata} \
-          --in-data {output.temp_metadata} \
+          --in-data {output.tmp_metadata} \
           --index-column sequence_name \
           --join-on sequence_name \
           --new-columns uk_lineage lineage lineage_support edin_date_stamp \
