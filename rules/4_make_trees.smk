@@ -32,9 +32,11 @@ rule split_based_on_lineages:
         echo "*Step 4: Ready for tree building*\\n" >> 4a_data.json
         num_lineages=$(cat {input.lineage} | wc -l)
         num_lineages=$((num_lineages+1))
-        for line in $(tail -n$num_lineages {log})
+        range={$num_lineages..1}
+        for i in $(eval echo ${range})
         do
-          echo "$line\\n" >> 4a_data.json
+          line=$(tail -n$i {log} | head -n1)
+          echo ">$line\\n" >> 4a_data.json
         done
         echo '"}}' >> 4a_data.json
         echo "webhook {params.webhook}"
