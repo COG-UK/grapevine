@@ -112,14 +112,14 @@ rule summarize_pangolin_lineage_typing:
         """
         mkdir -p {params.outdir}
         cp {input.full_metadata} {params.prefix}_metadata.full.csv
-        echo "> Full COG metadata published to {params.prefix}_metadata.full.csv\n" >> {log}
+        echo "> Full COG metadata published to {params.prefix}_metadata.full.csv\\n" >> {log}
 
         cp {input.fasta} {params.prefix}_alignment.matched.fasta
         cp {input.metadata} {params.prefix}_metadata.matched.csv
-        echo "> Matched COG fasta and restricted metadata published to {params.prefix}_alignment.matched.fasta and {params.prefix}_metadata.matched.csv\n" >> {log}
+        echo "> Matched COG fasta and restricted metadata published to {params.prefix}_alignment.matched.fasta and {params.prefix}_metadata.matched.csv\\n" >> {log}
 
         echo '{{"text":"' > 2_data.json
-        echo "*Step 2: COG-UK pangolin typing*\n" >> 2_data.json
+        echo "*Step 2: COG-UK pangolin typing*\\n" >> 2_data.json
         cat {log} >> 2_data.json
         echo '"}}' >> 2_data.json
         curl -X POST -H "Content-type: application/json" -d @2_data.json {params.webhook}

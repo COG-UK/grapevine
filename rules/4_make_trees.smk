@@ -17,7 +17,7 @@ rule split_based_on_lineages:
         config["output_path"] + "/logs/4_split_based_on_lineages.log"
     shell:
         """
-        lineages=$(cat {input.lineage} | cut -f1 --delim "," | tr '\n' '  ')
+        lineages=$(cat {input.lineage} | cut -f1 --delim "," | tr '\\n' '  ')
         fastafunk split \
           --in-fasta {input.fasta} \
           --in-metadata {input.metadata} \
@@ -29,7 +29,7 @@ rule split_based_on_lineages:
         echo {params.webhook}
 
         echo '{{"text":"' > 4_data.json
-        echo "*Step 4: Ready for tree building*\n" >> 4_data.json
+        echo "*Step 4: Ready for tree building*\\n" >> 4_data.json
         num_lineages=$(cat {input.lineage} | wc -l)
         num_lineages=$((num_lineages+1))
         tail -n$num_lineages {log} >> 4_data.json
@@ -57,8 +57,8 @@ rule run_subroutine_on_lineages:
     threads: 16
     shell:
         """
-        lineages=$(cat {input.lineage} | cut -f1 -d"," | tr '\n' '  ')
-        outgroups=$(cat {input.lineage} | cut -f2 -d"," | tr '\n' '  ')
+        lineages=$(cat {input.lineage} | cut -f1 -d"," | tr '\\n' '  ')
+        outgroups=$(cat {input.lineage} | cut -f2 -d"," | tr '\\n' '  ')
         snakemake --nolock \
           --snakefile {params.path_to_script}/4_subroutine/process_lineages.smk \
           --cores {threads} \
@@ -84,10 +84,10 @@ rule summarize_make_trees:
         config["output_path"] + "/logs/4_summarize_make_trees.log"
     shell:
         """
-        echo "> Trees have been published in {params.outdir}\n" >> {log}
+        echo "> Trees have been published in {params.outdir}\\n" >> {log}
 
         echo '{{"text":"' > 4_data.json
-        echo "*Step 4: Construct and annotate trees completed*\n" >> 4_data.json
+        echo "*Step 4: Construct and annotate trees completed*\\n" >> 4_data.json
         cat {log} >> 4_data.json
         echo '"}}' >> 4_data.json
         curl -X POST -H "Content-type: application/json" -d @4_data.json {params.webhook}

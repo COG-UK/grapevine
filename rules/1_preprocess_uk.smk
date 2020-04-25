@@ -192,20 +192,20 @@ rule summarize_preprocess_uk:
         config["output_path"] + "/logs/1_summarize_preprocess_uk.log"
     shell:
         """
-        echo "> Number of sequences in raw UK fasta: $(cat {input.raw_fasta} | grep ">" | wc -l)\n" &> {log}
-        echo "> Number of sequences in raw UK fasta after unifying headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)\n" &>> {log}
-        echo "> Number of sequences after deduplication: $(cat {input.deduplicated_fasta} | grep ">" | wc -l)\n" &>> {log}
-        echo "> Number of sequences after removing sequences <29000bps: $(cat {input.removed_short_fasta} | grep ">" | wc -l)\n" &>> {log}
-        echo "> Number of sequences after trimming and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)\n" &>> {log}
+        echo "> Number of sequences in raw UK fasta: $(cat {input.raw_fasta} | grep ">" | wc -l)\\n" &> {log}
+        echo "> Number of sequences in raw UK fasta after unifying headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)\\n" &>> {log}
+        echo "> Number of sequences after deduplication: $(cat {input.deduplicated_fasta} | grep ">" | wc -l)\\n" &>> {log}
+        echo "> Number of sequences after removing sequences <29000bps: $(cat {input.removed_short_fasta} | grep ">" | wc -l)\\n" &>> {log}
+        echo "> Number of sequences after trimming and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)\\n" &>> {log}
 
         mkdir -p {params.outdir}
         cp {input.full_alignment} {params.prefix}_alignment.full.fasta
-        echo "> Full untrimmed COG alignment published to {params.prefix}_alignment.full.fasta\n" >> {log}
+        echo "> Full untrimmed COG alignment published to {params.prefix}_alignment.full.fasta\\n" >> {log}
         cp {input.removed_low_covg_fasta} {params.prefix}_alignment.trimmed.fasta
-        echo "> Trimmed COG alignment published to {params.prefix}_alignment.trimmed.fasta\n" >> {log}
+        echo "> Trimmed COG alignment published to {params.prefix}_alignment.trimmed.fasta\\n" >> {log}
 
         echo '{{"text":"' > 1_data.json
-        echo "*Step 1: COG-UK preprocessing complete*\n" >> 1_data.json
+        echo "*Step 1: COG-UK preprocessing complete*\\n" >> 1_data.json
         cat {log} >> 1_data.json
         echo '"}}' >> 1_data.json
         curl -X POST -H "Content-type: application/json" -d @1_data.json {params.webhook}
