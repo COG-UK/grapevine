@@ -34,7 +34,7 @@ rule split_based_on_lineages:
         num_lineages=$((num_lineages+1))
         tail -n$num_lineages {log} >> 4a_data.json
         echo '"}}' >> 4a_data.json
-        echo "webhook {params.webhook}" 
+        echo "webhook {params.webhook}"
         curl -X POST -H "Content-type: application/json" -d @4a_data.json {params.webhook}
         #rm 4a_data.json
 

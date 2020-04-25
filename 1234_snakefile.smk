@@ -36,7 +36,7 @@ rule clean_up:
     shell:
         """
         mkdir -p {output}
-        mv slurm-*.out {output}/
+        mv slurm-*.out *_data.json {output}/
         for file in pre trace default.profraw
         do
           if [ -f "$file" ]
