@@ -51,12 +51,43 @@ rule uk_pangolin:
         --outdir {params.outdir} > {log} 2>&1
         """
 
+rule uk_add_previous_uk_lineages_to_metadata:
+    input:
+        previous_metadata = config["previous_uk_metadata"],
+        metadata = rules.uk_remove_duplicates.output.metadata,
+        fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
+    output:
+        metadata = config["output_path"] + "/2/uk.with_previous_lineages.csv",
+        tmp_fasta = temp(config["output_path"] + "/2/uk.with_previous_lineages.fasta.tmp"),
+        tmp_metadata = temp(config["output_path"] + "/2/uk.with_previous_lineages.csv.tmp")
+    log:
+        config["output_path"] + "/logs/2_uk_add_previous_uk_lineages_to_metadata.log"
+    shell:
+        """
+        fastafunk fetch \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata} \
+          --index-column sequence_name \
+          --filter-column sequence_name uk_lineage lineage lineage_support edin_date_stamp \
+          --out-fasta {output.tmp_fasta} \
+          --out-metadata {output.tmp_metadata} \
+          --log-file {log}
+
+        fastafunk add_columns \
+          --in-metadata {input.metadata} \
+          --in-data {output.temp_metadata} \
+          --index-column sequence_name \
+          --join-on sequence_name \
+          --new-columns uk_lineage lineage lineage_support edin_date_stamp \
+          --out-metadata {output.metadata} &>> {log}
+        """
+
 rule uk_add_pangolin_lineages_to_metadata:
     input:
-        metadata = rules.uk_remove_duplicates.output.metadata,
+        metadata = rules.uk_add_previous_uk_lineages_to_metadata.output.metadata,
         lineages = rules.uk_pangolin.output.lineages
     output:
-        metadata = config["output_path"] + "/2/uk.with_lineages.csv"
+        metadata = config["output_path"] + "/2/uk.with_new_lineages.csv"
     log:
         config["output_path"] + "/logs/2_uk_add_pangolin_lineages_to_metadata.log"
     shell:
