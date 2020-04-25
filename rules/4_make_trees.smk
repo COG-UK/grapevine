@@ -34,6 +34,7 @@ rule split_based_on_lineages:
         num_lineages=$((num_lineages+1))
         tail -n$num_lineages {log} >> 4a_data.json
         echo '"}}' >> 4a_data.json
+        echo "webhook {params.webhook}" 
         curl -X POST -H "Content-type: application/json" -d @4a_data.json {params.webhook}
         #rm 4a_data.json
 
@@ -90,6 +91,7 @@ rule summarize_make_trees:
         echo "*Step 4: Construct and annotate trees completed*\\n" >> 4_data.json
         cat {log} >> 4b_data.json
         echo '"}}' >> 4b_data.json
+        echo "webhook {params.webhook}"
         curl -X POST -H "Content-type: application/json" -d @4b_data.json {params.webhook}
         #rm 4b_data.json
         """

@@ -208,6 +208,7 @@ rule summarize_preprocess_uk:
         echo "*Step 1: COG-UK preprocessing complete*\\n" >> 1_data.json
         cat {log} >> 1_data.json
         echo '"}}' >> 1_data.json
+        echo "webhook {params.webhook}"
         curl -X POST -H "Content-type: application/json" -d @1_data.json {params.webhook}
         #rm 1_data.json
         """
