@@ -28,14 +28,14 @@ rule split_based_on_lineages:
 
         echo {params.webhook}
 
-        echo '{{"text":"' > 4_data.json
-        echo "*Step 4: Ready for tree building*\\n" >> 4_data.json
+        echo '{{"text":"' > 4a_data.json
+        echo "*Step 4: Ready for tree building*\\n" >> 4a_data.json
         num_lineages=$(cat {input.lineage} | wc -l)
         num_lineages=$((num_lineages+1))
-        tail -n$num_lineages {log} >> 4_data.json
-        echo '"}}' >> 4_data.json
-        curl -X POST -H "Content-type: application/json" -d @4_data.json {params.webhook}
-        #rm 4_data.json
+        tail -n$num_lineages {log} >> 4a_data.json
+        echo '"}}' >> 4a_data.json
+        curl -X POST -H "Content-type: application/json" -d @4a_data.json {params.webhook}
+        #rm 4a_data.json
 
         touch {output}
         """
@@ -86,10 +86,10 @@ rule summarize_make_trees:
         """
         echo "> Trees have been published in {params.outdir}\\n" >> {log}
 
-        echo '{{"text":"' > 4_data.json
+        echo '{{"text":"' > 4b_data.json
         echo "*Step 4: Construct and annotate trees completed*\\n" >> 4_data.json
-        cat {log} >> 4_data.json
-        echo '"}}' >> 4_data.json
-        curl -X POST -H "Content-type: application/json" -d @4_data.json {params.webhook}
-        rm 4_data.json
+        cat {log} >> 4b_data.json
+        echo '"}}' >> 4b_data.json
+        curl -X POST -H "Content-type: application/json" -d @4b_data.json {params.webhook}
+        #rm 4b_data.json
         """

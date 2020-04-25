@@ -123,5 +123,5 @@ rule summarize_pangolin_lineage_typing:
         cat {log} >> 2_data.json
         echo '"}}' >> 2_data.json
         curl -X POST -H "Content-type: application/json" -d @2_data.json {params.webhook}
-        rm 2_data.json
+        #rm 2_data.json
         """
