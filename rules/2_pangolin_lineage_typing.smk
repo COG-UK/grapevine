@@ -122,6 +122,7 @@ rule summarize_pangolin_lineage_typing:
         echo "*Step 2: COG-UK pangolin typing*\\n" >> 2_data.json
         cat {log} >> 2_data.json
         echo '"}}' >> 2_data.json
+        echo "webhook {params.webhook}"
         curl -X POST -H "Content-type: application/json" -d @2_data.json {params.webhook}
         #rm 2_data.json
         """
