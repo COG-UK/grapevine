@@ -119,7 +119,7 @@ rule summarize_pangolin_lineage_typing:
         echo "> Matched COG fasta and restricted metadata published to {params.prefix}_alignment.matched.fasta and {params.prefix}_metadata.matched.csv\\n" >> {log}
 
         echo '{{"text":"' > 2_data.json
-        echo "*Step 2: COG-UK pangolin typing*\\n" >> 2_data.json
+        echo "*Step 2: COG-UK pangolin typing complete*\\n" >> 2_data.json
         cat {log} >> 2_data.json
         echo '"}}' >> 2_data.json
         echo "webhook {params.webhook}"

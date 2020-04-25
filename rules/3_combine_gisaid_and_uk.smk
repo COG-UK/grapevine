@@ -45,7 +45,7 @@ rule summarize_combine_gisaid_and_cog:
 
         echo {params.webhook}
         echo '{{"text":"' > 3_data.json
-        echo "*Step 3: Combine COG-UK and GISAID data*\\n" >> 3_data.json
+        echo "*Step 3: Combine COG-UK and GISAID data complete*\\n" >> 3_data.json
         cat {log} >> 3_data.json
         echo '"}}' >> 3_data.json
         echo "webhook {params.webhook}"
