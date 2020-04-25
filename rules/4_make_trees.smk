@@ -32,7 +32,10 @@ rule split_based_on_lineages:
         echo "*Step 4: Ready for tree building*\\n" >> 4a_data.json
         num_lineages=$(cat {input.lineage} | wc -l)
         num_lineages=$((num_lineages+1))
-        tail -n$num_lineages {log} >> 4a_data.json
+        for line in $(tail -n$num_lineages {log})
+        do
+          echo "$line\\n" >> 4a_data.json
+        done
         echo '"}}' >> 4a_data.json
         echo "webhook {params.webhook}"
         curl -X POST -H "Content-type: application/json" -d @4a_data.json {params.webhook}
