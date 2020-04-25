@@ -146,6 +146,8 @@ rule summarize_pangolin_lineage_typing:
         cp {input.fasta} {params.prefix}_alignment.matched.fasta
         cp {input.metadata} {params.prefix}_metadata.matched.csv
         echo "> Matched COG fasta and restricted metadata published to {params.prefix}_alignment.matched.fasta and {params.prefix}_metadata.matched.csv\\n" >> {log}
+        echo "> Number of sequences in matched COG files: $(cat {input.fasta} | grep ">" | wc -l)\\n" &>> {log}
+
 
         echo '{{"text":"' > 2_data.json
         echo "*Step 2: COG-UK pangolin typing complete*\\n" >> 2_data.json

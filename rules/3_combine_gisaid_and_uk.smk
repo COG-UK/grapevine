@@ -42,6 +42,7 @@ rule summarize_combine_gisaid_and_cog:
         cp {input.metadata} {params.prefix}_metadata.csv
         echo "> Combined COG and GISAID trimmed alignments published to {params.prefix}_alignment.fasta\\n" >> {log}
         echo "> Combined COG and GISAID restricted metadata published to {params.prefix}_metadata.csv\\n" >> {log}
+        echo "> Number of sequences in combined COG and GISAID matched files: $(cat {input.fasta} | grep ">" | wc -l)\\n" &>> {log}
 
         echo {params.webhook}
         echo '{{"text":"' > 3_data.json
