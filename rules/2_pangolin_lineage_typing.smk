@@ -77,7 +77,7 @@ rule uk_add_pangolin_lineages_to_metadata:
         lineages = rules.uk_pangolin.output.lineages
     output:
         metadata = config["output_path"] + "/2/uk.with_new_lineages.csv",
-        tmp_metadata = temp(config["output_path"] + "/2/uk.with_new_lineages.csv.tmp)")
+        tmp_metadata = temp(config["output_path"] + "/2/uk.with_new_lineages.csv.tmp")
     log:
         config["output_path"] + "/logs/2_uk_add_pangolin_lineages_to_metadata.log"
     shell:
