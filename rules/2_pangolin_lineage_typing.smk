@@ -59,14 +59,14 @@ rule uk_add_previous_uk_lineages_to_metadata:
     output:
         metadata = config["output_path"] + "/2/uk.with_previous_lineages.csv",
         tmp_fasta = temp(config["output_path"] + "/2/uk.with_previous_lineages.fasta.tmp"),
-        tmp_metadata = temp(config["output_path"] + "/2/uk.with_previous_lineages.csv.tmp")
+        tmp_metadata = config["output_path"] + "/2/uk.with_previous_lineages.csv.tmp"
     log:
         config["output_path"] + "/logs/2_uk_add_previous_uk_lineages_to_metadata.log"
     shell:
         """
         fastafunk fetch \
           --in-fasta {input.fasta} \
-          --in-metadata {input.metadata} \
+          --in-metadata {input.previous_metadata} \
           --index-column sequence_name \
           --filter-column sequence_name uk_lineage lineage lineage_support edin_date_stamp \
           --out-fasta {output.tmp_fasta} \
