@@ -95,7 +95,8 @@ rule uk_add_pangolin_lineages_to_metadata:
           --in-data {input.lineages} \
           --index-column sequence_name \
           --join-on taxon \
-          --new-columns lineage UFbootstrap \
+          --new-columns lineage lineage_support \
+          --where-column lineage_support=UFbootstrap \
           --out-metadata {output.metadata} &>> {log}
         """
 
@@ -119,7 +120,7 @@ rule uk_output_cog:
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
                           lineage_support uk_lineage \
-          --where-column epi_week=edin_epi_week country=UK lineage_support=ufbootstrap \
+          --where-column epi_week=edin_epi_week country=adm0 \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --log-file {log} \
