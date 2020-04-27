@@ -165,11 +165,12 @@ rule cut_out_trees:
           --input {input.tree} \
           --output {params.outdir} &> {log}
 
-        if [[ -f {params.outdir}/traits.csv ]] then
+        if [[ -e {params.outdir}/traits.csv ]]
+        then
           mkdir -p {params.pubdir}
           cp {params.outdir}/*.tree {params.pubdir}/
         fi
-        
+
         touch {output}
         """
 
