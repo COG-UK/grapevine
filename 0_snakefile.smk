@@ -20,11 +20,14 @@ else:
 
 rule all:
     input:
-        fasta = config["output_path"] + "/0/gisaid.regularized.fasta",
-        metadata = config["output_path"] + "/0/gisaid.regularized.csv",
-        summary = config["output_path"] + "/logs/0_summary_preprocess_gisaid.log",
+        fasta_cog = config["output_path"] + "/0/gisaid.cog.fasta",
+        metadata_cog = config["output_path"] + "/0/gisaid.cog.csv",
+        fasta_gisaid = config["output_path"] + "/0/gisaid.full.fasta",
+        metadata_gisaid = config["output_path"] + "/0/gisaid.full.csv",
         counts = config["output_path"] + "/0/gisaid_counts_by_country.csv",
-
+        QC_table = config["output_path"] + "/0/QC_distances.tsv",
+        QC_plot = config["output_path"] + "/0/QC_distances.png",
+        summary = config["output_path"] + "/logs/0_summary_preprocess_gisaid.log"
 
 ##### Modules #####
 include: "rules/0_preprocess_gisaid.smk"
