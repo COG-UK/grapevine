@@ -1,5 +1,5 @@
-output_path:
+output_path: analysis
 lineages:
 lineage_specific_outgroups:
 metadata:
-publish_path:
+publish_path: publish
