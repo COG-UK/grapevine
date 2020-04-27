@@ -167,7 +167,7 @@ rule cut_out_trees:
           --threads {threads} \
           --output {params.outdir} &> {log}
 
-        if [ -z "$(ls -A {params.outdir})" ]
+        if [ ! -z "$(ls -A {params.outdir})" ]
         then
           mkdir -p {params.pubdir}
           cp {params.outdir}/*.tree {params.pubdir}/
