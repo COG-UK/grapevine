@@ -2,15 +2,6 @@ import datetime
 
 date = datetime.date.today()
 
-# rule update_pangolin:
-#     output:
-#         temp("updated_pangolin")
-#     shell:
-#         """
-#         pip install --upgrade git+https://github.com/hCoV-2019/pangolin.git
-#         touch updated_pangolin
-#         """
-
 rule uk_extract_new:
     input:
         previous_stage = config["output_path"] + "/logs/1_summarize_preprocess_uk.log",
@@ -36,7 +27,6 @@ rule uk_extract_new:
 rule uk_pangolin:
     input:
         fasta = rules.uk_extract_new.output.fasta,
-        #update = rules.update_pangolin.output
     params:
         outdir = config["output_path"] + "/2/pangolin"
     output:
@@ -115,12 +105,39 @@ rule uk_output_cog:
           --in-fasta {input.fasta} \
           --in-metadata {input.metadata} \
           --index-column sequence_name \
-          --filter-column sequence_name collection_date epi_week \
+          --filter-column sequence_name sample_date epi_week \
                           country adm1 adm2 outer_postcode \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
                           lineage_support uk_lineage \
           --where-column epi_week=edin_epi_week country=adm0 \
+                         sample_date=reception_date sample_date=collection_date \
+          --out-fasta {output.fasta} \
+          --out-metadata {output.metadata} \
+          --log-file {log} \
+          --restrict
+        """
+
+rule uk_output_cog_public:
+    input:
+        fasta = rules.uk_remove_duplicates.output.fasta,
+        metadata = rules.uk_add_pangolin_lineages_to_metadata.output.metadata
+    output:
+        fasta = config["output_path"] + "/2/uk.public.fasta",
+        metadata = config["output_path"] + "/2/uk.public.csv"
+    log:
+        config["output_path"] + "/logs/2_uk_output_cog_public.log"
+    shell:
+        """
+        fastafunk fetch \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata} \
+          --index-column sequence_name \
+          --filter-column sequence_name country adm1 \
+                          sample_date epi_week lineage \
+                          lineage_support \
+          --where-column epi_week=edin_epi_week country=adm0 \
+                         sample_date=reception_date sample_date=collection_date \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --log-file {log} \
@@ -131,6 +148,8 @@ rule summarize_pangolin_lineage_typing:
     input:
         fasta = rules.uk_output_cog.output.fasta,
         metadata = rules.uk_output_cog.output.metadata,
+        public_fasta = rules.uk_output_cog_public.output.fasta,
+        public_metadata = rules.uk_output_cog_public.output.metadata,
         full_metadata = rules.uk_add_pangolin_lineages_to_metadata.output.metadata
     params:
         webhook = config["webhook"],
@@ -149,6 +168,10 @@ rule summarize_pangolin_lineage_typing:
         echo "> Matched COG fasta and restricted metadata published to {params.prefix}_alignment.matched.fasta and {params.prefix}_metadata.matched.csv\\n" >> {log}
         echo "> Number of sequences in matched COG files: $(cat {input.fasta} | grep ">" | wc -l)\\n" &>> {log}
 
+        cp {input.public_fasta} {params.prefix}_sequences.public.fasta
+        cp {input.public_metadata} {params.prefix}_metadata.public.csv
+        echo "> Public unaligned COG fasta and restricted metadata published to {params.prefix}_sequences.public.fasta and {params.prefix}_metadata.public.csv\\n" >> {log}
+        echo "> Number of sequences in public COG files: $(cat {input.public_fasta} | grep ">" | wc -l)\\n" &>> {log}
 
         echo '{{"text":"' > 2_data.json
         echo "*Step 2: COG-UK pangolin typing complete*\\n" >> 2_data.json
