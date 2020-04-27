@@ -7,11 +7,6 @@ date = datetime.date.today()
 
 ##### Configuration #####
 
-if not config.get("output_path"):
-    config["output_path"] = "analysis"
-
-if not config.get("publish_path"):
-    config["publish_path"] = "publish"
 config["publish_path"] = os.path.abspath(config["publish_path"])
 
 LINEAGES = config["lineages"].split()
@@ -28,7 +23,8 @@ print("outgroups", OUTGROUPS)
 
 rule all:
     input:
-        expand(config["output_path"] + "/4/{lineage}/trees/traits.csv", lineage=LINEAGES)
+        expand(config["output_path"] + "/4/{lineage}/trees/traits.csv", lineage=LINEAGES),
+        expand(config["output_path"] + "/4/{lineage}/trees/cut_out_trees_done", lineage=LINEAGES)
 
 rule iq_tree:
     input:
@@ -157,7 +153,7 @@ rule cut_out_trees:
         config["output_path"] + "/4/{lineage}/trees/cut_out_trees_done"
     log:
         config["output_path"] + "/logs/4_cut_out_trees_{lineage}.log"
-    threads: 4
+    threads: 8
     shell:
         """
         clusterfunk prune \
@@ -179,7 +175,6 @@ rule cut_out_trees:
 rule output_annotations:
     input:
         tree = rules.label_introductions.output.tree,
-        trees_cut = rules.cut_out_trees.output
     params:
         lineage = "{lineage}",
     output:
