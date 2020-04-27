@@ -157,7 +157,7 @@ rule cut_out_trees:
         config["output_path"] + "/4/{lineage}/trees/cut_out_trees_done"
     log:
         config["output_path"] + "/logs/4_cut_out_trees_{lineage}.log"
-    threads: 10
+    threads: 4
     shell:
         """
         clusterfunk prune \
