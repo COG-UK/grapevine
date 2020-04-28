@@ -24,24 +24,9 @@ rule gisaid_process_json:
         """
 
 
-rule gisaid_mask_1:
-    input:
-        fasta = rules.gisaid_process_json.output.fasta,
-        mask = config["gisaid_mask_file"]
-    output:
-        fasta = config["output_path"] + "/0/gisaid.masked.fasta"
-    shell:
-        """
-        datafunk mask \
-          --input-fasta {input.fasta} \
-          --output-fasta {output.fasta} \
-          --mask-file {input.mask}
-        """
-
-
 rule gisaid_remove_duplicates:
     input:
-        fasta = rules.gisaid_mask_1.output.fasta,
+        fasta = rules.gisaid_process_json.output.fasta,
         metadata = rules.gisaid_process_json.output.metadata
     output:
         fasta = config["output_path"] + "/0/gisaid.RD.fasta",
@@ -169,8 +154,7 @@ rule gisaid_filter_2:
     input:
         fasta = rules.gisaid_remove_insertions_and_pad.output.fasta
     output:
-        fasta = config["output_path"] + "/0/gisaid.RD.new.UH.filt.mapped.filt2.fasta",
-        published_fasta = config["publish_path"] + "/GISAID/gisaid.new.fasta"
+        fasta = config["output_path"] + "/0/gisaid.RD.new.UH.filt.mapped.filt2.fasta"
     log:
         config["output_path"] + "/logs/0_gisaid_filter_2.log"
     shell:
@@ -180,13 +164,30 @@ rule gisaid_filter_2:
           -o {output.fasta} \
           --min-covg 93 &> {log}
 
+        """
+
+
+rule gisaid_mask_1:
+    input:
+        fasta = rules.gisaid_filter_2.output.fasta,
+        mask = config["gisaid_mask_file"]
+    output:
+        fasta = config["output_path"] + "/0/gisaid.RD.new.UH.filt.mapped.filt2.masked.fasta",
+        published_fasta = config["publish_path"] + "/GISAID/gisaid.new.fasta"
+    shell:
+        """
+        datafunk mask \
+          --input-fasta {input.fasta} \
+          --output-fasta {output.fasta} \
+          --mask-file {input.mask}
+
         cp {output.fasta} {output.published_fasta}
         """
 
 
 rule gisaid_pangolin:
     input:
-        fasta = rules.gisaid_filter_2.output.fasta
+        fasta = rules.gisaid_mask_1.output.fasta
     params:
         outdir = config["output_path"] + "/0/pangolin"
     output:
@@ -225,7 +226,7 @@ rule gisaid_add_pangolin_lineages_to_metadata:
 rule gisaid_combine_previous_and_new:
     input:
         previous_fasta = config["previous_gisaid_fasta"],
-        new_fasta = rules.gisaid_filter_2.output.fasta,
+        new_fasta = rules.gisaid_mask_1.output.fasta,
         new_metadata = rules.gisaid_add_pangolin_lineages_to_metadata.output.metadata
     output:
         fasta = config["output_path"] + "/0/gisaid.full.fasta",
