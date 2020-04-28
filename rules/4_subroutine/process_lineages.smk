@@ -148,7 +148,7 @@ rule label_acctran_introductions:
           --trait country_uk_acctran \
           --to True \
           --transition-name acc_lineage \
-          --transition-prefix {params.lineage}_acc. \
+          --transition-prefix {params.lineage}_ \
           --include_root \
           --input {input.tree} \
           --output {output.tree} &> {log}
@@ -171,7 +171,7 @@ rule label_deltran_introductions:
           --trait country_uk_deltran \
           --to True \
           --transition-name del_lineage \
-          --transition-prefix {params.lineage}_del. \
+          --transition-prefix {params.lineage}_ \
           --input {input.tree} \
           --output {output.tree} &> {log}
 
