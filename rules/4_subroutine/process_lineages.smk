@@ -59,6 +59,7 @@ rule phylotype_tree:
     output:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.phylotyped.tree"
     params:
+        lineage="{lineage}",
         collapse=5E-6,
         threshold=2E-5,
     log:
@@ -69,9 +70,9 @@ rule phylotype_tree:
         --format newick \
         --collapse_to_polytomies {params.collapse} \
         --threshold {params.threshold} \
-        --prefix {params.lineage}_ \
+        --prefix {params.lineage}_1 \
         --input {input.tree} \
-        --output{output.tree} &> {log}
+        --output {output.tree} &> {log}
         """
 
 
@@ -202,7 +203,7 @@ rule label_deltran_introductions:
 
 rule cut_out_trees:
     input:
-        tree = rules.label_introductions.output.tree
+        tree = rules.label_deltran_introductions.output.tree
     params:
         lineage = "{lineage}",
         outdir = config["output_path"] + "/4/{lineage}/trees",
@@ -242,7 +243,7 @@ rule output_annotations:
     shell:
         """
         clusterfunk extract_tip_annotations \
-          --traits country lineage uk_lineage acc_lineage del_lineage \
+          --traits country lineage uk_lineage acc_lineage del_lineage phylotype \
           --input {input.tree} \
           --output {output.traits} &> {log}
         """
