@@ -13,7 +13,7 @@ dependencies:
   - python=3.6
   - snakemake-minimal=5.13
   - pip:
-    - git+https://github.com/cov-ert/datafunk.git@v0.0.6
+    - git+https://github.com/cov-ert/datafunk.git
     - git+https://github.com/cov-ert/fastafunk.git@v0.0.2
     - git+https://github.com/hCoV-2019/pangolin.git
     - git+https://github.com/cov-ert/clusterfunk.git
