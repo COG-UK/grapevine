@@ -1,7 +1,3 @@
-import datetime
-
-date = datetime.date.today()
-
 rule uk_extract_new:
     input:
         previous_stage = config["output_path"] + "/logs/1_summarize_preprocess_uk.log",

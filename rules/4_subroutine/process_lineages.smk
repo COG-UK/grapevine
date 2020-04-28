@@ -1,9 +1,6 @@
 configfile: workflow.current_basedir + "/config.yaml"
 
-import datetime
 import os
-
-date = datetime.date.today()
 
 ##### Configuration #####
 
