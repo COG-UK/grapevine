@@ -23,8 +23,8 @@ print("outgroups", OUTGROUPS)
 
 rule all:
     input:
-        expand(config["output_path"] + "/4/{lineage}/trees/traits.csv", lineage=LINEAGES),
-        expand(config["output_path"] + "/4/{lineage}/trees/cut_out_trees_done", lineage=LINEAGES)
+        expand(config["output_path"] + "/4/{lineage}/traits.csv", lineage=LINEAGES),
+        expand(config["output_path"] + "/4/{lineage}/cut_out_trees_done", lineage=LINEAGES)
 
 rule iq_tree:
     input:
@@ -150,7 +150,7 @@ rule cut_out_trees:
         outdir = config["output_path"] + "/4/{lineage}/trees",
         pubdir = config["publish_path"] + "/COG_GISAID/acc_lineages/{lineage}",
     output:
-        config["output_path"] + "/4/{lineage}/trees/cut_out_trees_done"
+        config["output_path"] + "/4/{lineage}/cut_out_trees_done"
     log:
         config["output_path"] + "/logs/4_cut_out_trees_{lineage}.log"
     threads: 8
@@ -178,7 +178,7 @@ rule output_annotations:
     params:
         lineage = "{lineage}",
     output:
-        traits = config["output_path"] + "/4/{lineage}/trees/traits.csv"
+        traits = config["output_path"] + "/4/{lineage}/traits.csv"
     log:
         config["output_path"] + "/logs/4_output_annotations_{lineage}.log"
     shell:
