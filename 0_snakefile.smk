@@ -20,8 +20,8 @@ else:
 
 rule all:
     input:
-        fasta_cog = config["output_path"] + "/0/gisaid.cog.fasta",
-        metadata_cog = config["output_path"] + "/0/gisaid.cog.csv",
+        fasta_cog = config["output_path"] + "/0/gisaid.regularized.fasta",
+        metadata_cog = config["output_path"] + "/0/gisaid.regularized.csv",
         fasta_gisaid = config["output_path"] + "/0/gisaid.full.fasta",
         metadata_gisaid = config["output_path"] + "/0/gisaid.full.csv",
         counts = config["output_path"] + "/0/gisaid_counts_by_country.csv",
