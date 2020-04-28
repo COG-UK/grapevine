@@ -24,9 +24,24 @@ rule gisaid_process_json:
         """
 
 
-rule gisaid_remove_duplicates:
+rule gisaid_mask_1:
     input:
         fasta = rules.gisaid_process_json.output.fasta,
+        mask = config["gisaid_mask_file"]
+    output:
+        fasta = config["output_path"] + "/0/gisaid.masked.fasta"
+    shell:
+        """
+        datafunk mask \
+          --input-fasta {input.fasta} \
+          --output-fasta {output.fasta} \
+          --mask-file {input.mask}
+        """
+
+
+rule gisaid_remove_duplicates:
+    input:
+        fasta = rules.gisaid_mask_1.output.fasta,
         metadata = rules.gisaid_process_json.output.metadata
     output:
         fasta = config["output_path"] + "/0/gisaid.RD.fasta",
@@ -189,7 +204,7 @@ rule gisaid_pangolin:
 
 rule gisaid_add_pangolin_lineages_to_metadata:
     input:
-        metadata = rules.gisaid_extract_new.output.metadata,
+        metadata = rules.gisaid_unify_headers.output.metadata,
         lineages = rules.gisaid_pangolin.output.lineages
     output:
         metadata = config["output_path"] + "/0/gisaid.RD.new.UH.filt.mapped.filt2.lineages.csv"
@@ -215,7 +230,6 @@ rule gisaid_combine_previous_and_new:
     output:
         fasta = config["output_path"] + "/0/gisaid.full.fasta",
         metadata = config["output_path"] + "/0/gisaid.full.csv",
-        published_fasta = config["publish_path"] + "/GISAID/gisaid.full.fasta",
         published_metadata = config["publish_path"] + "/GISAID/gisaid.full.csv"
     params:
         outdir = config["publish_path"] + "/GISAID"
@@ -231,7 +245,6 @@ rule gisaid_combine_previous_and_new:
           --index-column sequence_name \
           --log-file {log}
 
-        cp {output.fasta} {output.published_fasta}
         cp {output.metadata} {output.published_metadata}
         """
 
@@ -244,7 +257,6 @@ rule gisaid_combine_previous_and_new:
 #     output:
 #         fasta = config["output_path"] + "/0/gisaid.full.fasta",
 #         metadata = config["output_path"] + "/0/gisaid.full.csv",
-#         published_fasta = config["publish_path"] + "/GISAID/gisaid.full.fasta",
 #         published_metadata = config["publish_path"] + "/GISAID/gisaid.full.csv"
 #     params:
 #         outdir = config["publish_path"] + "/GISAID"
@@ -260,7 +272,6 @@ rule gisaid_combine_previous_and_new:
 #           --index-column sequence_name \
 #           --log-file {log}
 #
-#         cp {output.fasta} {output.published_fasta}
 #         cp {output.metadata} {output.published_metadata}
 #         """
 #
@@ -273,9 +284,27 @@ rule gisaid_combine_previous_and_new:
 #         # fi
 
 
-rule gisaid_distance_QC:
+rule gisaid_mask_2:
     input:
         fasta = rules.gisaid_combine_previous_and_new.output.fasta,
+        mask = config["gisaid_mask_file"]
+    output:
+        fasta = config["output_path"] + "/0/gisaid.full.masked.fasta",
+        published_fasta = config["publish_path"] + "/GISAID/gisaid.full.fasta"
+    shell:
+        """
+        datafunk mask \
+          --input-fasta {input.fasta} \
+          --output-fasta {output.fasta} \
+          --mask-file {input.mask}
+
+        cp {output.fasta} {output.published_fasta}
+        """
+
+
+rule gisaid_distance_QC:
+    input:
+        fasta = rules.gisaid_mask_2.output.fasta,
         metadata = rules.gisaid_combine_previous_and_new.output.metadata
     log:
         config["output_path"] + "/logs/0_gisaid_distance_QC.log"
@@ -323,7 +352,7 @@ rule gisaid_summarize_preprocess:
         new_fasta = rules.gisaid_extract_new.output.fasta,
         removed_short_fasta = rules.gisaid_filter_1.output,
         removed_low_covg_fasta = rules.gisaid_filter_2.output.published_fasta,
-        final_fasta = rules.gisaid_combine_previous_and_new.output.fasta,
+        final_fasta = rules.gisaid_mask_2.output.fasta,
         final_metadata = rules.gisaid_combine_previous_and_new.output.metadata
     log:
         config["output_path"] + "/logs/0_summary_preprocess_gisaid.log"
@@ -341,7 +370,7 @@ rule gisaid_summarize_preprocess:
 
 rule gisaid_output_gisaid:
     input:
-        fasta = rules.gisaid_combine_previous_and_new.output.fasta,
+        fasta = rules.gisaid_mask_2.output.fasta,
         metadata = rules.gisaid_combine_previous_and_new.output.metadata
     output:
         fasta = config["output_path"] + "/0/gisaid.matched.fasta",

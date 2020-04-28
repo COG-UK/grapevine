@@ -20,10 +20,11 @@ else:
 
 rule all:
     input:
-        fasta_cog = config["output_path"] + "/0/gisaid.regularized.fasta",
-        metadata_cog = config["output_path"] + "/0/gisaid.regularized.csv",
-        fasta_gisaid = config["output_path"] + "/0/gisaid.full.fasta",
-        metadata_gisaid = config["output_path"] + "/0/gisaid.full.csv",
+        fasta_cog = config["publish_path"] + "/GISAID/gisaid.matched.fasta",
+        metadata_cog = config["publish_path"] + "/GISAID/gisaid.matched.csv",
+        fasta_gisaid = config["publish_path"] + "/GISAID/gisaid.full.fasta",
+        metadata_gisaid = config["publish_path"] + "/GISAID/gisaid.full.csv",
+        fasta_gisaid_new = config["publish_path"] + "/GISAID/gisaid.new.fasta",
         counts = config["output_path"] + "/0/gisaid_counts_by_country.csv",
         QC_table = config["output_path"] + "/0/QC_distances.tsv",
         QC_plot = config["output_path"] + "/0/QC_distances.png",
