@@ -344,10 +344,10 @@ rule gisaid_output_gisaid:
         fasta = rules.gisaid_combine_previous_and_new.output.fasta,
         metadata = rules.gisaid_combine_previous_and_new.output.metadata
     output:
-        fasta = config["output_path"] + "/0/gisaid.cog.fasta",
-        metadata = config["output_path"] + "/0/gisaid.cog.csv",
-        published_fasta = config["publish_path"] + "/GISAID/gisaid.cog.fasta",
-        published_metadata = config["publish_path"] + "/GISAID/gisaid.cog.csv"
+        fasta = config["output_path"] + "/0/gisaid.matched.fasta",
+        metadata = config["output_path"] + "/0/gisaid.matched.csv",
+        published_fasta = config["publish_path"] + "/GISAID/gisaid.matched.fasta",
+        published_metadata = config["publish_path"] + "/GISAID/gisaid.matched.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_output_gisaid.log"
     shell:
