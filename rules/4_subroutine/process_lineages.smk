@@ -123,7 +123,7 @@ rule label_introductions:
     params:
         lineage = "{lineage}",
         outdir = config["publish_path"] + "/COG_GISAID",
-        prefix = config["publish_path"] + "/COG_GISAID/cog_gisaid_%s" %date
+        prefix = config["publish_path"] + "/COG_GISAID/cog_gisaid_"
     output:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.uk_lineages.labelled.tree"
     log:

@@ -40,10 +40,29 @@ rule uk_add_epi_week:
         --epi-column-name edin_epi_week &> {log}
         """
 
+rule uk_add_previous_uk_duplicates_to_metadata:
+    input:
+        previous_metadata = config["previous_uk_metadata"],
+        metadata = rules.uk_add_epi_week.output.metadata,
+    output:
+        metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.add_previous.csv",
+    log:
+        config["output_path"] + "/logs/1_uk_add_previous_uk_duplicates_to_metadata.log"
+    shell:
+        """
+        fastafunk add_columns \
+          --in-metadata {input.metadata} \
+          --in-data {input.previous_metadata} \
+          --index-column sequence_name \
+          --join-on sequence_name \
+          --new-columns subsample_omit \
+          --out-metadata {output.metadata} &>> {log}
+        """
+
 rule uk_annotate_to_remove_duplicates:
     input:
         fasta = rules.uk_unify_headers.output.fasta,
-        metadata = rules.uk_add_epi_week.output.metadata
+        metadata = rules.uk_add_previous_uk_duplicates_to_metadata.output.metadata
     output:
         metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.annotated.csv"
     log:
@@ -187,7 +206,7 @@ rule summarize_preprocess_uk:
     params:
         webhook = config["webhook"],
         outdir = config["publish_path"] + "/COG",
-        prefix = config["publish_path"] + "/COG/cog_%s" %date
+        prefix = config["publish_path"] + "/COG/cog_"
     log:
         config["output_path"] + "/logs/1_summarize_preprocess_uk.log"
     shell:

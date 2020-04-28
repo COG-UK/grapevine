@@ -154,7 +154,7 @@ rule summarize_pangolin_lineage_typing:
     params:
         webhook = config["webhook"],
         outdir = config["publish_path"] + "/COG",
-        prefix = config["publish_path"] + "/COG/cog_%s" %date
+        prefix = config["publish_path"] + "/COG/cog_"
     log:
         config["output_path"] + "/logs/2_summarize_pangolin_lineage_typing.log"
     shell:
