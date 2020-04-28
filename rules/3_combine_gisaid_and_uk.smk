@@ -1,7 +1,3 @@
-import datetime
-
-date = datetime.date.today()
-
 rule combine_gisaid_and_cog:
     input:
         previous_stage = config["output_path"] + "/logs/2_summarize_pangolin_lineage_typing.log",

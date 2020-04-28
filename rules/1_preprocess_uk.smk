@@ -1,7 +1,3 @@
-import datetime
-
-date = datetime.date.today()
-
 rule uk_unify_headers:
     input:
         fasta = config["latest_uk_fasta"],
