@@ -32,7 +32,7 @@ rule summarize_combine_gisaid_and_cog:
     params:
         webhook = config["webhook"],
         outdir = config["publish_path"] + "/COG_GISAID",
-        prefix = config["publish_path"] + "/COG_GISAID/cog_gisaid_%s" %date,
+        prefix = config["publish_path"] + "/COG_GISAID/cog_gisaid_",
     log:
         config["output_path"] + "/logs/3_summarize_combine_gisaid_and_cog.log"
     shell:
