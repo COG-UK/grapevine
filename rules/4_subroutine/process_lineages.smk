@@ -53,14 +53,36 @@ rule iq_tree:
         fi
         """
 
+rule phylotype_tree:
+    input:
+        tree = rules.iq_tree.output.tree
+    output:
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.phylotyped.tree"
+    params:
+        collapse=5E-6,
+        threshold=2E-5,
+    log:
+        config["output_path"] + "/logs/4_phylotype_{lineage}.log"
+    shell:
+        """
+        clusterfunk phylotype \
+        --format newick \
+        --collapse_to_polytomies {params.collapse} \
+        --threshold {params.threshold} \
+        --prefix {params.lineage}_ \
+        --input {input.tree} \
+        --output{output.tree} &> {log}
+        """
+
+
 rule annotate_tree:
     input:
-        tree = rules.iq_tree.output.tree,
+        tree = rules.phylotype_tree.output.tree,
         metadata = config["metadata"]
     params:
         lineage = "{lineage}",
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.tree"
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.phylotyped.annotated.tree"
     log:
         config["output_path"] + "/logs/4_annotate_{lineage}.log"
     shell:
@@ -73,7 +95,6 @@ rule annotate_tree:
           --boolean-for-trait country='UK' country='UK' country=UK \
           --boolean-trait-names country_uk country_uk_acctran country_uk_deltran\
           --input {input.tree} \
-          --format newick \
           --output {output.tree} &> {log}
         """
 
@@ -83,7 +104,7 @@ rule acctran_ancestral_reconstruction:
     params:
         lineage = "{lineage}",
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.tree"
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.phylotyped.annotated.acc.tree"
     log:
         config["output_path"] + "/logs/4_acctran_ancestral_reconstruction_{lineage}.log"
     shell:
@@ -102,7 +123,7 @@ rule deltran_ancestral_reconstruction:
     params:
         lineage = "{lineage}",
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.del.tree"
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.phylotyped.annotated.acc.del.tree"
     log:
         config["output_path"] + "/logs/4_deltran_ancestral_reconstruction_{lineage}.log"
     shell:
@@ -121,7 +142,7 @@ rule push_lineage_to_tips:
     params:
         lineage = "{lineage}",
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.del.uk_lineages.tree"
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.phylotyped.annotated.acc.del.uk_lineages.tree"
     log:
         config["output_path"] + "/logs/4_push_lineage_to_tips_{lineage}.log"
     shell:
@@ -139,7 +160,7 @@ rule label_acctran_introductions:
     params:
         lineage = "{lineage}",
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.del.uk_lineages.acc_labelled.tree"
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.phylotyped.annotated.acc.del.uk_lineages.acc_labelled.tree"
     log:
         config["output_path"] + "/logs/4_label_acctran_introductions_{lineage}.log"
     shell:
@@ -162,7 +183,7 @@ rule label_deltran_introductions:
         outdir = config["publish_path"] + "/COG_GISAID",
         prefix = config["publish_path"] + "/COG_GISAID/cog_gisaid_"
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.del.uk_lineages.acc_labelled.del_labelled.tree"
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.phylotyped.annotated.acc.del.uk_lineages.acc_labelled.del_labelled.tree"
     log:
         config["output_path"] + "/logs/4_label_deltran_introductions_{lineage}.log"
     shell:
