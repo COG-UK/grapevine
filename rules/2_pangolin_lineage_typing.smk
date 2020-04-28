@@ -1,7 +1,7 @@
 rule uk_extract_new:
     input:
         previous_stage = config["output_path"] + "/logs/1_summarize_preprocess_uk.log",
-        fasta = rules.uk_filter_low_coverage_sequences.output,
+        fasta = rules.uk_filter_low_coverage.sequences.output,
         metadata = rules.uk_remove_duplicates.output.metadata,
         previous_metadata = config["previous_uk_metadata"]
     output:
@@ -88,7 +88,7 @@ rule uk_add_pangolin_lineages_to_metadata:
 
 rule uk_output_cog:
     input:
-        fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
+        fasta = rules.uk_filter_low_coverage.sequences.output.fasta,
         metadata = rules.uk_add_pangolin_lineages_to_metadata.output.metadata
     output:
         fasta = config["output_path"] + "/2/uk.regularized.fasta",
@@ -156,17 +156,17 @@ rule summarize_pangolin_lineage_typing:
     shell:
         """
         mkdir -p {params.outdir}
-        cp {input.full_metadata} {params.prefix}_metadata.full.csv
-        echo "> Full COG metadata published to {params.prefix}_metadata.full.csv\\n" >> {log}
+        cp {input.full_metadata} {params.prefix}.metadata.full.csv
+        echo "> Full COG metadata published to {params.prefix}.metadata.full.csv\\n" >> {log}
 
-        cp {input.fasta} {params.prefix}_alignment.matched.fasta
-        cp {input.metadata} {params.prefix}_metadata.matched.csv
-        echo "> Matched COG fasta and restricted metadata published to {params.prefix}_alignment.matched.fasta and {params.prefix}_metadata.matched.csv\\n" >> {log}
+        cp {input.fasta} {params.prefix}.trimmed_alignment.matched.fasta
+        cp {input.metadata} {params.prefix}.metadata.matched.csv
+        echo "> Matched COG fasta and restricted metadata published to {params.prefix}.trimmed_alignment.matched.fasta and {params.prefix}.metadata.matched.csv\\n" >> {log}
         echo "> Number of sequences in matched COG files: $(cat {input.fasta} | grep ">" | wc -l)\\n" &>> {log}
 
-        cp {input.public_fasta} {params.prefix}_sequences.public.fasta
-        cp {input.public_metadata} {params.prefix}_metadata.public.csv
-        echo "> Public unaligned COG fasta and restricted metadata published to {params.prefix}_sequences.public.fasta and {params.prefix}_metadata.public.csv\\n" >> {log}
+        cp {input.public_fasta} {params.prefix}.sequences.public.fasta
+        cp {input.public_metadata} {params.prefix}.metadata.public.csv
+        echo "> Public unaligned COG fasta and restricted metadata published to {params.prefix}.sequences.public.fasta and {params.prefix}.metadata.public.csv\\n" >> {log}
         echo "> Number of sequences in public COG files: $(cat {input.public_fasta} | grep ">" | wc -l)\\n" &>> {log}
 
         echo '{{"text":"' > 2_data.json

@@ -1,9 +1,5 @@
 configfile: workflow.current_basedir + "/config.yaml"
 
-import datetime
-
-date = datetime.date.today()
-
 ##### Configuration #####
 
 if config.get("output_path"):
@@ -26,16 +22,15 @@ rule all:
         config["output_path"] + "/logs/2_summarize_pangolin_lineage_typing.log",
         config["output_path"] + "/logs/1_summarize_preprocess_uk.log",
         config["output_path"] + "/logs/0_gisaid_summarize_preprocess.log",
-        config["output_path"] + "/snakejunk"
+        config["output_path"] + "/snakejunk/all"
 
 rule clean_up:
     input:
         config["output_path"] + "/logs/4_summarize_make_trees.log",
     output:
-        config["output_path"] + "/snakejunk"
+        config["output_path"] + "/snakejunk/all"
     shell:
         """
-        mkdir -p {output}
         mkdir -p {output}
         mv slurm-*.out *_data.json {output}/
         for file in pre trace default.profraw
