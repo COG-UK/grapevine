@@ -1,9 +1,5 @@
 configfile: workflow.current_basedir + "/config.yaml"
 
-import datetime
-
-date = datetime.date.today()
-
 ##### Configuration #####
 
 if config.get("output_path"):
@@ -15,20 +11,35 @@ if config.get("publish_path"):
     config["publish_path"] = config["publish_path"].rstrip("/") + "/publish"
 else:
     config["publish_path"] = "publish"
+config["publish_path"] = os.path.abspath(config["publish_path"])
+
 
 ##### Target rules #####
 
 rule all:
     input:
-        fasta_cog = config["publish_path"] + "/GISAID/gisaid.matched.fasta",
-        metadata_cog = config["publish_path"] + "/GISAID/gisaid.matched.csv",
-        fasta_gisaid = config["publish_path"] + "/GISAID/gisaid.full.fasta",
-        metadata_gisaid = config["publish_path"] + "/GISAID/gisaid.full.csv",
-        fasta_gisaid_new = config["publish_path"] + "/GISAID/gisaid.new.fasta",
-        counts = config["output_path"] + "/0/gisaid_counts_by_country.csv",
-        QC_table = config["output_path"] + "/0/QC_distances.tsv",
-        QC_plot = config["output_path"] + "/0/QC_distances.png",
-        summary = config["output_path"] + "/logs/0_summary_preprocess_gisaid.log"
+        config["output_path"] + "/logs/1_summarize_preprocess_gisaid.log",
+        config["output_path"] + "/0/QC_distances.tsv",
+        config["output_path"] + "/0/QC_distances.png",
+        config["output_path"] + "/snakejunk/0"
+
+rule clean_up:
+    input:
+        config["output_path"] + "/logs/0_summarize_preprocess_gisaid.log",
+    output:
+        config["output_path"] + "/snakejunk/0"
+    shell:
+        """
+        mkdir -p {output}
+        mv slurm-*.out *_data.json {output}/
+        for file in pre trace default.profraw
+        do
+          if [ -f "$file" ]
+          then
+            rm $file
+          fi
+        done
+        """
 
 ##### Modules #####
 include: "rules/0_preprocess_gisaid.smk"

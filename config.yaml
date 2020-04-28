@@ -7,12 +7,12 @@ gisaid_mask_file: /cephfs/covid/bham/raccoon-dog/resources/GISAID_mask.txt
 previous_uk_fasta: /cephfs/covid/bham/raccoon-dog/previous/COG/cog.fasta
 previous_uk_metadata: /cephfs/covid/bham/raccoon-dog/previous/COG/cog.csv
 
-latest_gisaid_json: GISAID/export.json
+latest_gisaid_json: input/export.json
 latest_uk_fasta: /cephfs/covid/bham/artifacts/published/elan.latest.consensus.fasta
 latest_uk_metadata: /cephfs/covid/bham/artifacts/published/majora.latest.metadata.tsv
 
-output_path:
-publish_path:
+output_path: analysis
+publish_path: publish
 
 ##### Filter thresholds #####
 min_covg: 95

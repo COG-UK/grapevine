@@ -1,7 +1,3 @@
-import datetime
-
-date = datetime.date.today()
-
 rule gisaid_process_json:
     input:
         json = config["latest_gisaid_json"],
@@ -22,7 +18,6 @@ rule gisaid_process_json:
           --output-metadata {output.metadata} \
           --exclude-undated &> {log}
         """
-
 
 rule gisaid_remove_duplicates:
     input:
@@ -96,6 +91,9 @@ rule gisaid_extract_new:
 rule gisaid_filter_1:
     input:
         fasta = rules.gisaid_extract_new.output.fasta
+    params:
+        min_covg = config["min_covg"],
+        min_length = confit["min_length"]
     output:
         fasta = config["output_path"] + "/0/gisaid.RD.new.UH.filt1.fasta"
     log:
@@ -105,8 +103,8 @@ rule gisaid_filter_1:
         datafunk filter_fasta_by_covg_and_length \
           -i {input.fasta} \
           -o {output} \
-          --min-length 29000 \
-          --min-covg 95 &> {log}
+          --min-length {params.min_length} \
+          --min-covg {params.min_covg} &> {log}
         """
 
 
@@ -155,6 +153,8 @@ rule gisaid_filter_2:
         fasta = rules.gisaid_remove_insertions_and_pad.output.fasta
     output:
         fasta = config["output_path"] + "/0/gisaid.RD.new.UH.filt.mapped.filt2.fasta"
+    params:
+        min_covg = config["min_covg"]
     log:
         config["output_path"] + "/logs/0_gisaid_filter_2.log"
     shell:
@@ -162,8 +162,7 @@ rule gisaid_filter_2:
         datafunk filter_fasta_by_covg_and_length \
           -i {input.fasta} \
           -o {output.fasta} \
-          --min-covg 93 &> {log}
-
+          --min-covg {params.min_covg} &> {log}
         """
 
 
@@ -173,7 +172,7 @@ rule gisaid_mask_1:
         mask = config["gisaid_mask_file"]
     output:
         fasta = config["output_path"] + "/0/gisaid.RD.new.UH.filt.mapped.filt2.masked.fasta",
-        published_fasta = config["publish_path"] + "/GISAID/gisaid.new.fasta"
+        published_fasta = config["publish_path"] + "/GISAID/gisaid.trimmed_alignment.new.fasta"
     shell:
         """
         datafunk mask \
@@ -231,7 +230,7 @@ rule gisaid_combine_previous_and_new:
     output:
         fasta = config["output_path"] + "/0/gisaid.full.fasta",
         metadata = config["output_path"] + "/0/gisaid.full.csv",
-        published_metadata = config["publish_path"] + "/GISAID/gisaid.full.csv"
+        published_metadata = config["publish_path"] + "/GISAID/gisaid.metadata.full.csv"
     params:
         outdir = config["publish_path"] + "/GISAID"
     log:
@@ -250,48 +249,13 @@ rule gisaid_combine_previous_and_new:
         """
 
 
-# rule gisaid_combine_previous_and_new:
-#     input:
-#         previous_fasta = config["previous_gisaid_fasta"],
-#         new_fasta = rules.gisaid_filter_2.output.fasta,
-#         new_metadata = rules.gisaid_unify_headers.output.metadata
-#     output:
-#         fasta = config["output_path"] + "/0/gisaid.full.fasta",
-#         metadata = config["output_path"] + "/0/gisaid.full.csv",
-#         published_metadata = config["publish_path"] + "/GISAID/gisaid.full.csv"
-#     params:
-#         outdir = config["publish_path"] + "/GISAID"
-#     log:
-#         config["output_path"] + "/logs/0_gisaid_combine_previous_and_new.log"
-#     shell:
-#         """
-#         fastafunk merge \
-#           --in-fasta {input.previous_fasta} {input.new_fasta} \
-#           --in-metadata {input.new_metadata} \
-#           --out-fasta {output.fasta} \
-#           --out-metadata {output.metadata} \
-#           --index-column sequence_name \
-#           --log-file {log}
-#
-#         cp {output.metadata} {output.published_metadata}
-#         """
-#
-#         # if [ -f info/to_omit_gisaid.txt ]; then
-#         #     fastafunk remove \
-#         #       --in-fasta {output.fasta} \
-#         #       --in-metadata info/to_omit_gisaid.txt \
-#         #       --out-fasta tmp.fa
-#         #     mv tmp.fa {output.fasta}
-#         # fi
-
-
 rule gisaid_mask_2:
     input:
         fasta = rules.gisaid_combine_previous_and_new.output.fasta,
         mask = config["gisaid_mask_file"]
     output:
         fasta = config["output_path"] + "/0/gisaid.full.masked.fasta",
-        published_fasta = config["publish_path"] + "/GISAID/gisaid.full.fasta"
+        published_fasta = config["publish_path"] + "/GISAID/gisaid.trimmed_alignment.full.fasta"
     shell:
         """
         datafunk mask \
@@ -333,7 +297,6 @@ rule gisaid_counts_by_country:
         published_counts = config["publish_path"] + "/GISAID/gisaid_counts_by_country.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_counts_by_country.log"
-
     shell:
         """
         fastafunk count \
@@ -345,30 +308,6 @@ rule gisaid_counts_by_country:
         """
 
 
-rule gisaid_summarize_preprocess:
-    input:
-        latest_fasta = rules.gisaid_process_json.output.fasta,
-        deduplicated_fasta = rules.gisaid_remove_duplicates.output.fasta,
-        unify_headers_fasta = rules.gisaid_unify_headers.output.fasta,
-        new_fasta = rules.gisaid_extract_new.output.fasta,
-        removed_short_fasta = rules.gisaid_filter_1.output,
-        removed_low_covg_fasta = rules.gisaid_filter_2.output.published_fasta,
-        final_fasta = rules.gisaid_mask_2.output.fasta,
-        final_metadata = rules.gisaid_combine_previous_and_new.output.metadata
-    log:
-        config["output_path"] + "/logs/0_summary_preprocess_gisaid.log"
-    shell:
-        """
-        echo "Number of sequences in latest GISAID download: $(cat {input.latest_fasta} | grep ">" | wc -l)" >> {log}
-        echo "Number of sequence after deduplicating: $(cat {input.deduplicated_fasta} | grep ">" | wc -l)" >> {log}
-        echo "Number of sequences after matching headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)" >> {log}
-        echo "Number of new sequences: $(cat {input.new_fasta} | grep ">" | wc -l)" >> {log}
-        echo "Number of sequences after removing sequences <29000bps and with <95% coverage: $(cat {input.removed_short_fasta} | grep ">" | wc -l)" >> {log}
-        echo "Number of sequences after mapping and removing those with <95% coverage remaining: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)" >> {log}
-        """
-        # curl -X POST -H ‘Content-type: application/json’ --data ‘{{“text”:$(cat {log})}}’ https://hooks.slack.com/services/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
-
-
 rule gisaid_output_gisaid:
     input:
         fasta = rules.gisaid_mask_2.output.fasta,
@@ -376,8 +315,8 @@ rule gisaid_output_gisaid:
     output:
         fasta = config["output_path"] + "/0/gisaid.matched.fasta",
         metadata = config["output_path"] + "/0/gisaid.matched.csv",
-        published_fasta = config["publish_path"] + "/GISAID/gisaid.matched.fasta",
-        published_metadata = config["publish_path"] + "/GISAID/gisaid.matched.csv"
+        published_fasta = config["publish_path"] + "/GISAID/gisaid.trimmed_alignment.matched.fasta",
+        published_metadata = config["publish_path"] + "/GISAID/gisaid.metadata.matched.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_output_gisaid.log"
     shell:
@@ -386,12 +325,12 @@ rule gisaid_output_gisaid:
           --in-fasta {input.fasta} \
           --in-metadata {input.metadata} \
           --index-column sequence_name \
-          --filter-column sequence_name collection_date epi_week \
+          --filter-column sequence_name sample_date epi_week \
                           country adm1 adm2 outer_postcode \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
                           lineage_support uk_lineage \
-          --where-column uk_omit=is_uk collection_date=covv_collection_date epi_week=edin_epi_week \
+          --where-column uk_omit=is_uk sample_date=covv_collection_date epi_week=edin_epi_week \
                          country=edin_admin_0 travel_history=edin_travel lineage_support=ufbootstrap \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
@@ -400,8 +339,48 @@ rule gisaid_output_gisaid:
 
         cp {output.fasta} {output.published_fasta}
         cp {output.metadata} {output.published_metadata}
-
-        echo "Number of non-omitted sequences in GISAID fasta: $(cat {output.fasta} | grep ">" | wc -l)" >> {log}
-        echo "Number of lines in regularized GISAID metadata: $(cat {output.metadata} | wc -l)" >> {log}
-        echo "Published to {output.published_metadata} and {output.published_fasta}" >> {log}
         """
+
+rule summarize_preprocess_gisaid:
+    input:
+        latest_fasta = rules.gisaid_process_json.output.fasta,
+        deduplicated_fasta = rules.gisaid_remove_duplicates.output.fasta,
+        unify_headers_fasta = rules.gisaid_unify_headers.output.fasta,
+        new_fasta = rules.gisaid_extract_new.output.fasta,
+        removed_short_fasta = rules.gisaid_filter_1.output,
+        removed_low_covg_fasta = rules.gisaid_filter_2.output.published_fasta,
+
+        full_fasta = rules.gisaid_mask_2.output.fasta,
+        full_metadata = rules.gisaid_combine_previous_and_new.output.metadata,
+        matched_fasta = rules.gisaid_output_gisaid.output.fasta,
+        matched_metadata = rules.gisaid_output_gisaid.output.metadata,
+    params:
+        prefix = config["publish_path"] + "/GISAID/gisaid"
+    log:
+        config["output_path"] + "/logs/0_summarize_preprocess_gisaid.log"
+    shell:
+        """
+        echo "Number of sequences in latest GISAID download: $(cat {input.latest_fasta} | grep ">" | wc -l)" >> {log}
+        echo "Number of sequence after deduplicating: $(cat {input.deduplicated_fasta} | grep ">" | wc -l)" >> {log}
+        echo "Number of sequences after matching headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)" >> {log}
+        echo "Number of new sequences: $(cat {input.new_fasta} | grep ">" | wc -l)" >> {log}
+        echo "Number of sequences after removing sequences <29000bps and with <95% coverage: $(cat {input.removed_short_fasta} | grep ">" | wc -l)" >> {log}
+        echo "Number of sequences after mapping and removing those with <95% coverage remaining: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)" >> {log}
+        echo ">\\n" >> {log}
+        echo "> Full masked and trimmed GISAID alignment published to {params.prefix}.trimmed_alignment.full.fasta\\n" >> {log}
+        echo "> Full GISAID metadata published to {params.prefix}.metadata.full.fasta\\n" >> {log}
+        echo ">\\n" >> {log}
+        echo "> Matched GISAID fasta and restricted metadata published to {params.prefix}.trimmed_alignment.matched.fasta and {params.prefix}.metadata.matched.csv\\n" >> {log}
+        echo "> Number of sequences in matched GISAID files: $(cat {input.matched_fasta} | grep ">" | wc -l)\\n" &>> {log}
+        echo ">\\n" >> {log}
+        echo "> Counts by country published to {params.prefix}_counts_by_country.csv\\n" >> {log}
+
+        echo '{{"text":"' > 0_data.json
+        echo "*Step 0: GISAID preprocessing complete*\\n" >> 0_data.json
+        cat {log} >> 0_data.json
+        echo '"}}' >> 0_data.json
+        echo "webhook {params.webhook}"
+        curl -X POST -H "Content-type: application/json" -d @0_data.json {params.webhook}
+        #rm 0_data.json
+        """
+
