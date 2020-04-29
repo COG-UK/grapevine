@@ -2,11 +2,10 @@ configfile: workflow.current_basedir + "/config.yaml"
 
 ##### Configuration #####
 
-if config.get("output_path"):
-    config["output_path"] = config["output_path"].rstrip("/") + "/analysis"
+config["output_path"] = config["output_path"]
 
 if config.get("publish_path"):
-    config["publish_path"] = config["publish_path"].rstrip("/") + "/publish"
+    config["publish_path"] = config["publish_path"]
 config["publish_path"] = os.path.abspath(config["publish_path"])
 
 
@@ -14,7 +13,7 @@ config["publish_path"] = os.path.abspath(config["publish_path"])
 
 rule all:
     input:
-        config["output_path"] + "/logs/1_summarize_preprocess_gisaid.log",
+        config["output_path"] + "/logs/0_summarize_preprocess_gisaid.log",
         config["output_path"] + "/0/QC_distances.tsv",
         config["output_path"] + "/0/QC_distances.png",
         config["output_path"] + "/snakejunk/0"
