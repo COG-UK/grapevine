@@ -21,7 +21,8 @@ print("outgroups", OUTGROUPS)
 
 rule all:
     input:
-        config["output_path"] + "/4/all_traits.csv"
+        config["output_path"] + "/4/all_traits.csv",
+        config["output_path"] + "/4/cog_gisaid_full.tree"
 
 rule iq_tree:
     input:
@@ -199,6 +200,32 @@ rule label_deltran_introductions:
 
         mkdir -p {params.outdir}
         cp {output.tree} {params.prefix}_lineage_{params.lineage}.tree
+        """
+
+rule graft:
+    input:
+         # not sure how to pass this as a space separated list below. Also assuming the order here matches lineages
+        trees = expand(config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.phylotyped.annotated.acc.del.uk_lineages.acc_labelled.del_labelled.tree", lineage=LINEAGES),
+        guide_tree="/path/to/guide.tree" # path to guide tree here
+    params:
+        outdir = config["publish_path"] + "/COG_GISAID",
+        prefix = config["publish_path"] + "/COG_GISAID/"
+    output:
+        tree = config["output_path"] + "/4/cog_gisaid_full.tree"
+    log:
+        config["output_path"] + "/logs/4_graft.log"
+    shell:
+        """
+        clusterfunk graft \
+        --full-graft \
+        --scions {input.trees} \
+        --scion_annotation_name scion_lineage \
+        --annotate_scions {LINEAGES} \
+        --input {input.guide_tree} \
+        --output {output.tree} &> {log}
+        
+        mkdir -p {params.outdir}
+        cp {output.tree} {params.prefix}
         """
 
 rule output_annotations:
