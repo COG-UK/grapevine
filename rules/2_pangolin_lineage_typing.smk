@@ -1,7 +1,7 @@
 rule uk_extract_new:
     input:
         previous_stage = config["output_path"] + "/logs/1_summarize_preprocess_uk.log",
-        fasta = rules.uk_filter_low_coverage.sequences.output,
+        fasta = rules.uk_filter_low_coverage_sequences.output,
         metadata = rules.uk_remove_duplicates.output.metadata,
         previous_metadata = config["previous_uk_metadata"]
     output:
@@ -88,7 +88,7 @@ rule uk_add_pangolin_lineages_to_metadata:
 
 rule uk_output_cog:
     input:
-        fasta = rules.uk_filter_low_coverage.sequences.output.fasta,
+        fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
         metadata = rules.uk_add_pangolin_lineages_to_metadata.output.metadata
     output:
         fasta = config["output_path"] + "/2/uk.regularized.fasta",
