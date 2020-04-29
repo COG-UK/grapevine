@@ -6,13 +6,9 @@ import os
 
 if config.get("output_path"):
     config["output_path"] = config["output_path"].rstrip("/") + "/analysis"
-else:
-    config["output_path"] = "analysis"
 
 if config.get("publish_path"):
     config["publish_path"] = config["publish_path"].rstrip("/") + "/publish"
-else:
-    config["publish_path"] = "publish"
 config["publish_path"] = os.path.abspath(config["publish_path"])
 
 ##### Target rules #####
