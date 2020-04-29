@@ -1,6 +1,7 @@
 configfile: workflow.current_basedir + "/config.yaml"
 
 import os
+import pandas as pd
 
 ##### Configuration #####
 
@@ -20,8 +21,7 @@ print("outgroups", OUTGROUPS)
 
 rule all:
     input:
-        expand(config["output_path"] + "/4/{lineage}/traits.csv", lineage=LINEAGES),
-        expand(config["output_path"] + "/4/{lineage}/cut_out_trees_done", lineage=LINEAGES)
+        config["output_path"] + "/4/all_traits.csv"
 
 rule iq_tree:
     input:
@@ -201,36 +201,6 @@ rule label_deltran_introductions:
         cp {output.tree} {params.prefix}_lineage_{params.lineage}.tree
         """
 
-rule cut_out_trees:
-    input:
-        tree = rules.label_deltran_introductions.output.tree
-    params:
-        lineage = "{lineage}",
-        outdir = config["output_path"] + "/4/{lineage}/trees",
-        pubdir = config["publish_path"] + "/COG_GISAID/acc_lineages/{lineage}",
-    output:
-        config["output_path"] + "/4/{lineage}/cut_out_trees_done"
-    log:
-        config["output_path"] + "/logs/4_cut_out_trees_{lineage}.log"
-    threads: 8
-    shell:
-        """
-        clusterfunk prune \
-          --extract \
-          --trait acc_lineage \
-          --input {input.tree} \
-          --threads {threads} \
-          --output {params.outdir} &> {log}
-
-        if [ ! -z "$(ls -A {params.outdir})" ]
-        then
-          mkdir -p {params.pubdir}
-          cp {params.outdir}/*.tree {params.pubdir}/
-        fi
-
-        touch {output}
-        """
-
 rule output_annotations:
     input:
         tree = rules.label_deltran_introductions.output.tree,
@@ -246,5 +216,18 @@ rule output_annotations:
           --traits country lineage uk_lineage acc_lineage del_lineage phylotype \
           --input {input.tree} \
           --output {output.traits} &> {log}
+        """
+
+rule combine_traits_files:
+    input:
+        list_df = expand(config["output_path"] + "/4/{lineage}/traits.csv", lineage=LINEAGES)
+    output:
+        traits = config["output_path"] + "/4/all_traits.csv"
+    log:
+        config["output_path"] + "/logs/4_combine_traits_files.log"
+    run:
+        """
+        result = pd.concat({input.list_df})
+        result.to_csv({output}, index=False)
         """
 

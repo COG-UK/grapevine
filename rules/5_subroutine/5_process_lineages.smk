@@ -42,12 +42,12 @@ rule cut_out_trees:
     params:
         lineage = "{lineage}",
         outdir = config["output_path"] + "/5/{lineage}/trees",
-        pubdir = config["publish_path"] + "/COG_GISAID/acc_lineages/{lineage}",
+        pubdir = config["publish_path"] + "/COG_GISAID/trees",
     output:
         config["output_path"] + "/5/{lineage}/cut_out_trees_done"
     log:
         config["output_path"] + "/logs/5_cut_out_trees_{lineage}.log"
-    threads: 8
+    threads: 40
     shell:
         """
         clusterfunk prune \

@@ -53,7 +53,7 @@ rule run_subroutine_on_lineages:
         publish_path = config["publish_path"],
         prefix = config["output_path"] + "/4/lineage_"
     output:
-        config["output_path"] + "/4/trees_done"
+        config["output_path"] + "/4/all_traits.csv"
     log:
         config["output_path"] + "/logs/4_run_subroutine_on_lineages.log"
     threads: 16
@@ -62,7 +62,7 @@ rule run_subroutine_on_lineages:
         lineages=$(cat {input.lineage} | cut -f1 -d"," | tr '\\n' '  ')
         outgroups=$(cat {input.lineage} | cut -f2 -d"," | tr '\\n' '  ')
         snakemake --nolock \
-          --snakefile {params.path_to_script}/4_subroutine/process_lineages.smk \
+          --snakefile {params.path_to_script}/4_subroutine/4_process_lineages.smk \
           --cores {threads} \
           --configfile {params.path_to_script}/4_subroutine/config.yaml \
           --config \
@@ -71,7 +71,18 @@ rule run_subroutine_on_lineages:
           lineages="$lineages" \
           lineage_specific_outgroups="$outgroups" \
           metadata={input.metadata} &> {log}
+        """
 
+rule update_metadata:
+    input:
+        traits = rules.run_subroutine_on_lineages.output,
+        metadata = rules.combine_gisaid_and_cog.output.metadata,
+    output:
+        config["output_path"] + "/4/cog_gisaid.with_all_traits.csv"
+    log:
+        config["output_path"] + "/logs/4_update_metadata.log"
+    shell:
+        """
         touch {output}
         """
 
@@ -79,6 +90,7 @@ rule summarize_make_trees:
     input:
         lineage = config["lineage_splits"],
         trees_done = rules.run_subroutine_on_lineages.output,
+        metadata = rules.update_metadata.output
     params:
         webhook = config["webhook"],
         outdir = config["publish_path"] + "/COG_GISAID",
