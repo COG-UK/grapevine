@@ -42,7 +42,7 @@ rule split_based_on_lineages:
         touch {output}
         """
 
-rule run_subroutine_on_lineages:
+rule run_4_subroutine_on_lineages:
     input:
         split_done = rules.split_based_on_lineages.output,
         metadata = rules.combine_gisaid_and_cog.output.metadata,
@@ -51,6 +51,7 @@ rule run_subroutine_on_lineages:
         path_to_script = workflow.current_basedir,
         output_path = config["output_path"],
         publish_path = config["publish_path"],
+        guide_tree = config["guide_tree"],
         prefix = config["output_path"] + "/4/lineage_"
     output:
         config["output_path"] + "/4/all_traits.csv"
@@ -70,27 +71,13 @@ rule run_subroutine_on_lineages:
           publish_path={params.publish_path} \
           lineages="$lineages" \
           lineage_specific_outgroups="$outgroups" \
+          guide_tree="{params.guide_tree}" \
           metadata={input.metadata} &> {log}
-        """
-
-rule update_metadata:
-    input:
-        traits = rules.run_subroutine_on_lineages.output,
-        metadata = rules.combine_gisaid_and_cog.output.metadata,
-    output:
-        config["output_path"] + "/4/cog_gisaid.with_all_traits.csv"
-    log:
-        config["output_path"] + "/logs/4_update_metadata.log"
-    shell:
-        """
-        touch {output}
         """
 
 rule summarize_make_trees:
     input:
-        lineage = config["lineage_splits"],
-        trees_done = rules.run_subroutine_on_lineages.output,
-        metadata = rules.update_metadata.output
+        traits = rules.run_subroutine_on_lineages.output,
     params:
         webhook = config["webhook"],
         outdir = config["publish_path"] + "/COG_GISAID",
@@ -98,10 +85,10 @@ rule summarize_make_trees:
         config["output_path"] + "/logs/4_summarize_make_trees.log"
     shell:
         """
-        echo "> Trees have been published in {params.outdir}\\n" >> {log}
+        echo "> Lineage trees have been published in {params.outdir}\\n" >> {log}
 
         echo '{{"text":"' > 4b_data.json
-        echo "*Step 4: Construct and annotate trees completed*\\n" >> 4_data.json
+        echo "*Step 4: Construct and annotate lineage trees completed*\\n" >> 4_data.json
         cat {log} >> 4b_data.json
         echo '"}}' >> 4b_data.json
         echo "webhook {params.webhook}"
