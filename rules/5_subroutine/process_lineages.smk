@@ -25,7 +25,7 @@ rule all:
 
 rule annotate_tree:
     input:
-        tree = rules.phylotype_tree.output.tree, #need to change
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.phylotyped.tree",
         metadata = config["metadata"]
     params:
         lineage = "{lineage}",
