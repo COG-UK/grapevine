@@ -15,13 +15,12 @@
 #         config["output_path"] + "/5/trees_done"
 #     log:
 #         config["output_path"] + "/logs/5_run_subroutine_on_lineages.log"
-#     threads: 16
+#     threads: 40
 #     shell:
 #         """
 #         lineages=$(cat {input.lineage} | cut -f1 -d"," | tr '\\n' '  ')
-#         outgroups=$(cat {input.lineage} | cut -f2 -d"," | tr '\\n' '  ')
 #         snakemake --nolock \
-#           --snakefile {params.path_to_script}/5_subroutine/process_lineages.smk \
+#           --snakefile {params.path_to_script}/5_subroutine/5_process_lineages.smk \
 #           --cores {threads} \
 #           --configfile {params.path_to_script}/5_subroutine/config.yaml \
 #           --config \
