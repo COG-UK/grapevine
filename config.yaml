@@ -28,5 +28,8 @@ trim_end: 29674
 ##### File of lineages to split by #####
 lineage_splits: input/lineage_splits.csv
 
+##### Guide tree #####
+guide_tree: /cephfs/covid/bham/raccoon-dog/resources/guide.tree
+
 ##### Webhook to push to #####
 webhook:
