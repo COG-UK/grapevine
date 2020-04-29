@@ -93,7 +93,7 @@ rule gisaid_filter_1:
         fasta = rules.gisaid_extract_new.output.fasta
     params:
         min_covg = config["min_covg"],
-        min_length = confit["min_length"]
+        min_length = config["min_length"]
     output:
         fasta = config["output_path"] + "/0/gisaid.RD.new.UH.filt1.fasta"
     log:
