@@ -8,19 +8,13 @@ config["publish_path"] = os.path.abspath(config["publish_path"])
 
 LINEAGES = config["lineages"].split()
 
-lineage_to_outgroup_map = {}
-for i,lin in enumerate(LINEAGES):
-    lineage_to_outgroup_map[lin] = OUTGROUPS[i].replace("/","_")
-
 print("lineages", LINEAGES)
-print("outgroups", OUTGROUPS)
 
 ##### Target rules #####
 
 rule all:
     input:
         expand(config["output_path"] + "/5/{lineage}/cut_out_trees_done", lineage=LINEAGES)
-
 
 rule annotate_tree:
     input:
@@ -41,7 +35,6 @@ rule annotate_tree:
           --input {input.tree} \
           --output {output.tree} &> {log}
         """
-
 
 rule cut_out_trees:
     input:
