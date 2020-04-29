@@ -7,7 +7,6 @@ import os
 config["publish_path"] = os.path.abspath(config["publish_path"])
 
 LINEAGES = config["lineages"].split()
-OUTGROUPS = config["lineage_specific_outgroups"].split()
 
 lineage_to_outgroup_map = {}
 for i,lin in enumerate(LINEAGES):
