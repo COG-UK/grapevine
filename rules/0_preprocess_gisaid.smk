@@ -348,39 +348,38 @@ rule summarize_preprocess_gisaid:
         unify_headers_fasta = rules.gisaid_unify_headers.output.fasta,
         new_fasta = rules.gisaid_extract_new.output.fasta,
         removed_short_fasta = rules.gisaid_filter_1.output,
-        removed_low_covg_fasta = rules.gisaid_filter_2.output.published_fasta,
+        removed_low_covg_fasta = rules.gisaid_filter_2.output.fasta,
 
         full_fasta = rules.gisaid_mask_2.output.fasta,
         full_metadata = rules.gisaid_combine_previous_and_new.output.metadata,
         matched_fasta = rules.gisaid_output_gisaid.output.fasta,
         matched_metadata = rules.gisaid_output_gisaid.output.metadata,
     params:
-        prefix = config["publish_path"] + "/GISAID/gisaid"
+        prefix = config["publish_path"] + "/GISAID/gisaid",
+        webhook = config["webhook"]
     log:
         config["output_path"] + "/logs/0_summarize_preprocess_gisaid.log"
     shell:
         """
-        echo "Number of sequences in latest GISAID download: $(cat {input.latest_fasta} | grep ">" | wc -l)" >> {log}
-        echo "Number of sequence after deduplicating: $(cat {input.deduplicated_fasta} | grep ">" | wc -l)" >> {log}
-        echo "Number of sequences after matching headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)" >> {log}
-        echo "Number of new sequences: $(cat {input.new_fasta} | grep ">" | wc -l)" >> {log}
-        echo "Number of sequences after removing sequences <29000bps and with <95% coverage: $(cat {input.removed_short_fasta} | grep ">" | wc -l)" >> {log}
-        echo "Number of sequences after mapping and removing those with <95% coverage remaining: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)" >> {log}
-        echo ">\\n" >> {log}
-        echo "> Full masked and trimmed GISAID alignment published to {params.prefix}.trimmed_alignment.full.fasta\\n" >> {log}
-        echo "> Full GISAID metadata published to {params.prefix}.metadata.full.fasta\\n" >> {log}
-        echo ">\\n" >> {log}
-        echo "> Matched GISAID fasta and restricted metadata published to {params.prefix}.trimmed_alignment.matched.fasta and {params.prefix}.metadata.matched.csv\\n" >> {log}
-        echo "> Number of sequences in matched GISAID files: $(cat {input.matched_fasta} | grep ">" | wc -l)\\n" &>> {log}
-        echo ">\\n" >> {log}
-        echo "> Counts by country published to {params.prefix}_counts_by_country.csv\\n" >> {log}
-
-        echo '{{"text":"' > 0_data.json
-        echo "*Step 0: GISAID preprocessing complete*\\n" >> 0_data.json
+        printf "Number of sequences in latest GISAID download: $(cat {input.latest_fasta} | grep ">" | wc -l)\n" >> {log}
+        printf "Number of sequence after deduplicating: $(cat {input.deduplicated_fasta} | grep ">" | wc -l)\n" >> {log}
+        printf "Number of sequences after matching headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)\n" >> {log}
+        printf "Number of new sequences: $(cat {input.new_fasta} | grep ">" | wc -l)\n" >> {log}
+        printf "Number of sequences after removing sequences <29000bps and with <95%% coverage: $(cat {input.removed_short_fasta} | grep ">" | wc -l)\n" >> {log}
+        printf "Number of sequences after mapping and removing those with <95%% coverage remaining: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)\n" >> {log}
+        printf ">\n" >> {log}
+        printf "> Full masked and trimmed GISAID alignment published to {params.prefix}.trimmed_alignment.full.fasta\n" >> {log}
+        printf "> Full GISAID metadata published to {params.prefix}.metadata.full.fasta\n" >> {log}
+        printf ">\n" >> {log}
+        printf "> Matched GISAID fasta and restricted metadata published to {params.prefix}.trimmed_alignment.matched.fasta and {params.prefix}.metadata.matched.csv\n" >> {log}
+        printf "> Number of sequences in matched GISAID files: $(cat {input.matched_fasta} | grep '>' | wc -l)\n" >> {log}
+        printf ">\n" >> {log}
+        printf "> Counts by country published to {params.prefix}_counts_by_country.csv\n" >> {log}
+        printf '{{"text":"' > 0_data.json
+        printf "*Step 0: GISAID preprocessing complete*\n" >> 0_data.json
         cat {log} >> 0_data.json
-        echo '"}}' >> 0_data.json
-        echo "webhook {params.webhook}"
+        printf '"}}' >> 0_data.json
+        printf "webhook {params.webhook}"
         curl -X POST -H "Content-type: application/json" -d @0_data.json {params.webhook}
-        #rm 0_data.json
+        # rm 0_data.json
         """
-
