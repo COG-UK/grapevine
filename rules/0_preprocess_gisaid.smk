@@ -367,19 +367,19 @@ rule summarize_preprocess_gisaid:
         printf "Number of new sequences: $(cat {input.new_fasta} | grep ">" | wc -l)\n" >> {log}
         printf "Number of sequences after removing sequences <29000bps and with <95%% coverage: $(cat {input.removed_short_fasta} | grep ">" | wc -l)\n" >> {log}
         printf "Number of sequences after mapping and removing those with <95%% coverage remaining: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)\n" >> {log}
-        printf ">\n" >> {log}
-        printf "> Full masked and trimmed GISAID alignment published to {params.prefix}.trimmed_alignment.full.fasta\n" >> {log}
-        printf "> Full GISAID metadata published to {params.prefix}.metadata.full.fasta\n" >> {log}
-        printf ">\n" >> {log}
-        printf "> Matched GISAID fasta and restricted metadata published to {params.prefix}.trimmed_alignment.matched.fasta and {params.prefix}.metadata.matched.csv\n" >> {log}
-        printf "> Number of sequences in matched GISAID files: $(cat {input.matched_fasta} | grep '>' | wc -l)\n" >> {log}
-        printf ">\n" >> {log}
-        printf "> Counts by country published to {params.prefix}_counts_by_country.csv\n" >> {log}
-        printf '{{"text":"' > 0_data.json
-        printf "*Step 0: GISAID preprocessing complete*\n" >> 0_data.json
+        printf ">\\n\n" >> {log}
+        printf "> Full masked and trimmed GISAID alignment published to {params.prefix}.trimmed_alignment.full.fasta\\n\n" >> {log}
+        printf "> Full GISAID metadata published to {params.prefix}.metadata.full.fasta\\n\n" >> {log}
+        printf ">\\n\n" >> {log}
+        printf "> Matched GISAID fasta and restricted metadata published to {params.prefix}.trimmed_alignment.matched.fasta and {params.prefix}.metadata.matched.csv\\n\n" >> {log}
+        printf "> Number of sequences in matched GISAID files: $(cat {input.matched_fasta} | grep '>' | wc -l)\\n\n" >> {log}
+        printf ">\\n\n" >> {log}
+        printf "> Counts by country published to {params.prefix}_counts_by_country.csv\\n\n" >> {log}
+        printf '{{"text":"\n' > 0_data.json
+        printf "*Step 0: GISAID preprocessing complete*\\n\n" >> 0_data.json
         cat {log} >> 0_data.json
-        printf '"}}' >> 0_data.json
-        printf "webhook {params.webhook}"
+        printf '"}}\n' >> 0_data.json
+        printf "webhook {params.webhook}\n"
         curl -X POST -H "Content-type: application/json" -d @0_data.json {params.webhook}
         # rm 0_data.json
         """
