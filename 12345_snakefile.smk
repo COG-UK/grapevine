@@ -11,28 +11,30 @@ if config.get("publish_path"):
     config["publish_path"] = config["publish_path"].rstrip('/')
 config["publish_path"] = os.path.abspath(config["publish_path"])
 
+if config.get("export_path"):
+    config["export_path"] = config["export_path"].rstrip('/')
+config["export_path"] = os.path.abspath(config["export_path"])
+
 if not config.get("date"):
     cwd = os.getcwd()
-    print(cwd)
     config["date"] = os.path.basename(cwd)[:10]
-    print(config["date"])
 
 ##### Target rules #####
 
 rule all:
     input:
-        config["output_path"] + "/logs/5_summarize_make_trees.log",
+        config["output_path"] + "/logs/5_summarize_generate_report_and_cut_out_trees.log",
         config["output_path"] + "/logs/4_summarize_make_trees.log",
         config["output_path"] + "/logs/3_summarize_combine_gisaid_and_cog.log",
         config["output_path"] + "/logs/2_summarize_pangolin_lineage_typing.log",
         config["output_path"] + "/logs/1_summarize_preprocess_uk.log",
-        config["output_path"] + "/snakejunk/1234"
+        config["output_path"] + "/snakejunk/12345"
 
 rule clean_up:
     input:
-        config["output_path"] + "/logs/4_summarize_make_trees.log",
+        config["output_path"] + "/logs/5_summarize_generate_report_and_cut_out_trees.log",
     output:
-        config["output_path"] + "/snakejunk/1234"
+        config["output_path"] + "/snakejunk/12345"
     shell:
         """
         mkdir -p {output}

@@ -13,6 +13,7 @@ latest_uk_metadata: /cephfs/covid/bham/artifacts/published/majora.latest.metadat
 
 output_path: analysis
 publish_path: publish
+export_path: publish/phylogenetics
 
 ##### Filter thresholds #####
 min_covg: 95
