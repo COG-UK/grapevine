@@ -1,17 +1,42 @@
 rule merge_and_create_new_uk_lineages:
-    pass
+    input:
+        config["output_path"] + "/4/all_traits.csv"
+    output:
+        config["output_path"] + "/5/updated_traits.csv"
+    log:
+        config["output_path"] + "/logs/5_merge_and_create_new_uk_lineages.log"
+    shell:
+        """
+        datafunk merge_lineages -i {input} -o {output} &> {log}
+        """
 
 rule update_metadata:
     input:
-        traits = rules.run_subroutine_on_lineages.output,
         metadata = rules.combine_gisaid_and_cog.output.metadata,
+        traits = rules.run_4_subroutine_on_lineages.output,
+        updated_lineages = rules.merge_and_create_new_uk_lineages.output
     output:
-        config["output_path"] + "/4/cog_gisaid.with_all_traits.csv"
+        traits_metadata = temp(config["output_path"] + "/4/cog_gisaid.with_traits.csv"),
+        all_metadata = config["output_path"] + "/4/cog_gisaid.with_all_traits.csv"
     log:
         config["output_path"] + "/logs/4_update_metadata.log"
     shell:
         """
-        touch {output}
+        fastafunk add_columns \
+          --in-metadata {input.metadata} \
+          --in-data {input.traits} \
+          --index-column sequence_name \
+          --join-on taxon \
+          --new-columns uk_lineage acc_lineage del_lineage phylotype \
+          --out-metadata {output.traits_metadata} &> {log}
+
+        fastafunk add_columns \
+          --in-metadata {output.traits_metadata} \
+          --in-data {input.updated_lineages} \
+          --index-column sequence_name \
+          --join-on taxon \
+          --new-columns uk_lineage \
+          --out-metadata {output.all_metadata} &>> {log}
         """
 
 rule run_5_subroutine_on_lineages:
