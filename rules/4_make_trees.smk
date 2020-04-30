@@ -51,10 +51,13 @@ rule run_4_subroutine_on_lineages:
         path_to_script = workflow.current_basedir,
         output_path = config["output_path"],
         publish_path = config["publish_path"],
+        export_path = config["export_path"],
+        date = config["date"],
         guide_tree = config["guide_tree"],
         prefix = config["output_path"] + "/4/lineage_"
     output:
-        config["output_path"] + "/4/all_traits.csv"
+        traits = config["output_path"] + "/4/all_traits.csv",
+        tree = config["output_path"] + "/4/cog_gisaid_full.tree"
     log:
         config["output_path"] + "/logs/4_run_4_subroutine_on_lineages.log"
     threads: 16
@@ -77,7 +80,12 @@ rule run_4_subroutine_on_lineages:
 
 rule summarize_make_trees:
     input:
-        traits = rules.run_4_subroutine_on_lineages.output,
+        traits = rules.run_4_subroutine_on_lineages.output.traits,
+        tree = rules.run_4_subroutine_on_lineages.output.tree
+    output:
+        published_tree = config["publish_path"] + "/COG_GISAID/cog_gisaid_full.tree",
+        exported_tree1 = config["export_path"] + "/public/cog_global_%s_tree.newick",
+        exported_tree2 = config["export_path"] + "/trees/cog_global_%s_tree.newick"
     params:
         webhook = config["webhook"],
         outdir = config["publish_path"] + "/COG_GISAID",
@@ -86,6 +94,12 @@ rule summarize_make_trees:
     shell:
         """
         echo "> Lineage trees have been published in {params.outdir}\\n" >> {log}
+
+        cp {input.tree} {output.published_tree}
+        cp {input.tree} {output.exported_tree1}
+        cp {input.tree} {output.exported_tree2}
+        echo "> Full GRAFT tree has been published in {output.published_tree}\\n" >> {log}
+        echo "> and {output.exported_tree1} and {output.exported_tree2}\\n" >> {log}
 
         echo '{{"text":"' > 4b_data.json
         echo "*Step 4: Construct and annotate lineage trees completed*\\n" >> 4_data.json
