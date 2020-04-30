@@ -31,5 +31,8 @@ lineage_splits: input/lineage_splits.csv
 ##### Guide tree #####
 guide_tree: /cephfs/covid/bham/raccoon-dog/resources/guide.tree
 
+##### Date #####
+date:
+
 ##### Webhook to push to #####
 webhook:
