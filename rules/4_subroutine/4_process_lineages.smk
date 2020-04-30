@@ -54,9 +54,10 @@ rule iq_tree:
         fi
         """
 
+"""
 rule phylotype_tree:
     input:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.tree"
+        tree = rules.iq_tree.output.tree
     output:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.phylotyped.tree"
     params:
@@ -75,16 +76,16 @@ rule phylotype_tree:
         --input {input.tree} \
         --output {output.tree} &> {log}
         """
-
+"""
 
 rule annotate_tree:
     input:
-        tree = rules.phylotype_tree.output.tree,
+        tree = rules.iq_tree.output.tree,
         metadata = config["metadata"]
     params:
         lineage = "{lineage}",
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.phylotyped.annotated.tree"
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.tree"
     log:
         config["output_path"] + "/logs/4_annotate_{lineage}.log"
     shell:
@@ -94,8 +95,8 @@ rule annotate_tree:
           --trait-columns lineage \
           country uk_lineage \
           --index-column sequence_name \
-          --boolean-for-trait country='UK' country='UK' country=UK \
-          --boolean-trait-names country_uk country_uk_acctran country_uk_deltran\
+          --boolean-for-trait country='UK' country='UK' country='UK' country='UK' \
+          --boolean-trait-names country_uk country_uk_acctran country_uk_deltran country_uk_maxtran\
           --input {input.tree} \
           --output {output.tree} &> {log}
         """
@@ -106,7 +107,7 @@ rule acctran_ancestral_reconstruction:
     params:
         lineage = "{lineage}",
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.phylotyped.annotated.acc.tree"
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.tree"
     log:
         config["output_path"] + "/logs/4_acctran_ancestral_reconstruction_{lineage}.log"
     shell:
@@ -119,13 +120,32 @@ rule acctran_ancestral_reconstruction:
         --output {output.tree} &> {log}
         """
 
-rule deltran_ancestral_reconstruction:
+rule maxtran_ancestral_reconstruction:
     input:
-        tree = rules.acctran_ancestral_reconstruction.output.tree
+        tree = rules.annotacctran_ancestral_reconstructionate_tree.output.tree
     params:
         lineage = "{lineage}",
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.phylotyped.annotated.acc.del.tree"
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.tree"
+    log:
+        config["output_path"] + "/logs/4_acctran_ancestral_reconstructionn_{lineage}.log"
+    shell:
+        """
+        clusterfunk ancestral_reconstruction \
+        --traits country_uk_maxtran \
+        ----maxtran-with-value True \
+        --ancestral_state False \
+        --input {input.tree} \
+        --output {output.tree} &> {log}
+        """
+
+rule deltran_ancestral_reconstruction:
+    input:
+        tree = rules.maxtran_ancestral_reconstruction.output.tree
+    params:
+        lineage = "{lineage}",
+    output:
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.tree"
     log:
         config["output_path"] + "/logs/4_deltran_ancestral_reconstruction_{lineage}.log"
     shell:
@@ -144,14 +164,14 @@ rule push_lineage_to_tips:
     params:
         lineage = "{lineage}",
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.phylotyped.annotated.acc.del.uk_lineages.tree"
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.uk_lineages.tree"
     log:
         config["output_path"] + "/logs/4_push_lineage_to_tips_{lineage}.log"
     shell:
         """
         clusterfunk push_annotations_to_tips \
           --traits uk_lineage \
-          --stop-where-trait country_uk_acctran=False \
+          --stop-where-trait country_uk_maxtran=False \
           --input {input.tree} \
           --output {output.tree} &> {log}
         """
@@ -162,7 +182,7 @@ rule label_acctran_introductions:
     params:
         lineage = "{lineage}",
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.phylotyped.annotated.acc.del.uk_lineages.acc_labelled.tree"
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.uk_lineages.acc_labelled.tree"
     log:
         config["output_path"] + "/logs/4_label_acctran_introductions_{lineage}.log"
     shell:
@@ -185,7 +205,7 @@ rule label_deltran_introductions:
         outdir = config["publish_path"] + "/COG_GISAID",
         prefix = config["publish_path"] + "/COG_GISAID/cog_gisaid_"
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.phylotyped.annotated.acc.del.uk_lineages.acc_labelled.del_labelled.tree"
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.uk_lineages.acc_labelled.del_labelled.tree"
     log:
         config["output_path"] + "/logs/4_label_deltran_introductions_{lineage}.log"
     shell:
@@ -200,6 +220,28 @@ rule label_deltran_introductions:
 
         mkdir -p {params.outdir}
         cp {output.tree} {params.prefix}_lineage_{params.lineage}.tree
+        """
+
+rule label_maxtran_introductions:
+    input:
+        tree = rules.label_deltran_introductions.output.tree
+    params:
+        lineage = "{lineage}",
+    output:
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.uk_lineages.acc_labelled.max_labelled.tree"
+    log:
+        config["output_path"] + "/logs/4_label_acctran_introductions_{lineage}.log"
+    shell:
+        """
+        clusterfunk label_transitions \
+          --trait country_uk_maxtran \
+          --to True \
+          --maxtrans
+          --transition-name max_lineage \
+          --transition-prefix {params.lineage}_ \
+          --include_root \
+          --input {input.tree} \
+          --output {output.tree} &> {log}
         """
 
 rule graft:
@@ -226,7 +268,7 @@ rule graft:
 
 rule output_annotations:
     input:
-        tree = rules.label_deltran_introductions.output.tree,
+        tree = rules.label_maxtran_introductions.output.tree,
     params:
         lineage = "{lineage}",
     output:
@@ -236,7 +278,7 @@ rule output_annotations:
     shell:
         """
         clusterfunk extract_tip_annotations \
-          --traits country lineage uk_lineage acc_lineage del_lineage phylotype \
+          --traits country lineage uk_lineage acc_lineage del_lineage \
           --input {input.tree} \
           --output {output.traits} &> {log}
         """
