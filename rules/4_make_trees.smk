@@ -56,7 +56,7 @@ rule run_4_subroutine_on_lineages:
     output:
         config["output_path"] + "/4/all_traits.csv"
     log:
-        config["output_path"] + "/logs/4_run_subroutine_on_lineages.log"
+        config["output_path"] + "/logs/4_run_4_subroutine_on_lineages.log"
     threads: 16
     shell:
         """
@@ -77,7 +77,7 @@ rule run_4_subroutine_on_lineages:
 
 rule summarize_make_trees:
     input:
-        traits = rules.run_subroutine_on_lineages.output,
+        traits = rules.run_4_subroutine_on_lineages.output,
     params:
         webhook = config["webhook"],
         outdir = config["publish_path"] + "/COG_GISAID",

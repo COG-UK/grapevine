@@ -52,7 +52,7 @@ rule run_5_subroutine_on_lineages:
     output:
         config["output_path"] + "/5/trees_done"
     log:
-        config["output_path"] + "/logs/5_run_subroutine_on_lineages.log"
+        config["output_path"] + "/logs/5_run_5_subroutine_on_lineages.log"
     threads: 40
     shell:
         """
@@ -72,12 +72,23 @@ rule run_5_subroutine_on_lineages:
         """
 
 rule generate_report:
-    pass
+    input:
+        metadata = rules.update_metadata.output.all_metadata
+    params:
+        path_to_script = workflow.current_basedir + "../Reports/UK_full_report",
+        name_stem = "UK_" + config["date"]
+    output:
+        report = "UK_" + config["date"] + ".pdf"
+    shell:
+        """
+        python3 {params.path_to_script}/run_report.py --m {input.metadata} --w "latest_date" --s {params.name_stem}
+        sh {params.path_to_script}/call_pandoc.sh {params.name_stem}.md {params.name_stem}.pdf
+        """
 
 rule summarize_generate_report_and_cut_out_trees:
     input:
-        lineage = config["lineage_splits"],
-        trees_done = rules.run_subroutine_on_lineages.output,
+        trees_done = rules.run_5_subroutine_on_lineages.output,
+        report = rules.generate_report.output.report
     params:
         webhook = config["webhook"],
         outdir = config["publish_path"] + "/COG_GISAID",
@@ -85,10 +96,11 @@ rule summarize_generate_report_and_cut_out_trees:
         config["output_path"] + "/logs/5_summarize_make_trees.log"
     shell:
         """
-        echo "> Trees have been published in {params.outdir}\\n" >> {log}
+        echo "> UK lineage trees have been published in {params.outdir}\\n" >> {log}
+        echo "> COG UK weekly report has been published in {params.outdir}\\n" >> {log}
 
         echo '{{"text":"' > 5b_data.json
-        echo "*Step 5: Construct and annotate trees completed*\\n" >> 5_data.json
+        echo "*Step 5: Generate report and UK lineage trees is complete*\\n" >> 5_data.json
         cat {log} >> 5b_data.json
         echo '"}}' >> 5b_data.json
         echo "webhook {params.webhook}"
