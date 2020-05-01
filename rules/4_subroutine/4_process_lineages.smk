@@ -56,7 +56,7 @@ rule iq_tree:
 
 rule phylotype_tree:
     input:
-        tree = rules.iq_tree.output.tree
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.tree"
     output:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.phylotyped.tree"
     params:
