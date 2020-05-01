@@ -36,7 +36,7 @@ rule uk_pangolin:
         outdir = config["output_path"] + "/2/pangolin"
     output:
         lineages = config["output_path"] + "/2/pangolin/lineage_report.csv",
-        tmpdir = config["output_path"] + "/2/pangolin/tmp
+        tmpdir = config["output_path"] + "/2/pangolin/tmp"
     log:
         config["output_path"] + "/logs/2_uk_pangolin.log"
     threads: 40
