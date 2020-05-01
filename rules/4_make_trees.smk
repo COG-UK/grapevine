@@ -1,8 +1,8 @@
 rule split_based_on_lineages:
     input:
         previous_stage = config["output_path"] + "/logs/3_summarize_combine_gisaid_and_cog.log",
-        fasta = rules.combine_gisaid_and_cog.output.fasta,
-        metadata = rules.combine_gisaid_and_cog.output.metadata,
+        fasta = config["output_path"] + "/3/cog_gisaid.fasta",
+        metadata = config["output_path"] + "/3/cog_gisaid.csv",
         lineage = config["lineage_splits"]
     params:
         prefix = config["output_path"] + "/4/lineage_",
@@ -45,7 +45,7 @@ rule split_based_on_lineages:
 rule run_4_subroutine_on_lineages:
     input:
         split_done = rules.split_based_on_lineages.output,
-        metadata = rules.combine_gisaid_and_cog.output.metadata,
+        metadata = config["output_path"] + "/3/cog_gisaid.csv",
         lineage = config["lineage_splits"]
     params:
         path_to_script = workflow.current_basedir,

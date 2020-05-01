@@ -12,7 +12,7 @@ rule merge_and_create_new_uk_lineages:
 
 rule update_metadata:
     input:
-        metadata = rules.combine_gisaid_and_cog.output.metadata,
+        metadata = config["output_path"] + "/3/cog_gisaid.csv",
         traits = rules.run_4_subroutine_on_lineages.output,
         updated_lineages = rules.merge_and_create_new_uk_lineages.output
     params:
@@ -76,7 +76,7 @@ rule publish_metadata:
 
 rule run_5_subroutine_on_lineages:
     input:
-        metadata = rules.combine_gisaid_and_cog.output.metadata,
+        metadata = rules.update_metadata.output.all_metadata,
         published = rules.publish_metadata.log,
         lineage = config["lineage_splits"]
     params:
