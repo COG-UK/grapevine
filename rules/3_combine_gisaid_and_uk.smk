@@ -33,7 +33,7 @@ rule run_snp_finder:
     shell:
         """
         snp_finder.py -a {input.fasta} -o {output.found} --snp-csv {input.snps} &> {log}
-        cp {output} {published}
+        cp {output.found} {output.published}
         """
 
 rule summarize_combine_gisaid_and_cog:
