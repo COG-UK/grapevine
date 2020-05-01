@@ -21,10 +21,26 @@ rule combine_gisaid_and_cog:
           --log-file {log}
         """
 
+rule run_snp_finder:
+    input:
+        fasta = rules.combine_gisaid_and_cog.output.fasta,
+        snps = config["snps"]
+    output:
+        found = config["output_path"] + "/3/cog_gisaid.snp_finder.csv",
+        published = config["publish_path"] + "/COG_GISAID/cog_gisaid.snp_finder.csv",
+    log:
+        config["output_path"] + "/logs/3_run_snp_finder.log"
+    shell:
+        """
+        snp_finder.py -a {input.fasta} -o {output.found} --snp-csv {input.snps} &> {log}
+        cp {output} {published}
+        """
+
 rule summarize_combine_gisaid_and_cog:
     input:
         fasta = rules.combine_gisaid_and_cog.output.fasta,
         metadata = rules.combine_gisaid_and_cog.output.metadata,
+        snps = rules.run_snp_finder.output.published,
     params:
         webhook = config["webhook"],
         outdir = config["publish_path"] + "/COG_GISAID",
@@ -39,6 +55,8 @@ rule summarize_combine_gisaid_and_cog:
         echo "> Combined COG and GISAID trimmed alignments published to _{params.prefix}_alignment.trimmed.fasta_\\n" >> {log}
         echo "> Combined COG and GISAID restricted metadata published to _{params.prefix}_metadata.csv_\\n" >> {log}
         echo "> Number of sequences in combined COG and GISAID matched files: $(cat {input.fasta} | grep ">" | wc -l)\\n" &>> {log}
+        echo "> \\n" &>> {log}
+        echo "> SNP finder results published in _{input.snps}_\\n" &>> {log}
 
         echo {params.webhook}
         echo '{{"text":"' > 3_data.json
