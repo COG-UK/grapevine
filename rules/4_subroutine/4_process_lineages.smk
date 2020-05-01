@@ -21,69 +21,70 @@ print("outgroups", OUTGROUPS)
 
 rule all:
     input:
-        config["output_path"] + "/4/all_traits.csv",
-        config["output_path"] + "/4/cog_gisaid_full.tree"
+        traits=config["output_path"] + "/4/all_traits.csv",
+        tree=config["output_path"] + "/4/cog_gisaid_full.tree"
 
-rule iq_tree:
-    input:
-        lineage_fasta = config["output_path"] + "/4/lineage_{lineage}.fasta"
-    params:
-        lineage = "{lineage}",
-        outgroup = lambda wildcards: lineage_to_outgroup_map[wildcards.lineage]
-    output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.tree"
-    log:
-        config["output_path"] + "/logs/4_iq_tree_{lineage}.log"
-    resources: mem_per_cpu=10000
-    shell:
-        """
-        echo "{params.outgroup} {input.lineage_fasta} {params.lineage}"
-        iqtree -m HKY -bb 1000 -czb \
-        -o \"{params.outgroup}\" \
-        -cptime 300 \
-        -nt AUTO \
-        -s {input.lineage_fasta} &> {log}
 
-        RESULT=$?
-        if [ $RESULT -eq 0 ]
-        then
-          datafunk repair_names \
-            --fasta {input.lineage_fasta} \
-            --tree {input.lineage_fasta}.treefile \
-            --out {output.tree} &>> {log}
-        fi
-        """
+# rule iq_tree:
+#     input:
+#         lineage_fasta = config["output_path"] + "/4/lineage_{lineage}.fasta"
+#     params:
+#         lineage = "{lineage}",
+#         outgroup = lambda wildcards: lineage_to_outgroup_map[wildcards.lineage]
+#     output:
+#         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.tree"
+#     log:
+#         config["output_path"] + "/logs/4_iq_tree_{lineage}.log"
+#     resources: mem_per_cpu=10000
+#     shell:
+#         """
+#         echo "{params.outgroup} {input.lineage_fasta} {params.lineage}"
+#         iqtree -m HKY -bb 1000 -czb \
+#         -o \"{params.outgroup}\" \
+#         -cptime 300 \
+#         -nt AUTO \
+#         -s {input.lineage_fasta} &> {log}
+#
+#         RESULT=$?
+#         if [ $RESULT -eq 0 ]
+#         then
+#           datafunk repair_names \
+#             --fasta {input.lineage_fasta} \
+#             --tree {input.lineage_fasta}.treefile \
+#             --out {output.tree} &>> {log}
+#         fi
+#         """
+# rule phylotype_tree:
+#     input:
+#         tree = rules.iq_tree.output.tree
+#     output:
+#         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.phylotyped.tree"
+#     params:
+#         lineage="{lineage}",
+#         collapse=5E-6,
+#         threshold=2E-5,
+#     log:
+#         config["output_path"] + "/logs/4_phylotype_{lineage}.log"
+#     shell:
+#         """
+#         clusterfunk phylotype \
+#         --format newick \
+#         --collapse_to_polytomies {params.collapse} \
+#         --threshold {params.threshold} \
+#         --prefix {params.lineage}_1 \
+#         --input {input.tree} \
+#         --output {output.tree} &> {log}
+#         """
 
-"""
-rule phylotype_tree:
-    input:
-        tree = rules.iq_tree.output.tree
-    output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.phylotyped.tree"
-    params:
-        lineage="{lineage}",
-        collapse=5E-6,
-        threshold=2E-5,
-    log:
-        config["output_path"] + "/logs/4_phylotype_{lineage}.log"
-    shell:
-        """
-        clusterfunk phylotype \
-        --format newick \
-        --collapse_to_polytomies {params.collapse} \
-        --threshold {params.threshold} \
-        --prefix {params.lineage}_1 \
-        --input {input.tree} \
-        --output {output.tree} &> {log}
-        """
-"""
 
 rule annotate_tree:
     input:
-        tree = rules.iq_tree.output.tree,
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.tree",
         metadata = config["metadata"]
     params:
         lineage = "{lineage}",
+        collapse=0.000005,
+
     output:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.tree"
     log:
@@ -97,6 +98,8 @@ rule annotate_tree:
           --index-column sequence_name \
           --boolean-for-trait country='UK' country='UK' country='UK' country='UK' \
           --boolean-trait-names country_uk country_uk_acctran country_uk_deltran country_uk_maxtran\
+          --format newick \
+          --collapse_to_polytomies {params.collapse} \
           --input {input.tree} \
           --output {output.tree} &> {log}
         """
@@ -122,18 +125,18 @@ rule acctran_ancestral_reconstruction:
 
 rule maxtran_ancestral_reconstruction:
     input:
-        tree = rules.annotacctran_ancestral_reconstructionate_tree.output.tree
+        tree = rules.acctran_ancestral_reconstruction.output.tree
     params:
         lineage = "{lineage}",
     output:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.tree"
     log:
-        config["output_path"] + "/logs/4_acctran_ancestral_reconstructionn_{lineage}.log"
+        config["output_path"] + "/logs/4_maxtran_ancestral_reconstructionn_{lineage}.log"
     shell:
         """
         clusterfunk ancestral_reconstruction \
         --traits country_uk_maxtran \
-        ----maxtran-with-value True \
+        --maxtran-with-value True \
         --ancestral_state False \
         --input {input.tree} \
         --output {output.tree} &> {log}
@@ -228,7 +231,7 @@ rule label_maxtran_introductions:
     params:
         lineage = "{lineage}",
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.uk_lineages.acc_labelled.max_labelled.tree"
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.uk_lineages.acc_labelled.del_labelled.max_labelled.tree"
     log:
         config["output_path"] + "/logs/4_label_acctran_introductions_{lineage}.log"
     shell:
@@ -236,7 +239,6 @@ rule label_maxtran_introductions:
         clusterfunk label_transitions \
           --trait country_uk_maxtran \
           --to True \
-          --maxtrans
           --transition-name max_lineage \
           --transition-prefix {params.lineage}_ \
           --include_root \
@@ -247,8 +249,8 @@ rule label_maxtran_introductions:
 rule graft:
     input:
          # not sure how to pass this as a space separated list below. Also assuming the order here matches lineages
-        trees = expand(config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.phylotyped.annotated.acc.del.uk_lineages.acc_labelled.del_labelled.tree", lineage=LINEAGES),
-        guide_tree = config["guide_tree"]
+        trees = expand(config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.uk_lineages.acc_labelled.del_labelled.max_labelled.tree", lineage=LINEAGES),
+        guide_tree = "/Users/jtmccrone/Desktop/COG/testNewSteps/lineage_representatives.tree" #config["guide_tree"]
     params:
         lineages = LINEAGES,
     output:
@@ -278,7 +280,7 @@ rule output_annotations:
     shell:
         """
         clusterfunk extract_tip_annotations \
-          --traits country lineage uk_lineage acc_lineage del_lineage \
+          --traits country lineage uk_lineage acc_lineage del_lineage max_lineage\
           --input {input.tree} \
           --output {output.traits} &> {log}
         """
@@ -291,8 +293,7 @@ rule combine_traits_files:
     log:
         config["output_path"] + "/logs/4_combine_traits_files.log"
     run:
-        """
-        result = pd.concat({input.list_df})
-        result.to_csv({output}, index=False)
-        """
+        dfs = [pd.read_csv(x) for x in input.list_df]
+        result = pd.concat(dfs)
+        result.to_csv(output[0], index=False)
 
