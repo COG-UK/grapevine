@@ -7,7 +7,7 @@ rule merge_and_create_new_uk_lineages:
         config["output_path"] + "/logs/5_merge_and_create_new_uk_lineages.log"
     shell:
         """
-        datafunk merge_lineages -i {input} -o {output} &> {log}
+        datafunk curate_lineages -i {input} -o {output} &> {log}
         """
 
 rule update_metadata:
