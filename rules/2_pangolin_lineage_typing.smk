@@ -25,9 +25,7 @@ rule update_pangolin_lineages:
         config["output_path"] + "/logs/2_update_pangolin_lineages.log"
     shell:
         """
-        pip install --upgrade git+https://github.com/hCoV-2019/lineages.git
-        pangolin --lineages-version >> {log}
-        pangolin --version >> {log}
+        #pip install --upgrade git+https://github.com/hCoV-2019/spangolin.git
         """
 
 rule uk_pangolin:
@@ -43,11 +41,13 @@ rule uk_pangolin:
     threads: 40
     shell:
         """
+        pangolin --lineages-version >> {log}
+        pangolin --version >> {log}
+
         pangolin {input.fasta} \
         --threads {threads} \
         --outdir {params.outdir} \
-        --tempdir {output.tmpdir} \
-        --data {} > {log} 2>&1
+        --tempdir {output.tmpdir}  >> {log} 2>&1
         """
 
 rule uk_add_previous_uk_lineages_to_metadata:
