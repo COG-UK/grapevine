@@ -26,6 +26,9 @@ reference_fasta: "reference.fasta"
 trim_start: 265
 trim_end: 29674
 
+##### File of SNPs to search for #####
+snps: input/snps.csv
+
 ##### File of lineages to split by #####
 lineage_splits: input/lineage_splits.csv
 
