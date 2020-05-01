@@ -1,6 +1,8 @@
 configfile: workflow.current_basedir + "/config.yaml"
 
 import os
+import pandas as pd
+
 
 ##### Configuration #####
 
@@ -14,11 +16,11 @@ print("lineages", LINEAGES)
 
 rule all:
     input:
-         expand(config["output_path"] + "/5/{lineage}/cut_out_trees_done", lineage=LINEAGES)
+         config["output_path"] +"/5/traits.csv"
 
 rule annotate_tree:
     input:
-         tree=config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.phylotyped.tree",
+         tree=config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.uk_lineages.acc_labelled.del_labelled.max_labelled.tree",
          metadata=config["metadata"]
     params:
           lineage="{lineage}",
@@ -35,9 +37,6 @@ rule annotate_tree:
            --input {input.tree} \
            --output {output.tree} &> {log}
          """
-
-
-
 
 """
 This is a checkpoint so the dag will get remade after this run. At that point aggregate_input_csv (below) will
@@ -64,6 +63,9 @@ checkpoint cut_out_trees:
            --input {input.tree} \
            --threads {threads} \
            --output {params.outdir} &> {log}
+           
+           echo "Look at all those trees:" >>{log}
+           ls {output}/* >>{log}
          """
 
 rule phylotype_cut_trees:
@@ -72,17 +74,17 @@ rule phylotype_cut_trees:
     output:
           tree=config["output_path"] + "/5/{lineage}/phylotyped_trees/uk_lineage_UK{i}.tree"
     params:
-          lineage="{lineage}",
-          collapse=5E-6,
-          threshold=2E-5,
+        lineage="{lineage}",
+        collapse=5E-6,
+        threshold=2E-5,
+        i="{i}"
     log:
        config["output_path"] + "/logs/5_phylotype_{lineage}_UK{i}.log"
     shell:
          """
          clusterfunk phylotype \
-         --format newick \
          --threshold {params.threshold} \
-         --prefix UK{i}_1 \
+         --prefix UK{params.i}_1 \
          --input {input.tree} \
          --output {output.tree} &> {log}
          """
@@ -107,8 +109,9 @@ rule get_uk_phylotypes_csv:
 
 def aggregate_input_csv(wildcards):
     checkpoint_output_directory = checkpoints.cut_out_trees.get(**wildcards).output[0]
+    print(checkpoints.cut_out_trees.get(**wildcards).output[0])
     lineage = wildcards.lineage
-    required_files = expand(config["output_path"] + "/5/%s/phylotyped_trees/uk_lineage_UK{i}.csv" % (lineage),
+    required_files = expand( "%s/5/%s/phylotyped_trees/uk_lineage_UK{i}.csv" %(config["output_path"],lineage),
                             i=glob_wildcards(os.path.join(checkpoint_output_directory, "uk_lineage_UK{i}.tree")).i)
 
     return (required_files)
@@ -116,22 +119,35 @@ def aggregate_input_csv(wildcards):
 
 rule combine_phylotypes_csv:
     input:
-         aggregate_input_csv
+         files=aggregate_input_csv
     output:
           phylotype_csv=config["output_path"] + "/5/{lineage}/UK_phylotypes.csv"
     log:
        config["output_path"] + "/logs/5_traits_{lineage}_combine_phylotype_csv.log"
     run:
-        """
-        result = pd.concat({input})
-        result.to_csv({output}, index=False)
-        """
+        dfs = [pd.read_csv(x) for x in input.files]
+        result = pd.concat(dfs)
+        result.to_csv(output[0], index=False)
 
+rule combine_lineage_csv:
+    input:
+         expand(config["output_path"] + "/5/{lineage}/UK_phylotypes.csv",lineage=LINEAGES)
+    output:
+          phylotype_csv=config["output_path"] + "/5/UK_phylotypes.csv"
+    log:
+       config["output_path"] + "/logs/5__combine_lineage_csv.log"
+    run:
+        dfs = [pd.read_csv(x) for x in input]
+        result = pd.concat(dfs)
+        result.to_csv(output[0], index=False)
 
 rule merge_with_metadata:
     input:
-        rules.combine_phylotypes_csv.ouput.traits.phylotype_csv
+        rules.combine_lineage_csv.output.phylotype_csv
+    output:
+         config["output_path"] +"/5/traits.csv"
     shell:
          """
          echo "We still need to implement this to merge the UK phylotypes into the metatdata csv"
+         touch {output}
          """
