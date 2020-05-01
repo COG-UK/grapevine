@@ -13,12 +13,12 @@ rule split_based_on_lineages:
         config["output_path"] + "/logs/4_split_based_on_lineages.log"
     shell:
         """
-        lineages=$(cat {input.lineage} | cut -f1 --delim "," | tr '\\n' '  ')
+        lineages=$(cat {input.lineage} | cut -f1 -d "," | tr '\\n' '  ')
         fastafunk split \
           --in-fasta {input.fasta} \
           --in-metadata {input.metadata} \
           --index-column sequence_name \
-          --index-field lineage \
+          --index-field special_lineage \
           --lineage $lineages \
           --out-folder {params.prefix} &> {log}
 

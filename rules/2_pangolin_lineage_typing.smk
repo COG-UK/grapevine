@@ -1,3 +1,5 @@
+import pandas as pd
+
 rule uk_extract_new:
     input:
         previous_stage = config["output_path"] + "/logs/1_summarize_preprocess_uk.log",
@@ -66,7 +68,7 @@ rule uk_add_previous_uk_lineages_to_metadata:
           --in-data {input.previous_metadata} \
           --index-column sequence_name \
           --join-on sequence_name \
-          --new-columns uk_lineage lineage lineage_support edin_date_stamp \
+          --new-columns uk_lineage special_lineage lineage lineage_support edin_date_stamp \
           --out-metadata {output.metadata} &>> {log}
         """
 
@@ -95,15 +97,35 @@ rule uk_add_pangolin_lineages_to_metadata:
           --in-data {input.lineages} \
           --index-column sequence_name \
           --join-on taxon \
-          --new-columns lineage lineage_support \
-          --where-column lineage_support=UFbootstrap \
+          --new-columns special_lineage lineage_support \
+          --where-column lineage_support=UFbootstrap special_lineage=lineage\
           --out-metadata {output.metadata} &>> {log}
+        """
+
+rule uk_update_metadata_lineages:
+    input:
+        metadata = rules.uk_add_pangolin_lineages_to_metadata.output.metadata,
+    output:
+        metadata = config["output_path"] + "/2/uk.with_new_lineages.special.csv",
+    log:
+        config["output_path"] + "/logs/2_uk_update_metadata_lineages.log"
+    run:
+        """
+        df = pd.read_csv({input.metadata})
+        lineages = []
+        for i,row in df.iterrows():
+            if row['special_lineage']:
+                lineages.append(row['special_lineage'].replace(".X","").replace(".Y","")
+            else:
+                lineages.append(row['lineage'])
+        df['lineage'] = lineages
+        df.to_csv({output.metadata}, index=False)
         """
 
 rule uk_output_cog:
     input:
         fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
-        metadata = rules.uk_add_pangolin_lineages_to_metadata.output.metadata
+        metadata = rules.uk_update_metadata_lineages.output.metadata
     output:
         fasta = config["output_path"] + "/2/uk.regularized.fasta",
         metadata = config["output_path"] + "/2/uk.regularized.csv"
@@ -118,7 +140,7 @@ rule uk_output_cog:
           --filter-column sequence_name sample_date epi_week \
                           country adm1 adm2 outer_postcode \
                           is_surveillance is_community is_hcw \
-                          is_travel_history travel_history lineage \
+                          is_travel_history travel_history lineage special_lineage \
                           lineage_support uk_lineage \
           --where-column epi_week=edin_epi_week country=adm0 \
                          sample_date=reception_date sample_date=collection_date \
