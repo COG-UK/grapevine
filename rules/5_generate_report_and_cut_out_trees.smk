@@ -12,7 +12,7 @@ rule merge_and_create_new_uk_lineages:
 
 rule update_metadata:
     input:
-        metadata = rules.combine_gisaid_and_cog.output.metadata,
+        metadata = config["output_path"] + "/3/cog_gisaid.csv",
         traits = rules.run_4_subroutine_on_lineages.output,
         updated_lineages = rules.merge_and_create_new_uk_lineages.output
     params:
@@ -60,8 +60,8 @@ rule publish_metadata:
         mkdir -p {params.export_dir}
         cp {input.metadata} {params.prefix}_metadata.csv
         cp {input.metadata} {params.export_prefix}_metadata.csv
-        echo "> Updated COG and GISAID metadata published to {params.prefix}_metadata.csv\\n" >> {log}
-        echo "> and to {params.export_prefix}_metadata.csv\\n" >> {log}
+        echo "> Updated COG and GISAID metadata published to _{params.prefix}_metadata.csv_\\n" >> {log}
+        echo "> and to _{params.export_prefix}_metadata.csv_\\n" >> {log}
 
         echo {params.webhook}
 
@@ -76,7 +76,7 @@ rule publish_metadata:
 
 rule run_5_subroutine_on_lineages:
     input:
-        metadata = rules.combine_gisaid_and_cog.output.metadata,
+        metadata = rules.update_metadata.output.all_metadata,
         published = rules.publish_metadata.log,
         lineage = config["lineage_splits"]
     params:
@@ -137,9 +137,10 @@ rule summarize_generate_report_and_cut_out_trees:
         mkdir -p {params.export_dir2}
 
         cp {params.outdir}/* {params.export_dir1}
-        echo "> UK lineage trees have been published in {params.outdir} and {params.export_dir1}\\n" >> {log}
+        echo "> UK lineage trees have been published in _{params.outdir}_ and _{params.export_dir1}_\\n" >> {log}
+        echo ">\\n" >> {log}
         cp {input.report} {params.export_dir2}/
-        echo "> COG UK weekly report has been published in {params.outdir} and {params.export_dir2}\\n" >> {log}
+        echo "> COG UK weekly report has been published in _{params.outdir}_ and _{params.export_dir2}_\\n" >> {log}
 
         echo '{{"text":"' > 5b_data.json
         echo "*Step 5: Generate report and UK lineage trees is complete*\\n" >> 5_data.json

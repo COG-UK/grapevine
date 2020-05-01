@@ -36,8 +36,8 @@ rule summarize_combine_gisaid_and_cog:
         mkdir -p {params.outdir}
         cp {input.fasta} {params.prefix}_alignment.trimmed.fasta
         cp {input.metadata} {params.prefix}_metadata.csv
-        echo "> Combined COG and GISAID trimmed alignments published to {params.prefix}_alignment.trimmed.fasta\\n" >> {log}
-        echo "> Combined COG and GISAID restricted metadata published to {params.prefix}_metadata.csv\\n" >> {log}
+        echo "> Combined COG and GISAID trimmed alignments published to _{params.prefix}_alignment.trimmed.fasta_\\n" >> {log}
+        echo "> Combined COG and GISAID restricted metadata published to _{params.prefix}_metadata.csv_\\n" >> {log}
         echo "> Number of sequences in combined COG and GISAID matched files: $(cat {input.fasta} | grep ">" | wc -l)\\n" &>> {log}
 
         echo {params.webhook}
