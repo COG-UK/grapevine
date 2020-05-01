@@ -25,56 +25,57 @@ rule all:
         tree=config["output_path"] + "/4/cog_gisaid_full.tree"
 
 
-# rule iq_tree:
-#     input:
-#         lineage_fasta = config["output_path"] + "/4/lineage_{lineage}.fasta"
-#     params:
-#         lineage = "{lineage}",
-#         outgroup = lambda wildcards: lineage_to_outgroup_map[wildcards.lineage]
-#     output:
-#         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.tree"
-#     log:
-#         config["output_path"] + "/logs/4_iq_tree_{lineage}.log"
-#     resources: mem_per_cpu=10000
-#     shell:
-#         """
-#         echo "{params.outgroup} {input.lineage_fasta} {params.lineage}"
-#         iqtree -m HKY -bb 1000 -czb \
-#         -o \"{params.outgroup}\" \
-#         -cptime 300 \
-#         -nt AUTO \
-#         -s {input.lineage_fasta} &> {log}
-#
-#         RESULT=$?
-#         if [ $RESULT -eq 0 ]
-#         then
-#           datafunk repair_names \
-#             --fasta {input.lineage_fasta} \
-#             --tree {input.lineage_fasta}.treefile \
-#             --out {output.tree} &>> {log}
-#         fi
-#         """
-# rule phylotype_tree:
-#     input:
-#         tree = rules.iq_tree.output.tree
-#     output:
-#         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.phylotyped.tree"
-#     params:
-#         lineage="{lineage}",
-#         collapse=5E-6,
-#         threshold=2E-5,
-#     log:
-#         config["output_path"] + "/logs/4_phylotype_{lineage}.log"
-#     shell:
-#         """
-#         clusterfunk phylotype \
-#         --format newick \
-#         --collapse_to_polytomies {params.collapse} \
-#         --threshold {params.threshold} \
-#         --prefix {params.lineage}_1 \
-#         --input {input.tree} \
-#         --output {output.tree} &> {log}
-#         """
+rule iq_tree:
+    input:
+        lineage_fasta = config["output_path"] + "/4/lineage_{lineage}.fasta"
+    params:
+        lineage = "{lineage}",
+        outgroup = lambda wildcards: lineage_to_outgroup_map[wildcards.lineage]
+    output:
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.tree"
+    log:
+        config["output_path"] + "/logs/4_iq_tree_{lineage}.log"
+    resources: mem_per_cpu=10000
+    shell:
+        """
+        echo "{params.outgroup} {input.lineage_fasta} {params.lineage}"
+        iqtree -m HKY -bb 1000 -czb \
+        -o \"{params.outgroup}\" \
+        -cptime 300 \
+        -nt AUTO \
+        -s {input.lineage_fasta} &> {log}
+
+        RESULT=$?
+        if [ $RESULT -eq 0 ]
+        then
+          datafunk repair_names \
+            --fasta {input.lineage_fasta} \
+            --tree {input.lineage_fasta}.treefile \
+            --out {output.tree} &>> {log}
+        fi
+        """
+
+rule phylotype_tree:
+    input:
+        tree = rules.iq_tree.output.tree
+    output:
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.phylotyped.tree"
+    params:
+        lineage="{lineage}",
+        collapse=5E-6,
+        threshold=2E-5,
+    log:
+        config["output_path"] + "/logs/4_phylotype_{lineage}.log"
+    shell:
+        """
+        clusterfunk phylotype \
+        --format newick \
+        --collapse_to_polytomies {params.collapse} \
+        --threshold {params.threshold} \
+        --prefix {params.lineage}_1 \
+        --input {input.tree} \
+        --output {output.tree} &> {log}
+        """
 
 
 rule annotate_tree:
