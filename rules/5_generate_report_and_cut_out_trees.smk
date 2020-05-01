@@ -13,7 +13,7 @@ rule merge_and_create_new_uk_lineages:
 rule update_metadata:
     input:
         metadata = config["output_path"] + "/3/cog_gisaid.csv",
-        traits = rules.run_4_subroutine_on_lineages.output,
+        traits = rules.run_4_subroutine_on_lineages.output.traits,
         updated_lineages = rules.merge_and_create_new_uk_lineages.output
     params:
         export_dir = config["export_path"] + "/metadata",
@@ -31,8 +31,8 @@ rule update_metadata:
           --in-data {input.traits} \
           --index-column sequence_name \
           --join-on taxon \
-          --new-columns uk_lineage acc_lineage del_lineage phylotype \
-          --out-metadata {output.traits_metadata} &> {log}
+          --new-columns uk_lineage acc_lineage del_lineage \
+          --out-metadata {output.traits_metadata} &> {log} ;
 
         fastafunk add_columns \
           --in-metadata {output.traits_metadata} \
@@ -40,7 +40,7 @@ rule update_metadata:
           --index-column sequence_name \
           --join-on taxon \
           --new-columns uk_lineage \
-          --out-metadata {output.all_metadata} &>> {log}
+          --out-metadata {output.all_metadata} &> {log}
         """
 
 rule publish_metadata:
@@ -100,7 +100,6 @@ rule run_5_subroutine_on_lineages:
           output_path={params.output_path} \
           publish_path={params.publish_path} \
           lineages="$lineages" \
-          lineage_specific_outgroups="$outgroups" \
           metadata={input.metadata} &> {log}
 
         touch {output}
