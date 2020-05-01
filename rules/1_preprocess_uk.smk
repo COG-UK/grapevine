@@ -213,15 +213,17 @@ rule summarize_preprocess_uk:
         echo "> Number of sequences after deduplication: $(cat {input.deduplicated_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after removing sequences <29000bps: $(cat {input.removed_short_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after trimming and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)\\n" &>> {log}
+        echo ">\\n" >> {log}
 
         mkdir -p {params.outdir}
         mkdir -p {params.export_dir}
         cp {input.full_alignment} {params.prefix}_alignment.full.fasta
         cp {input.full_alignment} {params.export_prefix}_alignment.full.fasta
-        echo "> Full untrimmed COG alignment published to {params.prefix}_alignment.full.fasta\\n" >> {log}
-        echo "> and to {params.export_prefix}_alignment.full.fasta\\n" >> {log}
+        echo "> Full untrimmed COG alignment published to _{params.prefix}_alignment.full.fasta_\\n" >> {log}
+        echo "> and to _{params.export_prefix}_alignment.full.fasta_\\n" >> {log}
+        echo ">\\n" >> {log}
         cp {input.removed_low_covg_fasta} {params.prefix}_alignment.trimmed.fasta
-        echo "> Trimmed COG alignment published to {params.prefix}_alignment.trimmed.fasta\\n" >> {log}
+        echo "> Trimmed COG alignment published to _{params.prefix}_alignment.trimmed.fasta_\\n" >> {log}
 
         echo '{{"text":"' > 1_data.json
         echo "*Step 1: COG-UK preprocessing complete*\\n" >> 1_data.json

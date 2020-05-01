@@ -3,4 +3,3 @@ publish_path: publish
 lineages:
 metadata:
 traits_csv:
-webhook:

@@ -1,8 +1,8 @@
 rule split_based_on_lineages:
     input:
         previous_stage = config["output_path"] + "/logs/3_summarize_combine_gisaid_and_cog.log",
-        fasta = rules.combine_gisaid_and_cog.output.fasta,
-        metadata = rules.combine_gisaid_and_cog.output.metadata,
+        fasta = config["output_path"] + "/3/cog_gisaid.fasta",
+        metadata = config["output_path"] + "/3/cog_gisaid.csv",
         lineage = config["lineage_splits"]
     params:
         prefix = config["output_path"] + "/4/lineage_",
@@ -45,7 +45,7 @@ rule split_based_on_lineages:
 rule run_4_subroutine_on_lineages:
     input:
         split_done = rules.split_based_on_lineages.output,
-        metadata = rules.combine_gisaid_and_cog.output.metadata,
+        metadata = config["output_path"] + "/3/cog_gisaid.csv",
         lineage = config["lineage_splits"]
     params:
         path_to_script = workflow.current_basedir,
@@ -93,13 +93,14 @@ rule summarize_make_trees:
         config["output_path"] + "/logs/4_summarize_make_trees.log"
     shell:
         """
-        echo "> Lineage trees have been published in {params.outdir}\\n" >> {log}
+        echo "> Lineage trees have been published in _{params.outdir}_\\n" >> {log}
+        echo ">\\n" >> {log}
 
         cp {input.tree} {output.published_tree}
         cp {input.tree} {output.exported_tree1}
         cp {input.tree} {output.exported_tree2}
-        echo "> Full GRAFT tree has been published in {output.published_tree}\\n" >> {log}
-        echo "> and {output.exported_tree1} and {output.exported_tree2}\\n" >> {log}
+        echo "> Full GRAFT tree has been published in _{output.published_tree}_\\n" >> {log}
+        echo "> and _{output.exported_tree1}_ and _{output.exported_tree2}_\\n" >> {log}
 
         echo '{{"text":"' > 4b_data.json
         echo "*Step 4: Construct and annotate lineage trees completed*\\n" >> 4_data.json
