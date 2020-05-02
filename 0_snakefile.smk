@@ -15,6 +15,7 @@ config["publish_path"] = os.path.abspath(config["publish_path"])
 rule all:
     input:
         config["output_path"] + "/logs/0_summarize_preprocess_gisaid.log",
+        config["output_path"] + "/0/gisaid_counts_by_country.csv",
         config["output_path"] + "/0/QC_distances.tsv",
         config["output_path"] + "/0/QC_distances.png",
         config["output_path"] + "/snakejunk/0"
