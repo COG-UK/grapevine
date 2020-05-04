@@ -12,7 +12,7 @@ rule gisaid_process_json:
         """
         datafunk process_gisaid_data \
           --input-json \"{input.json}\" \
-          --input-metadata {input.metadata} \
+          --input-metadata \"{input.metadata}\" \
           --exclude-file \"{input.omitted}\" \
           --output-fasta {output.fasta} \
           --output-metadata {output.metadata} \
@@ -61,6 +61,25 @@ rule gisaid_unify_headers:
           --output-metadata {output.metadata} \
           --log {log} \
           --gisaid
+        """
+
+
+rule gisaid_counts_by_country:
+    input:
+        metadata = rules.gisaid_unify_headers.output.metadata
+    output:
+        counts = config["output_path"] + "/0/gisaid_counts_by_country.csv",
+        published_counts = config["publish_path"] + "/GISAID/gisaid_counts_by_country.csv"
+    log:
+        config["output_path"] + "/logs/0_gisaid_counts_by_country.log"
+    shell:
+        """
+        fastafunk count \
+          --in-metadata {input.metadata} \
+          --group-column edin_admin_0 \
+          --log-file {output.counts} &> {log}
+
+        cp {output.counts} {output.published_counts}
         """
 
 
@@ -178,7 +197,7 @@ rule gisaid_mask_1:
         datafunk mask \
           --input-fasta {input.fasta} \
           --output-fasta {output.fasta} \
-          --mask-file {input.mask}
+          --mask-file \"{input.mask}\"
 
         cp {output.fasta} {output.published_fasta}
         """
@@ -188,18 +207,49 @@ rule gisaid_pangolin:
     input:
         fasta = rules.gisaid_mask_1.output.fasta
     params:
-        outdir = config["output_path"] + "/0/pangolin"
+        outdir = config["output_path"] + "/0/pangolin",
+        tmpdir = config["output_path"] + "/0/pangolin/tmp"
     output:
-        lineages = config["output_path"] + "/0/pangolin/lineage_report.csv"
+        lineages = protected(lineages = config["output_path"] + "/0/pangolin/lineage_report.csv")
     log:
         config["output_path"] + "/logs/0_gisaid_pangolin.log"
-    threads: 16
+    threads: 40
     shell:
         """
         pangolin {input.fasta} \
         --threads {threads} \
+        --tempdir {params.tmp} \
         --outdir {params.outdir} > {log} 2>&1
         """
+
+
+# rule update_pangolin_lineages:
+#     log:
+#         config["output_path"] + "/logs/2_update_pangolin_lineages.log"
+#     shell:
+#         """
+#         pip install --upgrade git+https://github.com/hCoV-2019/spangolin.git
+#         """
+
+
+# rule gisaid_special_pangolin:
+#     input:
+#         fasta = rules.gisaid_mask_1.output.fasta
+#     params:
+#         outdir = config["output_path"] + "/0/pangolin"
+#         tmp = config["output_path"] + "/0/pangolin/tmp"
+#     output:
+#         lineages = config["output_path"] + "/0/pangolin/lineage_report.csv"
+#     log:
+#         config["output_path"] + "/logs/0_gisaid_special_pangolin.log"
+#     threads: 40
+#     shell:
+#         """
+#         pangolin {input.fasta} \
+#         --threads {threads} \
+#         --outdir {params.outdir} \
+#         --tempdir {params.tmp} > {log} 2>&1
+#         """
 
 
 rule gisaid_add_pangolin_lineages_to_metadata:
@@ -217,7 +267,8 @@ rule gisaid_add_pangolin_lineages_to_metadata:
           --in-data {input.lineages} \
           --index-column sequence_name \
           --join-on taxon \
-          --new-columns lineage UFbootstrap \
+          --new-columns special_lineage lineage_support \
+          --where-column lineage_support=UFbootstrap special_lineage=lineage \
           --out-metadata {output.metadata} &> {log}
         """
 
@@ -261,7 +312,7 @@ rule gisaid_mask_2:
         datafunk mask \
           --input-fasta {input.fasta} \
           --output-fasta {output.fasta} \
-          --mask-file {input.mask}
+          --mask-file \"{input.mask}\"
 
         cp {output.fasta} {output.published_fasta}
         """
@@ -289,24 +340,6 @@ rule gisaid_distance_QC:
 
 # possible adding lineage step here
 
-rule gisaid_counts_by_country:
-    input:
-        metadata = rules.gisaid_combine_previous_and_new.output.metadata
-    output:
-        counts = config["output_path"] + "/0/gisaid_counts_by_country.csv",
-        published_counts = config["publish_path"] + "/GISAID/gisaid_counts_by_country.csv"
-    log:
-        config["output_path"] + "/logs/0_gisaid_counts_by_country.log"
-    shell:
-        """
-        fastafunk count \
-          --in-metadata {input.metadata} \
-          --group-column edin_admin_0 \
-          --log-file {output.counts} &> {log}
-
-        cp {output.counts} {output.published_counts}
-        """
-
 
 rule gisaid_output_gisaid:
     input:
@@ -328,7 +361,7 @@ rule gisaid_output_gisaid:
           --filter-column sequence_name sample_date epi_week \
                           country adm1 adm2 outer_postcode \
                           is_surveillance is_community is_hcw \
-                          is_travel_history travel_history lineage \
+                          is_travel_history travel_history special_lineage \
                           lineage_support uk_lineage \
           --where-column uk_omit=is_uk sample_date=covv_collection_date epi_week=edin_epi_week \
                          country=edin_admin_0 travel_history=edin_travel lineage_support=ufbootstrap \
@@ -349,7 +382,7 @@ rule summarize_preprocess_gisaid:
         new_fasta = rules.gisaid_extract_new.output.fasta,
         removed_short_fasta = rules.gisaid_filter_1.output,
         removed_low_covg_fasta = rules.gisaid_filter_2.output.fasta,
-
+        new_fasta_masked = rules.gisaid_mask_1.output.fasta,
         full_fasta = rules.gisaid_mask_2.output.fasta,
         full_metadata = rules.gisaid_combine_previous_and_new.output.metadata,
         matched_fasta = rules.gisaid_output_gisaid.output.fasta,
@@ -361,25 +394,25 @@ rule summarize_preprocess_gisaid:
         config["output_path"] + "/logs/0_summarize_preprocess_gisaid.log"
     shell:
         """
-        printf "Number of sequences in latest GISAID download: $(cat {input.latest_fasta} | grep ">" | wc -l)\n" >> {log}
-        printf "Number of sequence after deduplicating: $(cat {input.deduplicated_fasta} | grep ">" | wc -l)\n" >> {log}
-        printf "Number of sequences after matching headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)\n" >> {log}
-        printf "Number of new sequences: $(cat {input.new_fasta} | grep ">" | wc -l)\n" >> {log}
-        printf "Number of sequences after removing sequences <29000bps and with <95%% coverage: $(cat {input.removed_short_fasta} | grep ">" | wc -l)\n" >> {log}
-        printf "Number of sequences after mapping and removing those with <95%% coverage remaining: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)\n" >> {log}
-        printf ">\\n\n" >> {log}
-        printf "> Full masked and trimmed GISAID alignment published to {params.prefix}.trimmed_alignment.full.fasta\\n\n" >> {log}
-        printf "> Full GISAID metadata published to {params.prefix}.metadata.full.fasta\\n\n" >> {log}
-        printf ">\\n\n" >> {log}
-        printf "> Matched GISAID fasta and restricted metadata published to {params.prefix}.trimmed_alignment.matched.fasta and {params.prefix}.metadata.matched.csv\\n\n" >> {log}
-        printf "> Number of sequences in matched GISAID files: $(cat {input.matched_fasta} | grep '>' | wc -l)\\n\n" >> {log}
-        printf ">\\n\n" >> {log}
-        printf "> Counts by country published to {params.prefix}_counts_by_country.csv\\n\n" >> {log}
-        printf '{{"text":"\n' > 0_data.json
-        printf "*Step 0: GISAID preprocessing complete*\\n\n" >> 0_data.json
+        echo "Number of sequences in latest GISAID download: $(cat {input.latest_fasta} | grep '>' | wc -l)\\n" >> {log}
+        echo "Number of sequence after deduplicating: $(cat {input.deduplicated_fasta} | grep '>' | wc -l)\\n" >> {log}
+        echo "Number of sequences after matching headers: $(cat {input.unify_headers_fasta} | grep '>' | wc -l)\\n" >> {log}
+        echo "Number of new sequences: $(cat {input.new_fasta} | grep '>' | wc -l)\\n" >> {log}
+        echo "Number of sequences after removing sequences <29000bps and with <95%% coverage: $(cat {input.removed_short_fasta} | grep '>' | wc -l)\\n" >> {log}
+        echo "Number of sequences after mapping and removing those with <95%% coverage remaining: $(cat {input.removed_low_covg_fasta} | grep '>' | wc -l)\\n" >> {log}
+        echo ">\\n" >> {log}
+        echo "> Full masked and trimmed GISAID alignment published to {params.prefix}.trimmed_alignment.full.fasta\\n" >> {log}
+        echo "> Full GISAID metadata published to {params.prefix}.metadata.full.fasta\\n" >> {log}
+        echo ">\\n" >> {log}
+        echo "> Matched GISAID fasta and restricted metadata published to {params.prefix}.trimmed_alignment.matched.fasta and {params.prefix}.metadata.matched.csv\\n" >> {log}
+        echo "> Number of sequences in matched GISAID files: $(cat {input.matched_fasta} | grep '>' | wc -l)\\n" >> {log}
+        echo ">\\n" >> {log}
+        echo "> Counts by country published to {params.prefix}_counts_by_country.csv\\n" >> {log}
+        echo '{{"text":"' > 0_data.json
+        echo "*Step 0: GISAID preprocessing complete*\\n" >> 0_data.json
         cat {log} >> 0_data.json
-        printf '"}}\n' >> 0_data.json
-        printf "webhook {params.webhook}\n"
+        echo '"}}' >> 0_data.json
+        echo 'webhook {params.webhook}'
         curl -X POST -H "Content-type: application/json" -d @0_data.json {params.webhook}
         # rm 0_data.json
         """

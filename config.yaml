@@ -15,12 +15,13 @@ output_path: /cephfs/covid/bham/raccoon-dog/2020-05-01/analysis
 publish_path: /cephfs/covid/bham/raccoon-dog/2020-05-01/publish
 export_path: /cephfs/covid/bham/raccoon-dog/2020-05-01/publish/phylogenetics
 
+
 ##### Filter thresholds #####
 min_covg: 95
 min_length: 29000
 
 ##### Mapping reference #####
-reference_fasta: "/cephfs/covid/bham/climb-covid19-jacksonb/git/grapevine/reference.fasta"
+reference_fasta: ~/git/grapevine/reference.fasta
 
 ##### Trim coordinates #####
 trim_start: 265
