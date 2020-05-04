@@ -203,23 +203,24 @@ rule gisaid_mask_1:
         """
 
 
-# rule gisaid_pangolin:
-#     input:
-#         fasta = rules.gisaid_mask_1.output.fasta
-#     params:
-#         outdir = config["output_path"] + "/0/pangolin"
-#     output:
-#         lineages = config["output_path"] + "/0/pangolin/lineage_report.csv"
-#     log:
-#         config["output_path"] + "/logs/0_gisaid_pangolin.log"
-#     threads: 16
-#     shell:
-#         """
-#         pangolin {input.fasta} \
-#         --threads {threads} \
-#         --tempdir /cephfs/covid/bham/raccoon-dog/tmp_ben \
-#         --outdir {params.outdir} > {log} 2>&1
-#         """
+rule gisaid_pangolin:
+    input:
+        fasta = rules.gisaid_mask_1.output.fasta
+    params:
+        outdir = config["output_path"] + "/0/pangolin",
+        tmpdir = config["output_path"] + "/0/pangolin/tmp"
+    output:
+        lineages = protected(lineages = config["output_path"] + "/0/pangolin/lineage_report.csv")
+    log:
+        config["output_path"] + "/logs/0_gisaid_pangolin.log"
+    threads: 40
+    shell:
+        """
+        pangolin {input.fasta} \
+        --threads {threads} \
+        --tempdir {params.tmp} \
+        --outdir {params.outdir} > {log} 2>&1
+        """
 
 
 # rule update_pangolin_lineages:
@@ -254,7 +255,7 @@ rule gisaid_mask_1:
 rule gisaid_add_pangolin_lineages_to_metadata:
     input:
         metadata = rules.gisaid_unify_headers.output.metadata,
-        lineages = "/cephfs/covid/bham/raccoon-dog/2020-05-01/analysis/0/pangolin/lineage_report.csv"
+        lineages = rules.gisaid_pangolin.output.lineages
     output:
         metadata = config["output_path"] + "/0/gisaid.RD.new.UH.filt.mapped.filt2.lineages.csv"
     log:
