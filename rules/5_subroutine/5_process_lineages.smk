@@ -113,7 +113,6 @@ def aggregate_input_csv(wildcards):
     lineage = wildcards.lineage
     required_files = expand( "%s/5/%s/phylotyped_trees/uk_lineage_UK{i}.csv" %(config["output_path"],lineage),
                             i=glob_wildcards(os.path.join(checkpoint_output_directory, "uk_lineage_UK{i}.tree")).i)
-
     return (required_files)
 
 

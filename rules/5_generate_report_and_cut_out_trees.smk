@@ -113,7 +113,7 @@ rule generate_report:
         cwd = config["cwd"]
     output:
         report = "UK_" + config["date"] + ".pdf"
-   log:
+    log:
         config["output_path"] + "/logs/5_generate_report.log"
     shell:
         """
