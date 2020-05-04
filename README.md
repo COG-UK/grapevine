@@ -1,6 +1,13 @@
 # grapevine
 snakemake pipelines to run all the funky funcs
 
+## Install
+```
+git clone https://github.com/cov-ert/grapevine.git
+conda install -f environment.yml
+conda activate grapevine
+```
+
 ## The pipeline
 
 1) Import CoG-UK consensus fasta file
