@@ -1,5 +1,6 @@
 output_path: analysis
+publish_path: publish
 lineages:
 lineage_specific_outgroups:
 metadata:
-publish_path: publish
+guide_tree:

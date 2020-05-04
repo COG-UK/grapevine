@@ -1,8 +1,8 @@
 rule split_based_on_lineages:
     input:
         previous_stage = config["output_path"] + "/logs/3_summarize_combine_gisaid_and_cog.log",
-        fasta = rules.combine_gisaid_and_cog.output.fasta,
-        metadata = rules.combine_gisaid_and_cog.output.metadata,
+        fasta = config["output_path"] + "/3/cog_gisaid.fasta",
+        metadata = config["output_path"] + "/3/cog_gisaid.csv",
         lineage = config["lineage_splits"]
     params:
         prefix = config["output_path"] + "/4/lineage_",
@@ -13,12 +13,12 @@ rule split_based_on_lineages:
         config["output_path"] + "/logs/4_split_based_on_lineages.log"
     shell:
         """
-        lineages=$(cat {input.lineage} | cut -f1 --delim "," | tr '\\n' '  ')
+        lineages=$(cat {input.lineage} | cut -f1 -d "," | tr '\\n' '  ')
         fastafunk split \
           --in-fasta {input.fasta} \
           --in-metadata {input.metadata} \
           --index-column sequence_name \
-          --index-field lineage \
+          --index-field special_lineage \
           --lineage $lineages \
           --out-folder {params.prefix} &> {log}
 
@@ -42,27 +42,31 @@ rule split_based_on_lineages:
         touch {output}
         """
 
-rule run_subroutine_on_lineages:
+rule run_4_subroutine_on_lineages:
     input:
         split_done = rules.split_based_on_lineages.output,
-        metadata = rules.combine_gisaid_and_cog.output.metadata,
+        metadata = config["output_path"] + "/3/cog_gisaid.csv",
         lineage = config["lineage_splits"]
     params:
         path_to_script = workflow.current_basedir,
         output_path = config["output_path"],
         publish_path = config["publish_path"],
+        export_path = config["export_path"],
+        date = config["date"],
+        guide_tree = config["guide_tree"],
         prefix = config["output_path"] + "/4/lineage_"
     output:
-        config["output_path"] + "/4/trees_done"
+        traits = config["output_path"] + "/4/all_traits.csv",
+        tree = config["output_path"] + "/4/cog_gisaid_full.tree"
     log:
-        config["output_path"] + "/logs/4_run_subroutine_on_lineages.log"
+        config["output_path"] + "/logs/4_run_4_subroutine_on_lineages.log"
     threads: 16
     shell:
         """
         lineages=$(cat {input.lineage} | cut -f1 -d"," | tr '\\n' '  ')
         outgroups=$(cat {input.lineage} | cut -f2 -d"," | tr '\\n' '  ')
         snakemake --nolock \
-          --snakefile {params.path_to_script}/4_subroutine/process_lineages.smk \
+          --snakefile {params.path_to_script}/4_subroutine/4_process_lineages.smk \
           --cores {threads} \
           --configfile {params.path_to_script}/4_subroutine/config.yaml \
           --config \
@@ -70,15 +74,18 @@ rule run_subroutine_on_lineages:
           publish_path={params.publish_path} \
           lineages="$lineages" \
           lineage_specific_outgroups="$outgroups" \
+          guide_tree="{params.guide_tree}" \
           metadata={input.metadata} &> {log}
-
-        touch {output}
         """
 
 rule summarize_make_trees:
     input:
-        lineage = config["lineage_splits"],
-        trees_done = rules.run_subroutine_on_lineages.output,
+        traits = rules.run_4_subroutine_on_lineages.output.traits,
+        tree = rules.run_4_subroutine_on_lineages.output.tree
+    output:
+        published_tree = config["publish_path"] + "/COG_GISAID/cog_gisaid_full.tree",
+        exported_tree1 = config["export_path"] + "/public/cog_global_%s_tree.newick",
+        exported_tree2 = config["export_path"] + "/trees/cog_global_%s_tree.newick"
     params:
         webhook = config["webhook"],
         outdir = config["publish_path"] + "/COG_GISAID",
@@ -86,10 +93,17 @@ rule summarize_make_trees:
         config["output_path"] + "/logs/4_summarize_make_trees.log"
     shell:
         """
-        echo "> Trees have been published in {params.outdir}\\n" >> {log}
+        echo "> Lineage trees have been published in _{params.outdir}_\\n" >> {log}
+        echo ">\\n" >> {log}
+
+        cp {input.tree} {output.published_tree}
+        cp {input.tree} {output.exported_tree1}
+        cp {input.tree} {output.exported_tree2}
+        echo "> Full GRAFT tree has been published in _{output.published_tree}_\\n" >> {log}
+        echo "> and _{output.exported_tree1}_ and _{output.exported_tree2}_\\n" >> {log}
 
         echo '{{"text":"' > 4b_data.json
-        echo "*Step 4: Construct and annotate trees completed*\\n" >> 4_data.json
+        echo "*Step 4: Construct and annotate lineage trees completed*\\n" >> 4_data.json
         cat {log} >> 4b_data.json
         echo '"}}' >> 4b_data.json
         echo "webhook {params.webhook}"
