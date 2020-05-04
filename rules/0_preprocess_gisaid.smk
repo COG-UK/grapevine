@@ -279,9 +279,8 @@ rule gisaid_combine_previous_and_new:
         new_fasta = rules.gisaid_mask_1.output.fasta,
         new_metadata = rules.gisaid_add_pangolin_lineages_to_metadata.output.metadata
     output:
-        fasta = config["output_path"] + "/0/gisaid.full.fasta",
-        metadata = config["output_path"] + "/0/gisaid.full.csv",
-        published_metadata = config["publish_path"] + "/GISAID/gisaid.metadata.full.csv"
+        fasta = config["output_path"] + "/0/gisaid.combined.fasta",
+        metadata = config["output_path"] + "/0/gisaid.combined.csv"
     params:
         outdir = config["publish_path"] + "/GISAID"
     log:
@@ -295,8 +294,38 @@ rule gisaid_combine_previous_and_new:
           --out-metadata {output.metadata} \
           --index-column sequence_name \
           --log-file {log}
+        """
 
-        cp {output.metadata} {output.published_metadata}
+
+rule gisaid_update_metadata_lineages:
+    input:
+        metadata = rules.gisaid_combine_previous_and_new.output.metadata
+    output:
+        metadata = config["output_path"] + "/0/gisaid.combined.updated.csv",
+    log:
+        config["output_path"] + "/logs/0_gisaid_update_metadata_lineages.log"
+    run:
+        df = pd.read_csv(input.metadata)
+        lineages = []
+        for i,row in df.iterrows():
+            if row['special_lineage']:
+                lineages.append(str(row['special_lineage']).replace(".X","").replace(".Y",""))
+            else:
+                lineages.append(row['lineage'])
+        df['lineage'] = lineages
+        df.to_csv(output.metadata, index=False)
+
+
+rule gisaid_publish_full_metadata:
+    input:
+        metadata = rules.gisaid_update_metadata_lineages.output.metadata
+    output:
+        published_metadata = config["publish_path"] + "/GISAID/gisaid.metadata.full.csv"
+    log:
+        config["output_path"] + "/logs/0_gisaid_publish_full_metadata.log"
+    shell:
+        """
+        cp {input.metadata} {output.published_metadata} 2> {log}
         """
 
 
@@ -306,22 +335,34 @@ rule gisaid_mask_2:
         mask = config["gisaid_mask_file"]
     output:
         fasta = config["output_path"] + "/0/gisaid.full.masked.fasta",
-        published_fasta = config["publish_path"] + "/GISAID/gisaid.trimmed_alignment.full.fasta"
+    log:
+        config["output_path"] + "/logs/0_gisaid_mask_2.log"
     shell:
         """
         datafunk mask \
           --input-fasta {input.fasta} \
           --output-fasta {output.fasta} \
-          --mask-file \"{input.mask}\"
+          --mask-file \"{input.mask}\" 2> {log}
+        """
 
-        cp {output.fasta} {output.published_fasta}
+
+rule gisaid_publish_full_alignment:
+    input:
+        fasta = rules.gisaid_mask_2.output.fasta
+    output:
+        published_fasta = config["publish_path"] + "/GISAID/gisaid.trimmed_alignment.full.fasta"
+    log:
+        config["output_path"] + "/logs/0_gisaid_publish_full_alignment.log"
+    shell:
+        """
+        cp {input.fasta} {output.published_fasta} 2> {log}
         """
 
 
 rule gisaid_distance_QC:
     input:
         fasta = rules.gisaid_mask_2.output.fasta,
-        metadata = rules.gisaid_combine_previous_and_new.output.metadata
+        metadata = rules.gisaid_update_metadata_lineages.output.metadata
     log:
         config["output_path"] + "/logs/0_gisaid_distance_QC.log"
     output:
@@ -338,13 +379,11 @@ rule gisaid_distance_QC:
         mv distances.png {output.plot}
         """
 
-# possible adding lineage step here
-
 
 rule gisaid_output_gisaid:
     input:
         fasta = rules.gisaid_mask_2.output.fasta,
-        metadata = rules.gisaid_combine_previous_and_new.output.metadata
+        metadata = rules.gisaid_update_metadata_lineages.output.metadata
     output:
         fasta = config["output_path"] + "/0/gisaid.matched.fasta",
         metadata = config["output_path"] + "/0/gisaid.matched.csv",
@@ -362,9 +401,9 @@ rule gisaid_output_gisaid:
                           country adm1 adm2 outer_postcode \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history special_lineage \
-                          lineage_support uk_lineage \
+                          lineage_support uk_lineage lineage \
           --where-column uk_omit=is_uk sample_date=covv_collection_date epi_week=edin_epi_week \
-                         country=edin_admin_0 travel_history=edin_travel lineage_support=ufbootstrap \
+                         country=edin_admin_0 travel_history=edin_travel \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --log-file {log} \
@@ -384,7 +423,7 @@ rule summarize_preprocess_gisaid:
         removed_low_covg_fasta = rules.gisaid_filter_2.output.fasta,
         new_fasta_masked = rules.gisaid_mask_1.output.fasta,
         full_fasta = rules.gisaid_mask_2.output.fasta,
-        full_metadata = rules.gisaid_combine_previous_and_new.output.metadata,
+        full_metadata = rules.gisaid_update_metadata_lineages.output.metadata,
         matched_fasta = rules.gisaid_output_gisaid.output.fasta,
         matched_metadata = rules.gisaid_output_gisaid.output.metadata,
     params:
