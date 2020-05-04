@@ -55,29 +55,6 @@ rule iq_tree:
         fi
         """
 
-rule phylotype_tree:
-    input:
-        tree = rules.iq_tree.output.tree
-    output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.phylotyped.tree"
-    params:
-        lineage="{lineage}",
-        collapse=5E-6,
-        threshold=2E-5,
-    log:
-        config["output_path"] + "/logs/4_phylotype_{lineage}.log"
-    shell:
-        """
-        clusterfunk phylotype \
-        --format newick \
-        --collapse_to_polytomies {params.collapse} \
-        --threshold {params.threshold} \
-        --prefix {params.lineage}_1 \
-        --input {input.tree} \
-        --output {output.tree} &> {log}
-        """
-
-
 rule annotate_tree:
     input:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.tree",
@@ -175,7 +152,7 @@ rule push_lineage_to_tips:
         """
         clusterfunk push_annotations_to_tips \
           --traits uk_lineage \
-          --stop-where-trait country_uk_maxtran=False \
+          --stop-where-trait country_uk_acctran=False \
           --input {input.tree} \
           --output {output.tree} &> {log}
         """
