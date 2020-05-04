@@ -107,18 +107,16 @@ rule generate_report:
     input:
         metadata = rules.run_5_subroutine_on_lineages.output.metadata
     params:
-        path_to_script = workflow.current_basedir + "/../Reports/UK_full_report",
-        name_stem = config["output_path"] + "/5/UK_" + config["date"],
+        name_stem = "UK_" + config["date"],
         date = config["date"],
-        outdir = config["output_path"] + "/5"
+        outdir = config["output_path"] + "/5/"
     output:
         report = "UK_" + config["date"] + ".pdf"
     log:
         config["output_path"] + "/logs/5_generate_report.log"
     shell:
         """
-        python3 {params.path_to_script}/run_report.py --m {input.metadata} --w {params.date} --s {params.name_stem} --od {params.outdir}/ &> {log}
-        sh {params.path_to_script}/call_pandoc.sh {params.name_stem}.md {params.path_to_script}/utils/latex_template.latex {params.name_stem}.pdf &>> {log}
+        generate_report --m {input.metadata} --w {params.date} --s {params.name_stem} --od {params.outdir} &> {log}
         """
 
 rule summarize_generate_report_and_cut_out_trees:
