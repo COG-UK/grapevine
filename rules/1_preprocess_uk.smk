@@ -134,7 +134,7 @@ rule uk_remove_insertions_and_trim_and_pad:
         trim_end = config["trim_end"],
         insertions = config["output_path"] + "/1/uk_insertions.txt"
     output:
-        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.length_fitered.trimmed_alignment.fasta"
+        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.length_fitered_alignment.trimmed.fasta"
     log:
         config["output_path"] + "/logs/1_uk_remove_insertions_and_trim_and_pad.log"
     shell:
@@ -172,7 +172,7 @@ rule uk_full_untrimmed_alignment:
         reference = config["reference_fasta"],
         omit_list = rules.uk_filter_low_coverage_sequences.log
     output:
-        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.length_fitered.full_alignment.fasta"
+        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.length_fitered_alignment.full.fasta"
     log:
         config["output_path"] + "/logs/1_uk_full_untrimmed_alignment.log"
     shell:
@@ -201,7 +201,9 @@ rule summarize_preprocess_uk:
     params:
         webhook = config["webhook"],
         outdir = config["publish_path"] + "/COG",
-        prefix = config["publish_path"] + "/COG/cog"
+        prefix = config["publish_path"] + "/COG/cog",
+        export_dir = config["export_path"] + "/alignments",
+        export_prefix = config["export_path"] + "/alignments/cog_" + config["date"]
     log:
         config["output_path"] + "/logs/1_summarize_preprocess_uk.log"
     shell:
@@ -211,12 +213,17 @@ rule summarize_preprocess_uk:
         echo "> Number of sequences after deduplication: $(cat {input.deduplicated_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after removing sequences <29000bps: $(cat {input.removed_short_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after trimming and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)\\n" &>> {log}
+        echo ">\\n" >> {log}
 
         mkdir -p {params.outdir}
-        cp {input.full_alignment} {params.prefix}.full_alignment.fasta
-        echo "> Full untrimmed COG alignment published to {params.prefix}.full_alignment.fasta\\n" >> {log}
-        cp {input.removed_low_covg_fasta} {params.prefix}.trimmed_alignment.fasta
-        echo "> Trimmed COG alignment published to {params.prefix}.trimmed_alignment.fasta\\n" >> {log}
+        mkdir -p {params.export_dir}
+        cp {input.full_alignment} {params.prefix}_alignment.full.fasta
+        cp {input.full_alignment} {params.export_prefix}_alignment.full.fasta
+        echo "> Full untrimmed COG alignment published to _{params.prefix}_alignment.full.fasta_\\n" >> {log}
+        echo "> and to _{params.export_prefix}_alignment.full.fasta_\\n" >> {log}
+        echo ">\\n" >> {log}
+        cp {input.removed_low_covg_fasta} {params.prefix}_alignment.trimmed.fasta
+        echo "> Trimmed COG alignment published to _{params.prefix}_alignment.trimmed.fasta_\\n" >> {log}
 
         echo '{{"text":"' > 1_data.json
         echo "*Step 1: COG-UK preprocessing complete*\\n" >> 1_data.json
