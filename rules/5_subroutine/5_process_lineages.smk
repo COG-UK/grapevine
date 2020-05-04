@@ -142,7 +142,7 @@ rule combine_lineage_csv:
 
 rule merge_with_metadata:
     input:
-        metadata = rules.update_metadata.output.all_metadata,
+        metadata = config["metadata"],
         traits = rules.combine_lineage_csv.output.phylotype_csv
     output:
         metadata = config["output_path"] + "/5/cog_gisaid.with_all_traits.with_phylotype_traits.csv"
