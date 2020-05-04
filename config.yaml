@@ -1,26 +1,26 @@
 ##### Where is the data? #####
-previous_gisaid_fasta: /cephfs/covid/bham/raccoon-dog/previous/GISAID/gisaid.fasta
-previous_gisaid_metadata: /cephfs/covid/bham/raccoon-dog/previous/GISAID/gisaid.csv
+previous_gisaid_fasta: /cephfs/covid/bham/raccoon-dog/2020-04-24_rerun/publish/GISAID/gisaid.full.2020-04-24.fasta
+previous_gisaid_metadata: /cephfs/covid/bham/raccoon-dog/2020-04-24_rerun/publish/GISAID/gisaid.full.2020-04-24.with_spangolin123.csv
 previous_omitted_file: /cephfs/covid/bham/raccoon-dog/resources/omissions.txt
-gisaid_mask_file: /cephfs/covid/bham/raccoon-dog/resources/GISAID_mask.txt
+gisaid_mask_file: /cephfs/covid/bham/raccoon-dog/resources/mask.txt
 
-previous_uk_fasta: /cephfs/covid/bham/raccoon-dog/previous/COG/cog.fasta
-previous_uk_metadata: /cephfs/covid/bham/raccoon-dog/previous/COG/cog.csv
+previous_uk_fasta: /cephfs/covid/bham/raccoon-dog/2020-04-24_rerun/publish/COG/cog_alignment.public.fasta
+previous_uk_metadata: /cephfs/covid/bham/raccoon-dog/2020-04-24_rerun/publish/COG/cog_metadata.full.with_spangolin123.csv
 
-latest_gisaid_json: input/export.json
-latest_uk_fasta: /cephfs/covid/bham/artifacts/published/elan.latest.consensus.fasta
-latest_uk_metadata: /cephfs/covid/bham/artifacts/published/majora.latest.metadata.tsv
+latest_gisaid_json: /cephfs/covid/bham/raccoon-dog/2020-05-01/input/export.json
+latest_uk_fasta: /cephfs/covid/bham/raccoon-dog/2020-05-01/input/elan.20200501.consensus.fasta
+latest_uk_metadata: /cephfs/covid/bham/artifacts/published/latest/majora.20200501.metadata.tsv
 
-output_path: analysis
-publish_path: publish
-export_path: publish/phylogenetics
+output_path: /cephfs/covid/bham/raccoon-dog/2020-05-01/analysis
+publish_path: /cephfs/covid/bham/raccoon-dog/2020-05-01/publish
+export_path: /cephfs/covid/bham/raccoon-dog/2020-05-01/publish/phylogenetics
 
 ##### Filter thresholds #####
 min_covg: 95
 min_length: 29000
 
 ##### Mapping reference #####
-reference_fasta: "reference.fasta"
+reference_fasta: "/cephfs/covid/bham/climb-covid19-jacksonb/git/grapevine/reference.fasta"
 
 ##### Trim coordinates #####
 trim_start: 265
@@ -30,10 +30,10 @@ trim_end: 29674
 snps: /cephfs/covid/bham/raccoon-dog/resources/snps.csv
 
 ##### File of lineages to split by #####
-lineage_splits: input/lineage_splits.csv
+lineage_splits: /cephfs/covid/bham/raccoon-dog/2020-05-01/input/lineage_splits.csv
 
 ##### Guide tree #####
-guide_tree: /cephfs/covid/bham/raccoon-dog/resources/guide.tree
+guide_tree: /cephfs/covid/bham/raccoon-dog/2020-05-01/input/lineage_representatives.tree
 
 ##### Date #####
 date:

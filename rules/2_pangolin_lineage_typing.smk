@@ -1,4 +1,5 @@
 import pandas as pd
+import sys
 
 rule uk_extract_new:
     input:
@@ -35,23 +36,23 @@ rule uk_pangolin:
         fasta = rules.uk_extract_new.output.fasta,
         pangolin_updated = rules.update_pangolin_lineages.log
     params:
-        outdir = config["output_path"] + "/2/pangolin"
-    output:
-        lineages = config["output_path"] + "/2/pangolin/lineage_report.csv",
+        outdir = config["output_path"] + "/2/pangolin",
         tmpdir = config["output_path"] + "/2/pangolin/tmp"
+    output:
+        lineages = protected(config["output_path"] + "/2/pangolin/lineage_report.csv")
     log:
         config["output_path"] + "/logs/2_uk_pangolin.log"
     threads: 40
     shell:
         """
-        pangolin --lineages-version >> {log}
-        pangolin --version >> {log}
-
         pangolin {input.fasta} \
         --threads {threads} \
         --outdir {params.outdir} \
-        --tempdir {output.tmpdir}  >> {log} 2>&1
+        --tempdir {params.tmpdir}  >> {log} 2>&1
         """
+
+        # pangolin --lineages-version >> {log}
+        # pangolin --version >> {log}
 
 rule uk_add_previous_uk_lineages_to_metadata:
     input:
@@ -104,23 +105,22 @@ rule uk_add_pangolin_lineages_to_metadata:
 
 rule uk_update_metadata_lineages:
     input:
-        metadata = rules.uk_add_pangolin_lineages_to_metadata.output.metadata,
+        metadata = rules.uk_add_pangolin_lineages_to_metadata.output.metadata
     output:
         metadata = config["output_path"] + "/2/uk.with_new_lineages.special.csv",
     log:
         config["output_path"] + "/logs/2_uk_update_metadata_lineages.log"
     run:
-        """
-        df = pd.read_csv({input.metadata})
+        df = pd.read_csv(input.metadata)
         lineages = []
         for i,row in df.iterrows():
             if row['special_lineage']:
-                lineages.append(row['special_lineage'].replace(".X","").replace(".Y","")
+                lineages.append(str(row['special_lineage']).replace(".X","").replace(".Y",""))
             else:
                 lineages.append(row['lineage'])
         df['lineage'] = lineages
-        df.to_csv({output.metadata}, index=False)
-        """
+        df.to_csv(output.metadata, index=False)
+
 
 rule uk_output_cog:
     input:
