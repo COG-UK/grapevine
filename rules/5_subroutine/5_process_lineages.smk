@@ -16,7 +16,7 @@ print("lineages", LINEAGES)
 
 rule all:
     input:
-         config["output_path"] +"/5/traits.csv"
+         config["output_path"] + "/5/cog_gisaid.with_all_traits.with_phylotype_traits.csv"
 
 rule annotate_tree:
     input:
@@ -143,11 +143,19 @@ rule combine_lineage_csv:
 
 rule merge_with_metadata:
     input:
-        rules.combine_lineage_csv.output.phylotype_csv
+        metadata = rules.update_metadata.output.all_metadata,
+        traits = rules.combine_lineage_csv.output.phylotype_csv
     output:
-         config["output_path"] +"/5/traits.csv"
+        metadata = config["output_path"] + "/5/cog_gisaid.with_all_traits.with_phylotype_traits.csv"
+    log:
+        config["output_path"] + "/logs/5_merge_with_metadata.log"
     shell:
-         """
-         echo "We still need to implement this to merge the UK phylotypes into the metatdata csv"
-         touch {output}
-         """
+        """
+        fastafunk add_columns \
+          --in-metadata {input.metadata} \
+          --in-data {input.traits} \
+          --index-column sequence_name \
+          --join-on taxon \
+          --new-columns phylotype \
+          --out-metadata {output.metadata} &> {log} ;
+        """

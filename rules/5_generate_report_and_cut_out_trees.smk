@@ -1,3 +1,5 @@
+import os
+
 rule merge_and_create_new_uk_lineages:
     input:
         config["output_path"] + "/4/all_traits.csv"
@@ -43,9 +45,37 @@ rule update_metadata:
           --out-metadata {output.all_metadata} &> {log}
         """
 
-rule publish_metadata:
+rule run_5_subroutine_on_lineages:
     input:
         metadata = rules.update_metadata.output.all_metadata,
+        lineage = config["lineage_splits"]
+    params:
+        path_to_script = workflow.current_basedir,
+        output_path = config["output_path"],
+        publish_path = config["publish_path"],
+        prefix = config["output_path"] + "/5/lineage_"
+    output:
+        metadata = config["output_path"] + "/5/cog_gisaid.with_all_traits.with_phylotype_traits.csv"
+    log:
+        config["output_path"] + "/logs/5_run_5_subroutine_on_lineages.log"
+    threads: 40
+    shell:
+        """
+        lineages=$(cat {input.lineage} | cut -f1 -d"," | tr '\\n' '  ')
+        snakemake --nolock \
+          --snakefile {params.path_to_script}/5_subroutine/5_process_lineages.smk \
+          --cores {threads} \
+          --configfile {params.path_to_script}/5_subroutine/config.yaml \
+          --config \
+          output_path={params.output_path} \
+          publish_path={params.publish_path} \
+          lineages="$lineages" \
+          metadata={input.metadata} &> {log}
+        """
+
+rule publish_metadata:
+    input:
+        metadata = rules.run_5_subroutine_on_lineages.output.metadata,
     params:
         outdir = config["publish_path"] + "/COG_GISAID",
         prefix = config["publish_path"] + "/COG_GISAID/cog_gisaid",
@@ -74,55 +104,27 @@ rule publish_metadata:
         #rm 5a_data.json
         """
 
-rule run_5_subroutine_on_lineages:
-    input:
-        metadata = rules.update_metadata.output.all_metadata,
-        published = rules.publish_metadata.log,
-        lineage = config["lineage_splits"]
-    params:
-        path_to_script = workflow.current_basedir,
-        output_path = config["output_path"],
-        publish_path = config["publish_path"],
-        prefix = config["output_path"] + "/5/lineage_"
-    output:
-        config["output_path"] + "/5/trees_done"
-    log:
-        config["output_path"] + "/logs/5_run_5_subroutine_on_lineages.log"
-    threads: 40
-    shell:
-        """
-        lineages=$(cat {input.lineage} | cut -f1 -d"," | tr '\\n' '  ')
-        snakemake --nolock \
-          --snakefile {params.path_to_script}/5_subroutine/5_process_lineages.smk \
-          --cores {threads} \
-          --configfile {params.path_to_script}/5_subroutine/config.yaml \
-          --config \
-          output_path={params.output_path} \
-          publish_path={params.publish_path} \
-          lineages="$lineages" \
-          metadata={input.metadata} &> {log}
-
-        touch {output}
-        """
 
 rule generate_report:
     input:
-        metadata = rules.update_metadata.output.all_metadata
+        metadata = rules.run_5_subroutine_on_lineages.output.metadata
     params:
         path_to_script = workflow.current_basedir + "/../Reports/UK_full_report",
         name_stem = "UK_" + config["date"],
-        date = config["date"]
+        date = config["date"],
+        cwd = os.getcwd()
     output:
         report = "UK_" + config["date"] + ".pdf"
+   log:
+        config["output_path"] + "/logs/5_generate_report.log"
     shell:
         """
-        python3 {params.path_to_script}/run_report.py --m {input.metadata} --w {params.date} --s {params.name_stem}
-        sh {params.path_to_script}/call_pandoc.sh {params.name_stem}.md {params.name_stem}.pdf
+        python3 {params.path_to_script}/run_report.py --m {input.metadata} --w {params.date} --s {params.name_stem} --od {params.cwd} &> {log}
+        sh {params.path_to_script}/call_pandoc.sh {params.name_stem}.md {params.path_to_script}/utils/latex_template.latex {params.name_stem}.pdf &>> {log}
         """
 
 rule summarize_generate_report_and_cut_out_trees:
     input:
-        trees_done = rules.run_5_subroutine_on_lineages.output,
         report = rules.generate_report.output.report
     params:
         webhook = config["webhook"],

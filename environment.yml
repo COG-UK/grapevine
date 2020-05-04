@@ -12,6 +12,9 @@ dependencies:
   - pip=19.3.1
   - python=3.6
   - snakemake-minimal=5.13
+  - pweave
+  - pandoc
+  - texlive-core
   - pip:
     - git+https://github.com/cov-ert/datafunk.git
     - git+https://github.com/cov-ert/fastafunk.git
