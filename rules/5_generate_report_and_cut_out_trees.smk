@@ -110,7 +110,7 @@ rule generate_report:
         path_to_script = workflow.current_basedir + "/../Reports/UK_full_report",
         name_stem = "UK_" + config["date"],
         date = config["date"],
-        outdir = config["output_path"] + "/5/"
+        outdir = config["output_path"] + "/5"
     output:
         report = "UK_" + config["date"] + ".pdf"
     log:
