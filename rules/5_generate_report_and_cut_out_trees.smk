@@ -1,5 +1,3 @@
-import os
-
 rule merge_and_create_new_uk_lineages:
     input:
         config["output_path"] + "/4/all_traits.csv"
@@ -112,7 +110,7 @@ rule generate_report:
         path_to_script = workflow.current_basedir + "/../Reports/UK_full_report",
         name_stem = "UK_" + config["date"],
         date = config["date"],
-        cwd = os.getcwd()
+        cwd = config["cwd"]
     output:
         report = "UK_" + config["date"] + ".pdf"
    log:

@@ -39,5 +39,8 @@ guide_tree: /cephfs/covid/bham/raccoon-dog/2020-05-01/input/lineage_representati
 ##### Date #####
 date:
 
+##### Working directory #####
+cwd:
+
 ##### Webhook to push to #####
 webhook:

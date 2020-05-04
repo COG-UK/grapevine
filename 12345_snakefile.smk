@@ -15,9 +15,11 @@ if config.get("export_path"):
     config["export_path"] = config["export_path"].rstrip('/')
 config["export_path"] = os.path.abspath(config["export_path"])
 
+if not config.get("cwd"):
+    config["cwd"] = os.getcwd()
+
 if not config.get("date"):
-    cwd = os.getcwd()
-    config["date"] = os.path.basename(cwd)[:10]
+    config["date"] = os.path.basename(config["cwd"])[:10]
 
 ##### Target rules #####
 
