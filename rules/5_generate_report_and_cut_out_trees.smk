@@ -108,7 +108,7 @@ rule generate_report:
         metadata = rules.run_5_subroutine_on_lineages.output.metadata
     params:
         path_to_script = workflow.current_basedir + "/../Reports/UK_full_report",
-        name_stem = "UK_" + config["date"],
+        name_stem = config["output_path"] + "/5/UK_" + config["date"],
         date = config["date"],
         outdir = config["output_path"] + "/5"
     output:
