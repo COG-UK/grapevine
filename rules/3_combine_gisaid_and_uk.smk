@@ -32,9 +32,10 @@ rule run_snp_finder:
         config["output_path"] + "/logs/3_run_snp_finder.log"
     shell:
         """
-        snp_finder.py -a {input.fasta} -o {output.found} --snp-csv {input.snps} &> {log}
+        datafunk snp_finder -a {input.fasta} -o {output.found} --snp-csv {input.snps} &> {log}
         cp {output.found} {output.published}
         """
+
 
 rule summarize_combine_gisaid_and_cog:
     input:
