@@ -251,7 +251,7 @@ rule graft:
     input:
          # not sure how to pass this as a space separated list below. Also assuming the order here matches lineages
         trees = expand(config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.uk_lineages.acc_labelled.del_labelled.max_labelled.tree", lineage=LINEAGES),
-        guide_tree = "/Users/jtmccrone/Desktop/COG/testNewSteps/lineage_representatives.tree" #config["guide_tree"]
+        guide_tree = config["guide_tree"]
     params:
         lineages = LINEAGES,
     output:
@@ -297,4 +297,3 @@ rule combine_traits_files:
         dfs = [pd.read_csv(x) for x in input.list_df]
         result = pd.concat(dfs)
         result.to_csv(output[0], index=False)
-
