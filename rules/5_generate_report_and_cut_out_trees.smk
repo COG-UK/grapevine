@@ -110,12 +110,13 @@ rule generate_report:
         metadata = rules.update_metadata.output.all_metadata
     params:
         path_to_script = workflow.current_basedir + "/../Reports/UK_full_report",
-        name_stem = "UK_" + config["date"]
+        name_stem = "UK_" + config["date"],
+        date = config["date"]
     output:
         report = "UK_" + config["date"] + ".pdf"
     shell:
         """
-        python3 {params.path_to_script}/run_report.py --m {input.metadata} --w "latest_date" --s {params.name_stem}
+        python3 {params.path_to_script}/run_report.py --m {input.metadata} --w {params.date} --s {params.name_stem}
         sh {params.path_to_script}/call_pandoc.sh {params.name_stem}.md {params.name_stem}.pdf
         """
 
