@@ -109,7 +109,7 @@ rule generate_report:
     input:
         metadata = rules.update_metadata.output.all_metadata
     params:
-        path_to_script = workflow.current_basedir + "../Reports/UK_full_report",
+        path_to_script = workflow.current_basedir + "/../Reports/UK_full_report",
         name_stem = "UK_" + config["date"]
     output:
         report = "UK_" + config["date"] + ".pdf"
