@@ -111,12 +111,13 @@ rule generate_report:
         date = config["date"],
         outdir = config["output_path"] + "/5/"
     output:
-        report = "UK_" + config["date"] + ".pdf"
+        report = config["output_path"] + "/5/UK_" + config["date"] + ".md"
     log:
         config["output_path"] + "/logs/5_generate_report.log"
     shell:
         """
         generate_report --m {input.metadata} --w {params.date} --s {params.name_stem} --od {params.outdir} &> {log}
+        mv {params.name_stem}* {params.outdir}
         """
 
 rule summarize_generate_report_and_cut_out_trees:
