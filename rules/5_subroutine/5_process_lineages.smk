@@ -64,8 +64,13 @@ checkpoint cut_out_trees:
           --threads {threads} \
           --output {params.outdir} &> {log}
 
-          echo "Look at all those trees:" >>{log}
-          ls {output}/* >>{log}
+          echo "Look at all those trees:" >> {log}
+          ls {output}/* >> {log}
+          if [ ! -z "$(ls -A {params.outdir})" ]
+          then
+            mkdir -p {params.pubdir}
+            cp {params.outdir}/*.tree {params.pubdir}/
+          fi
         """
 
 rule phylotype_cut_trees:
