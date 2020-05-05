@@ -111,7 +111,9 @@ rule generate_report:
         date = config["date"],
         outdir = config["output_path"] + "/5/"
     output:
-        report = config["output_path"] + "/5/UK_" + config["date"] + ".md"
+        report = config["output_path"] + "/5/UK_" + config["date"] + ".md",
+        figures = config["output_path"] + "/5/figures_" + config["date"],
+        summary = config["output_path"] + "/5/summary_files_" + config["date"]
     log:
         config["output_path"] + "/logs/5_generate_report.log"
     shell:
@@ -122,10 +124,10 @@ rule generate_report:
 
 rule summarize_generate_report_and_cut_out_trees:
     input:
-        report = rules.generate_report.output.report
+        report = rules.generate_report.output
     params:
         webhook = config["webhook"],
-        outdir = config["publish_path"] + "/COG_GISAID/trees",
+        outdir = config["publish_path"] + "/COG_GISAID",
         export_dir1 = config["export_path"] + "/trees/uk_lineages",
         export_dir2 = config["export_path"] + "/reports",
     log:
@@ -135,13 +137,14 @@ rule summarize_generate_report_and_cut_out_trees:
         mkdir -p {params.export_dir1}
         mkdir -p {params.export_dir2}
 
-        if [ ! -z "$(ls -A {params.outdir})" ]
+        if [ ! -z "$(ls -A {params.outdir}/trees)" ]
         then
-          cp {params.outdir}/* {params.export_dir1}/
+          cp {params.outdir}/trees/* {params.export_dir1}/
         fi
-        echo "> UK lineage trees have been published in _{params.outdir}_ and _{params.export_dir1}_\\n" >> {log}
+        echo "> UK lineage trees have been published in _{params.outdir}/trees_ and _{params.export_dir1}_\\n" >> {log}
         echo ">\\n" >> {log}
-        cp {input.report} {params.export_dir2}/
+        cp -r {input.report} {params.outdir}/
+        cp -r {input.report} {params.export_dir2}/
         echo "> COG UK weekly report has been published in _{params.outdir}_ and _{params.export_dir2}_\\n" >> {log}
 
         echo '{{"text":"' > 5b_data.json
