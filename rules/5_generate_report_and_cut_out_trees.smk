@@ -135,7 +135,10 @@ rule summarize_generate_report_and_cut_out_trees:
         mkdir -p {params.export_dir1}
         mkdir -p {params.export_dir2}
 
-        cp {params.outdir}/* {params.export_dir1}
+        if [ ! -z "$(ls -A {params.outdir})" ]
+        then
+          cp {params.outdir}/* {params.export_dir1}/
+        fi
         echo "> UK lineage trees have been published in _{params.outdir}_ and _{params.export_dir1}_\\n" >> {log}
         echo ">\\n" >> {log}
         cp {input.report} {params.export_dir2}/

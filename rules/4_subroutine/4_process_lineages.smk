@@ -184,7 +184,7 @@ rule label_deltran_introductions:
     params:
         lineage = "{lineage}",
         outdir = config["publish_path"] + "/COG_GISAID",
-        prefix = config["publish_path"] + "/COG_GISAID/cog_gisaid_"
+        prefix = config["publish_path"] + "/COG_GISAID/cog_gisaid"
     output:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.uk_lineages.acc_labelled.del_labelled.tree"
     log:
