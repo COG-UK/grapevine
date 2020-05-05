@@ -143,7 +143,7 @@ rule uk_output_cog:
                           is_travel_history travel_history lineage special_lineage \
                           lineage_support uk_lineage \
           --where-column epi_week=edin_epi_week country=adm0 \
-                         sample_date=reception_date sample_date=collection_date \
+                         sample_date=received_date sample_date=collection_date \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --log-file {log} \
@@ -169,7 +169,7 @@ rule uk_output_cog_public:
                           sample_date epi_week lineage \
                           lineage_support \
           --where-column epi_week=edin_epi_week country=adm0 \
-                         sample_date=reception_date sample_date=collection_date \
+                         sample_date=received_date sample_date=collection_date \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --log-file {log} \
