@@ -224,15 +224,18 @@ rule label_maxtran_introductions:
           --output {output.tree} &> {log}
         """
 
+# To make for less writing below. Might not work
+def assemble_all_lineage_tree_paths():
+    trees = expand(config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.uk_lineages.acc_labelled.del_labelled.max_labelled.tree", lineage=sorted(LINEAGES))
+    return trees
+
 rule graft:
     input:
          # not sure how to pass this as a space separated list below. Also assuming the order here matches lineages
-        trees = expand(config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.uk_lineages.acc_labelled.del_labelled.max_labelled.tree", lineage=LINEAGES),
+        scions = expand(config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.uk_lineages.acc_labelled.del_labelled.max_labelled.tree", lineage=sorted(LINEAGES)),
+        guide = "Path/to/AB_guide.tree",
     params:
-        lineages = sorted(LINEAGES)[1:],
-        guide = sorted(input.trees)[0],
-        scions = sorted(input.trees)[1:]
-
+        lineages = sorted(LINEAGES),
     output:
         tree = config["output_path"] + "/4/cog_gisaid_full.tree",
     log:
@@ -240,11 +243,10 @@ rule graft:
     shell:
         """
         clusterfunk graft \
-        --full-graft \
-        --scions {params.scions} \
+        --scions {input.scions} \
         --scion_annotation_name scion_lineage \
         --annotate_scions {params.lineages} \
-        --input {params.guide} \
+        --input {input.guide} \
         --output {output.tree} &> {log}
         """
 
