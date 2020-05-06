@@ -13,13 +13,12 @@ rule split_based_on_lineages:
         config["output_path"] + "/logs/4_split_based_on_lineages.log"
     shell:
         """
-        lineages=$(cat {input.lineage} | cut -f1 -d "," | tr '\\n' '  ')
         fastafunk split \
           --in-fasta {input.fasta} \
           --in-metadata {input.metadata} \
           --index-column sequence_name \
           --index-field special_lineage \
-          --lineage $lineages \
+          --lineage-csv {input.lineage} \
           --out-folder {params.prefix} &> {log}
 
         echo {params.webhook}
@@ -84,8 +83,8 @@ rule summarize_make_trees:
         tree = rules.run_4_subroutine_on_lineages.output.tree
     output:
         published_tree = config["publish_path"] + "/COG_GISAID/cog_gisaid_full.tree",
-        exported_tree1 = config["export_path"] + "/public/cog_global_%s_tree.newick",
-        exported_tree2 = config["export_path"] + "/trees/cog_global_%s_tree.newick"
+        exported_tree1 = config["export_path"] + "/public/cog_global_" + config["date"] + "_tree.newick",
+        exported_tree2 = config["export_path"] + "/trees/cog_global_" + config["date"] + "_tree.newick"
     params:
         webhook = config["webhook"],
         outdir = config["publish_path"] + "/COG_GISAID",
