@@ -228,9 +228,11 @@ rule graft:
     input:
          # not sure how to pass this as a space separated list below. Also assuming the order here matches lineages
         trees = expand(config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.uk_lineages.acc_labelled.del_labelled.max_labelled.tree", lineage=LINEAGES),
-        guide_tree = config["guide_tree"]
     params:
-        lineages = LINEAGES,
+        lineages = sorted(LINEAGES)[1:],
+        guide = sorted(input.trees)[0],
+        scions = sorted(input.trees)[1:]
+
     output:
         tree = config["output_path"] + "/4/cog_gisaid_full.tree",
     log:
@@ -239,10 +241,10 @@ rule graft:
         """
         clusterfunk graft \
         --full-graft \
-        --scions {input.trees} \
+        --scions {params.scions} \
         --scion_annotation_name scion_lineage \
         --annotate_scions {params.lineages} \
-        --input {input.guide_tree} \
+        --input {params.guide} \
         --output {output.tree} &> {log}
         """
 
