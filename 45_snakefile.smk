@@ -1,4 +1,5 @@
-configfile: workflow.current_basedir + "/config.yaml"
+# configfile: workflow.current_basedir + "/config.yaml"
+
 
 import os
 
@@ -18,6 +19,10 @@ config["export_path"] = os.path.abspath(config["export_path"])
 if not config.get("date"):
     cwd = os.getcwd()
     config["date"] = os.path.basename(cwd)[:10]
+
+
+
+>>>>>>> Stashed changes
 
 ##### Target rules #####
 
@@ -47,4 +52,8 @@ rule clean_up:
 
 ##### Modules #####
 include: "rules/4_make_trees.smk"
+<<<<<<< Updated upstream
 include: "rules/5_generate_report_and_cut_out_trees.smk"
+=======
+include: "rules/5_generate_report_and_cut_out_trees.smk"
+>>>>>>> Stashed changes

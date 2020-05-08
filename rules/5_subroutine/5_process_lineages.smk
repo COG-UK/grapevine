@@ -8,7 +8,7 @@ import pandas as pd
 
 config["publish_path"] = os.path.abspath(config["publish_path"])
 
-LINEAGES = config["lineages"].split()
+LINEAGES = config["lineages"].split()[1:]
 
 print("lineages", LINEAGES)
 
@@ -162,4 +162,8 @@ rule merge_with_metadata:
           --join-on taxon \
           --new-columns phylotype \
           --out-metadata {output.metadata} &> {log} ;
+<<<<<<< Updated upstream
         """
+=======
+        """
+>>>>>>> Stashed changes
