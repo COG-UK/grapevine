@@ -161,9 +161,7 @@ rule merge_with_metadata:
           --index-column sequence_name \
           --join-on taxon \
           --new-columns phylotype \
-          --out-metadata {output.metadata} &> {log} ;
-<<<<<<< Updated upstream
+          --out-metadata {output.metadata} &> {log}
         """
-=======
-        """
->>>>>>> Stashed changes
+
+
