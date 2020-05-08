@@ -26,7 +26,6 @@ rule split_based_on_lineages:
         echo '{{"text":"' > 4a_data.json
         echo "*Step 4: Ready for tree building*\\n" >> 4a_data.json
         num_lineages=$(cat {input.lineage} | wc -l)
-        num_lineages=$((num_lineages+1))
         range={{$num_lineages..1}}
         for i in $(eval echo ${{range}})
         do

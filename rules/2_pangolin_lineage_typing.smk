@@ -42,7 +42,7 @@ rule uk_pangolin:
         lineages = protected(config["output_path"] + "/2/pangolin/lineage_report.csv")
     log:
         config["output_path"] + "/logs/2_uk_pangolin.log"
-    threads: 40
+    threads: 16
     shell:
         """
         pangolin {input.fasta} \
@@ -153,7 +153,8 @@ rule uk_output_cog:
 rule uk_output_cog_public:
     input:
         fasta = rules.uk_remove_duplicates.output.fasta,
-        metadata = rules.uk_add_pangolin_lineages_to_metadata.output.metadata
+        metadata = rules.uk_add_pangolin_lineages_to_metadata.output.metadata,
+        omit_list = rules.uk_filter_low_coverage_sequences.log
     output:
         fasta = config["output_path"] + "/2/uk.public.fasta",
         metadata = config["output_path"] + "/2/uk.public.csv"
@@ -174,6 +175,12 @@ rule uk_output_cog_public:
           --out-metadata {output.metadata} \
           --log-file {log} \
           --restrict
+
+        fastafunk remove \
+          --in-fasta {output.fasta} \
+          --in-metadata {input.omit_list} \
+          --out-fasta removed.fa
+        mv removed.fa {output.fasta}
         """
 
 rule summarize_pangolin_lineage_typing:

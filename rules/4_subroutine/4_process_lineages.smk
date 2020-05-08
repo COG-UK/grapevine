@@ -7,8 +7,8 @@ import pandas as pd
 
 config["publish_path"] = os.path.abspath(config["publish_path"])
 
-LINEAGES = config["lineages"].split()
-OUTGROUPS = config["lineage_specific_outgroups"].split()
+LINEAGES = config["lineages"].split()[1:]
+OUTGROUPS = config["lineage_specific_outgroups"].split()[1:]
 
 lineage_to_outgroup_map = {}
 for i,lin in enumerate(LINEAGES):

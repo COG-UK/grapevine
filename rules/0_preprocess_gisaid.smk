@@ -1,3 +1,5 @@
+import pandas as pd
+
 rule gisaid_process_json:
     input:
         json = config["latest_gisaid_json"],
@@ -422,8 +424,8 @@ rule summarize_preprocess_gisaid:
         removed_short_fasta = rules.gisaid_filter_1.output,
         removed_low_covg_fasta = rules.gisaid_filter_2.output.fasta,
         new_fasta_masked = rules.gisaid_mask_1.output.fasta,
-        full_fasta = rules.gisaid_mask_2.output.fasta,
-        full_metadata = rules.gisaid_update_metadata_lineages.output.metadata,
+        full_fasta = rules.gisaid_publish_full_alignment.output.published_fasta,
+        full_metadata = rules.gisaid_publish_full_metadata.output.published_metadata,
         matched_fasta = rules.gisaid_output_gisaid.output.fasta,
         matched_metadata = rules.gisaid_output_gisaid.output.metadata,
     params:
@@ -439,7 +441,7 @@ rule summarize_preprocess_gisaid:
         echo "Number of new sequences: $(cat {input.new_fasta} | grep '>' | wc -l)\\n" >> {log}
         echo "Number of sequences after removing sequences <29000bps and with <95%% coverage: $(cat {input.removed_short_fasta} | grep '>' | wc -l)\\n" >> {log}
         echo "Number of sequences after mapping and removing those with <95%% coverage remaining: $(cat {input.removed_low_covg_fasta} | grep '>' | wc -l)\\n" >> {log}
-        echo ">\\n" >> {log}
+        echo "> \\n" >> {log}
         echo "> Full masked and trimmed GISAID alignment published to {params.prefix}.trimmed_alignment.full.fasta\\n" >> {log}
         echo "> Full GISAID metadata published to {params.prefix}.metadata.full.fasta\\n" >> {log}
         echo ">\\n" >> {log}
