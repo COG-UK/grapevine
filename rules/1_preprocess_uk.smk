@@ -24,16 +24,23 @@ rule uk_add_epi_week:
     input:
         metadata = rules.uk_unify_headers.output.metadata
     output:
-        metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.csv"
+        metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.csv",
+        tmp_metadata = temp(config["output_path"] + "/1/uk_latest.unify_headers.epi_week.csv.tmp")
     log:
         config["output_path"] + "/logs/1_uk_add_epi_week.log"
     shell:
         """
         datafunk add_epi_week \
         --input-metadata {input.metadata} \
+        --output-metadata {output.tmp_metadata} \
+        --date-column received_date \
+        --epi-column-name edin_epi_week &> {log}
+
+        datafunk add_epi_week \
+        --input-metadata {output.tmp_metadata} \
         --output-metadata {output.metadata} \
         --date-column collection_date \
-        --epi-column-name edin_epi_week &> {log}
+        --epi-column-name edin_epi_week &>> {log}
         """
 
 rule uk_add_previous_uk_duplicates_to_metadata:

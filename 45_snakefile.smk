@@ -7,6 +7,7 @@ import os
 
 if config.get("output_path"):
     config["output_path"] = config["output_path"].rstrip('/')
+config["output_path"] = os.path.abspath(config["output_path"])
 
 if config.get("publish_path"):
     config["publish_path"] = config["publish_path"].rstrip('/')
