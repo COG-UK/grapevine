@@ -208,7 +208,7 @@ rule add_snp_finder_result_to_metadata:
         columns=$(cat {input.snps} | cut -f1 -d"," | tr '\\n' '  ')
         fastafunk add_columns \
           --in-metadata {input.metadata} \
-          --in-data {input.new_metadata} \
+          --in-data {input.new_data} \
           --index-column sequence_name \
           --join-on name \
           --new-columns "$columns" \
