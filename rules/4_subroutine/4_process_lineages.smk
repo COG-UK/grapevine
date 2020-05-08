@@ -76,7 +76,8 @@ rule annotate_tree:
           --index-column sequence_name \
           --boolean-for-trait country='UK' country='UK' country='UK' country='UK' \
           --boolean-trait-names country_uk country_uk_acctran country_uk_deltran country_uk_maxtran\
-          --format newick \
+          --in-format newick \
+          --out-format nexus \
           --collapse_to_polytomies {params.collapse} \
           --input {input.tree} \
           --output {output.tree} &> {log}
@@ -242,6 +243,7 @@ rule graft:
         --scions {input.scions} \
         --scion_annotation_name scion_lineage \
         --annotate_scions {params.lineages} \
+        --out-format newick \
         --input {input.guide_tree} \
         --output {output.tree} &> {log}
         """
