@@ -219,12 +219,12 @@ rule summarize_pangolin_lineage_typing:
         echo "> Number of sequences in matched COG files: $(cat {input.fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo ">\\n" >> {log}
 
-        cp {input.public_fasta} {params.prefix}_alignment.public.fasta
+        cp {input.public_fasta} {params.prefix}_sequences.public.fasta
         cp {input.public_metadata} {params.prefix}_metadata.public.csv
-        cp {input.public_fasta} {params.export_prefix1}_alignment.fasta
+        cp {input.public_fasta} {params.export_prefix1}_sequences.fasta
         cp {input.public_metadata} {params.export_prefix1}_metadata.csv
-        echo "> Public unaligned COG fasta and restricted metadata published to _{params.prefix}_alignment.public.fasta_ and _{params.prefix}_metadata.public.csv_\\n" >> {log}
-        echo "> and to _{params.export_prefix1}_alignment.fasta_ and _{params.export_prefix1}_metadata.csv_\\n" >> {log}
+        echo "> Public unaligned COG fasta and restricted metadata published to _{params.prefix}_sequences.public.fasta_ and _{params.prefix}_metadata.public.csv_\\n" >> {log}
+        echo "> and to _{params.export_prefix1}_sequences.fasta_ and _{params.export_prefix1}_metadata.csv_\\n" >> {log}
         echo "> Number of sequences in public COG files: $(cat {input.public_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo ">\\n" >> {log}
 

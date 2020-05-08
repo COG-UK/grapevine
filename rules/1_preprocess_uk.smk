@@ -237,8 +237,8 @@ rule summarize_preprocess_uk:
         echo "> Full untrimmed COG alignment published to _{params.prefix}_alignment.full.fasta_\\n" >> {log}
         echo "> and to _{params.export_prefix}_alignment.full.fasta_\\n" >> {log}
         echo ">\\n" >> {log}
-        cp {input.removed_low_covg_fasta} {params.prefix}_alignment.trimmed.fasta
-        echo "> Trimmed COG alignment published to _{params.prefix}_alignment.trimmed.fasta_\\n" >> {log}
+        # cp {input.removed_low_covg_fasta} {params.prefix}_alignment.trimmed.fasta
+        # echo "> Trimmed COG alignment published to _{params.prefix}_alignment.trimmed.fasta_\\n" >> {log}
 
         echo '{{"text":"' > 1_data.json
         echo "*Step 1: COG-UK preprocessing complete*\\n" >> 1_data.json
