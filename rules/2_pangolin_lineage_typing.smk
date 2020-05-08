@@ -5,7 +5,7 @@ rule uk_extract_new:
     input:
         previous_stage = config["output_path"] + "/logs/1_summarize_preprocess_uk.log",
         fasta = rules.uk_filter_low_coverage_sequences.output,
-        metadata = rules.uk_remove_duplicates.output.metadata,
+        metadata = rules.add_snp_finder_result_to_metadata.output.metadata,
         previous_metadata = config["previous_uk_metadata"]
     output:
         fasta = config["output_path"] + "/2/uk.new.fasta",
@@ -57,7 +57,7 @@ rule uk_pangolin:
 rule uk_add_previous_uk_lineages_to_metadata:
     input:
         previous_metadata = config["previous_uk_metadata"],
-        metadata = rules.uk_remove_duplicates.output.metadata,
+        metadata = rules.add_snp_finder_result_to_metadata.output.metadata,
     output:
         metadata = config["output_path"] + "/2/uk.with_previous_lineages.csv",
     log:
@@ -152,7 +152,7 @@ rule uk_output_cog:
 
 rule uk_output_cog_public:
     input:
-        fasta = rules.uk_remove_duplicates.output.fasta,
+        fasta = rules.add_snp_finder_result_to_metadata.output.fasta,
         metadata = rules.uk_add_pangolin_lineages_to_metadata.output.metadata,
         omit_list = rules.uk_filter_low_coverage_sequences.log
     output:
