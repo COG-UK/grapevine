@@ -20,10 +20,6 @@ if not config.get("date"):
     cwd = os.getcwd()
     config["date"] = os.path.basename(cwd)[:10]
 
-
-
->>>>>>> Stashed changes
-
 ##### Target rules #####
 
 rule all:
@@ -52,8 +48,4 @@ rule clean_up:
 
 ##### Modules #####
 include: "rules/4_make_trees.smk"
-<<<<<<< Updated upstream
 include: "rules/5_generate_report_and_cut_out_trees.smk"
-=======
-include: "rules/5_generate_report_and_cut_out_trees.smk"
->>>>>>> Stashed changes
