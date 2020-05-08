@@ -17,7 +17,7 @@ export_path: publish/phylogenetics
 
 
 ##### Filter thresholds #####
-min_covg: 95
+min_covg: 93
 min_length: 29000
 
 ##### Mapping reference #####

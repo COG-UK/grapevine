@@ -95,29 +95,29 @@ rule uk_remove_duplicates:
           --select-by-min-column gaps &> {log}
         """
 
-rule uk_filter_short_sequences:
-    input:
-        fasta = rules.uk_remove_duplicates.output.fasta
-    params:
-        min_length = config["min_length"]
-    output:
-        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.length_fitered.fasta"
-    log:
-        config["output_path"] + "/logs/1_uk_filter_short_sequences.log"
-    shell:
-        """
-        datafunk filter_fasta_by_covg_and_length \
-          -i {input.fasta} \
-          -o {output.fasta} \
-          --min-length {params.min_length} &> {log}
-        """
+# rule uk_filter_short_sequences:
+#     input:
+#         fasta = rules.uk_remove_duplicates.output.fasta
+#     params:
+#         min_length = config["min_length"]
+#     output:
+#         fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.length_fitered.fasta"
+#     log:
+#         config["output_path"] + "/logs/1_uk_filter_short_sequences.log"
+#     shell:
+#         """
+#         datafunk filter_fasta_by_covg_and_length \
+#           -i {input.fasta} \
+#           -o {output.fasta} \
+#           --min-length {params.min_length} &> {log}
+#         """
 
 rule uk_minimap2_to_reference:
     input:
-        fasta = rules.uk_filter_short_sequences.output,
+        fasta = rules.uk_remove_duplicates.output,
         reference = config["reference_fasta"]
     output:
-        sam = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.length_fitered.mapped.sam"
+        sam = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.mapped.sam"
     log:
         config["output_path"] + "/logs/1_uk_minimap2_to_reference.log"
     shell:
@@ -134,7 +134,7 @@ rule uk_remove_insertions_and_trim_and_pad:
         trim_end = config["trim_end"],
         insertions = config["output_path"] + "/1/uk_insertions.txt"
     output:
-        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.length_fitered_alignment.trimmed.fasta"
+        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.trimmed.fasta"
     log:
         config["output_path"] + "/logs/1_uk_remove_insertions_and_trim_and_pad.log"
     shell:
@@ -155,7 +155,7 @@ rule uk_filter_low_coverage_sequences:
     params:
         min_covg = config["min_covg"]
     output:
-        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.length_fitered.trimmed.low_covg_filtered.fasta"
+        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.fasta"
     log:
         config["output_path"] + "/logs/1_uk_filter_low_coverage_sequences.log"
     shell:
@@ -172,7 +172,7 @@ rule uk_full_untrimmed_alignment:
         reference = config["reference_fasta"],
         omit_list = rules.uk_filter_low_coverage_sequences.log
     output:
-        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.length_fitered_alignment.full.fasta"
+        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.full.fasta"
     log:
         config["output_path"] + "/logs/1_uk_full_untrimmed_alignment.log"
     shell:
@@ -190,12 +190,28 @@ rule uk_full_untrimmed_alignment:
         mv removed.fa {output.fasta}
         """
 
+
+rule run_snp_finder:
+    input:
+        fasta = rules.uk_full_untrimmed_alignment.output.fasta,
+        snps = config["snps"]
+    output:
+        found = config["output_path"] + "/1/cog.snp_finder.csv",
+        published = config["publish_path"] + "/COG/cog.snp_finder.csv",
+    log:
+        config["output_path"] + "/logs/1_run_snp_finder.log"
+    shell:
+        """
+        datafunk snp_finder -a {input.fasta} -o {output.found} --snp-csv {input.snps} &> {log}
+        cp {output.found} {output.published}
+        """
+
+
 rule summarize_preprocess_uk:
     input:
         raw_fasta = config["latest_uk_fasta"],
         unify_headers_fasta = rules.uk_unify_headers.output.fasta,
         deduplicated_fasta = rules.uk_remove_duplicates.output.fasta,
-        removed_short_fasta = rules.uk_filter_short_sequences.output.fasta,
         removed_low_covg_fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
         full_alignment = rules.uk_full_untrimmed_alignment.output.fasta
     params:
@@ -211,7 +227,6 @@ rule summarize_preprocess_uk:
         echo "> Number of sequences in raw UK fasta: $(cat {input.raw_fasta} | grep ">" | wc -l)\\n" &> {log}
         echo "> Number of sequences in raw UK fasta after unifying headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after deduplication: $(cat {input.deduplicated_fasta} | grep ">" | wc -l)\\n" &>> {log}
-        echo "> Number of sequences after removing sequences <29000bps: $(cat {input.removed_short_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after trimming and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo ">\\n" >> {log}
 
@@ -222,8 +237,8 @@ rule summarize_preprocess_uk:
         echo "> Full untrimmed COG alignment published to _{params.prefix}_alignment.full.fasta_\\n" >> {log}
         echo "> and to _{params.export_prefix}_alignment.full.fasta_\\n" >> {log}
         echo ">\\n" >> {log}
-        cp {input.removed_low_covg_fasta} {params.prefix}_alignment.trimmed.fasta
-        echo "> Trimmed COG alignment published to _{params.prefix}_alignment.trimmed.fasta_\\n" >> {log}
+        # cp {input.removed_low_covg_fasta} {params.prefix}_alignment.trimmed.fasta
+        # echo "> Trimmed COG alignment published to _{params.prefix}_alignment.trimmed.fasta_\\n" >> {log}
 
         echo '{{"text":"' > 1_data.json
         echo "*Step 1: COG-UK preprocessing complete*\\n" >> 1_data.json
