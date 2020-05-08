@@ -103,28 +103,29 @@ rule publish_metadata:
         """
 
 
-rule generate_report:
-    input:
-        metadata = rules.run_5_subroutine_on_lineages.output.metadata
-    params:
-        name_stem = "UK_" + config["date"],
-        date = config["date"],
-        outdir = config["output_path"] + "/5/"
-    output:
-        report = config["output_path"] + "/5/UK_" + config["date"] + ".md",
-        figures = config["output_path"] + "/5/figures_" + config["date"],
-        summary = config["output_path"] + "/5/summary_files_" + config["date"]
-    log:
-        config["output_path"] + "/logs/5_generate_report.log"
-    shell:
-        """
-        generate_report --m {input.metadata} --w {params.date} --s {params.name_stem} --od {params.outdir} &> {log}
-        mv {params.name_stem}* {params.outdir}
-        """
+# rule generate_report:
+#     input:
+#         metadata = rules.run_5_subroutine_on_lineages.output.metadata
+#     params:
+#         name_stem = "UK_" + config["date"],
+#         date = config["date"],
+#         outdir = config["output_path"] + "/5/"
+#     output:
+#         report = config["output_path"] + "/5/UK_" + config["date"] + ".md",
+#         figures = config["output_path"] + "/5/figures_" + config["date"],
+#         summary = config["output_path"] + "/5/summary_files_" + config["date"]
+#     log:
+#         config["output_path"] + "/logs/5_generate_report.log"
+#     shell:
+#         """
+#         generate_report --m {input.metadata} --w {params.date} --s {params.name_stem} --od {params.outdir} &> {log}
+#         mv {params.name_stem}* {params.outdir}
+#         """
 
 rule summarize_generate_report_and_cut_out_trees:
     input:
-        report = rules.generate_report.output
+        #report = rules.generate_report.output
+        metadata = rules.run_5_subroutine_on_lineages.output.metadata
     params:
         webhook = config["webhook"],
         outdir = config["publish_path"] + "/COG_GISAID",
@@ -143,9 +144,9 @@ rule summarize_generate_report_and_cut_out_trees:
         fi
         echo "> UK lineage trees have been published in _{params.outdir}/trees_ and _{params.export_dir1}_\\n" >> {log}
         echo ">\\n" >> {log}
-        cp -r {input.report} {params.outdir}/
-        cp -r {input.report} {params.export_dir2}/
-        echo "> COG UK weekly report has been published in _{params.outdir}_ and _{params.export_dir2}_\\n" >> {log}
+        #cp -r {input.report} {params.outdir}/
+        #cp -r {input.report} {params.export_dir2}/
+        #echo "> COG UK weekly report has been published in _{params.outdir}_ and _{params.export_dir2}_\\n" >> {log}
 
         echo '{{"text":"' > 5b_data.json
         echo "*Step 5: Generate report and UK lineage trees is complete*\\n" >> 5_data.json
