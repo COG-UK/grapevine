@@ -153,7 +153,7 @@ rule uk_output_cog:
 rule uk_output_cog_public:
     input:
         fasta = rules.uk_remove_duplicates.output.fasta,
-        metadata = rules.uk_add_pangolin_lineages_to_metadata.output.metadata,
+        metadata = rules.uk_update_metadata_lineages.output.metadata,
         omit_list = rules.uk_filter_low_coverage_sequences.log
     output:
         fasta = config["output_path"] + "/2/uk.public.fasta",
