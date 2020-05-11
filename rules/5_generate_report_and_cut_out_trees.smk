@@ -144,15 +144,18 @@ rule summarize_generate_report_and_cut_out_trees:
         fi
         echo "> UK lineage trees have been published in _{params.outdir}/trees_ and _{params.export_dir1}_\\n" >> {log}
         echo ">\\n" >> {log}
-        #cp -r {input.report} {params.outdir}/
-        #cp -r {input.report} {params.export_dir2}/
-        #echo "> COG UK weekly report has been published in _{params.outdir}_ and _{params.export_dir2}_\\n" >> {log}
+
 
         echo '{{"text":"' > 5b_data.json
-        echo "*Step 5: Generate report and UK lineage trees is complete*\\n" >> 5_data.json
+        echo "*Step 5: Generate UK lineage trees is complete*\\n" >> 5_data.json
         cat {log} >> 5b_data.json
         echo '"}}' >> 5b_data.json
         echo "webhook {params.webhook}"
         curl -X POST -H "Content-type: application/json" -d @5b_data.json {params.webhook}
         #rm 5b_data.json
         """
+
+        #echo "*Step 5: Generate report and UK lineage trees is complete*\\n" >> 5_data.json
+        #cp -r {input.report} {params.outdir}/
+        #cp -r {input.report} {params.export_dir2}/
+        #echo "> COG UK weekly report has been published in _{params.outdir}_ and _{params.export_dir2}_\\n" >> {log}
