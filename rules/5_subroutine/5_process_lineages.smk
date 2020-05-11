@@ -139,7 +139,7 @@ rule combine_lineage_csv:
     output:
         phylotype_csv=config["output_path"] + "/5/UK_phylotypes.csv"
     log:
-        config["output_path"] + "/logs/5__combine_lineage_csv.log"
+        config["output_path"] + "/logs/5_combine_lineage_csv.log"
     run:
         dfs = [pd.read_csv(x) for x in input]
         result = pd.concat(dfs)
@@ -163,5 +163,3 @@ rule merge_with_metadata:
           --new-columns phylotype \
           --out-metadata {output.metadata} &> {log}
         """
-
-
