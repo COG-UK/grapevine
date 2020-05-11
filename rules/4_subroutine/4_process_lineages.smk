@@ -268,7 +268,7 @@ rule get_private_nexus_tree:
     output:
         tree = '/4/cog_gisaid_full.tree.private.nexus'
     log:
-        config["output_path"] + "/logs/4_publish_private_newick_tree.log"
+        config["output_path"] + "/logs/4_publish_private_nexus_tree.log"
     shell:
         """
         clusterfunk annotate_lineages \
