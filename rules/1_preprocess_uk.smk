@@ -205,7 +205,7 @@ rule add_snp_finder_result_to_metadata:
         config["output_path"] + "/logs/1_add_snp_finder_result_to_metadata.log"
     shell:
         """
-        columns=$(cat {input.snps} | cut -f1 -d"," | tr '\\n' '  ')
+        columns=$(head -n1 {input.new_data} | cut -d',' -f2-)
         fastafunk add_columns \
           --in-metadata {input.metadata} \
           --in-data {input.new_data} \
