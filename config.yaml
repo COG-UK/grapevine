@@ -21,7 +21,7 @@ min_covg: 93
 min_length: 29000
 
 ##### Mapping reference #####
-reference_fasta: ~/git/grapevine/reference.fasta
+reference_fasta: /cephfs/covid/bham/climb-covid19-jacksonb/git/grapevine/reference.fasta
 
 ##### Trim coordinates #####
 trim_start: 265
