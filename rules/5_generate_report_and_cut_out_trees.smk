@@ -71,6 +71,67 @@ rule run_5_subroutine_on_lineages:
           metadata={input.metadata} &> {log}
         """
 
+rule uk_output_cog:
+    input:
+        fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
+        metadata = rules.uk_update_metadata_lineages.output.metadata
+    output:
+        fasta = config["output_path"] + "/2/uk.regularized.fasta",
+        metadata = config["output_path"] + "/2/uk.regularized.csv"
+    log:
+        config["output_path"] + "/logs/2_uk_output_cog.log"
+    shell:
+        """
+        fastafunk fetch \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata} \
+          --index-column sequence_name \
+          --filter-column sequence_name sample_date epi_week \
+                          country adm1 adm2 outer_postcode \
+                          is_surveillance is_community is_hcw \
+                          is_travel_history travel_history lineage special_lineage \
+                          lineage_support uk_lineage \
+          --where-column epi_week=edin_epi_week country=adm0 \
+                         sample_date=received_date sample_date=collection_date \
+          --out-fasta {output.fasta} \
+          --out-metadata {output.metadata} \
+          --log-file {log} \
+          --restrict
+        """
+
+rule uk_output_cog_public:
+    input:
+        fasta = rules.uk_remove_duplicates.output.fasta,
+        metadata = rules.uk_update_metadata_lineages.output.metadata,
+        omit_list = rules.uk_filter_low_coverage_sequences.log
+    output:
+        fasta = config["output_path"] + "/2/uk.public.fasta",
+        metadata = config["output_path"] + "/2/uk.public.csv"
+    log:
+        config["output_path"] + "/logs/2_uk_output_cog_public.log"
+    shell:
+        """
+        fastafunk fetch \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata} \
+          --index-column sequence_name \
+          --filter-column sequence_name country adm1 \
+                          sample_date epi_week lineage \
+                          lineage_support \
+          --where-column epi_week=edin_epi_week country=adm0 \
+                         sample_date=received_date sample_date=collection_date \
+          --out-fasta {output.fasta} \
+          --out-metadata {output.metadata} \
+          --log-file {log} \
+          --restrict
+
+        fastafunk remove \
+          --in-fasta {output.fasta} \
+          --in-metadata {input.omit_list} \
+          --out-fasta removed.fa
+        mv removed.fa {output.fasta}
+        """
+        
 rule publish_metadata:
     input:
         metadata = rules.run_5_subroutine_on_lineages.output.metadata,
