@@ -189,7 +189,7 @@ rule summarize_pangolin_lineage_typing:
         metadata = rules.uk_output_cog.output.metadata,
         public_fasta = rules.uk_output_cog_public.output.fasta,
         public_metadata = rules.uk_output_cog_public.output.metadata,
-        full_metadata = rules.uk_add_pangolin_lineages_to_metadata.output.metadata
+        full_metadata = rules.uk_update_metadata_lineages.output.metadata
     params:
         webhook = config["webhook"],
         outdir = config["publish_path"] + "/COG",
