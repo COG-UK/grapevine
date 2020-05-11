@@ -239,21 +239,6 @@ rule summarize_preprocess_uk:
         echo "> Number of sequences after trimming and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo ">\\n" >> {log}
 
-        mkdir -p {params.outdir}
-        mkdir -p {params.export_dir}
-        cp {input.full_alignment} {params.prefix}_alignment.full.fasta
-        cp {input.full_alignment} {params.export_prefix}_alignment.full.fasta
-        echo "> Full untrimmed COG alignment published to _{params.prefix}_alignment.full.fasta_\\n" >> {log}
-        echo "> and to _{params.export_prefix}_alignment.full.fasta_\\n" >> {log}
-        #echo ">\\n" >> {log}
-        # cp {input.removed_low_covg_fasta} {params.prefix}_alignment.trimmed.fasta
-        # echo "> Trimmed COG alignment published to _{params.prefix}_alignment.trimmed.fasta_\\n" >> {log}
-        cp {input.full_metadata} {params.prefix}_metadata.full.csv
-        cp {input.full_metadata} {params.export_prefix}_metadata.full.csv
-        echo "> Full COG only metadata published to _{params.prefix}_metadata.full.csv_\\n" >> {log}
-        echo "> and to _{params.export_prefix}_metadata.full.csv_\\n" >> {log}
-        echo ">\\n" >> {log}
-
         echo '{{"text":"' > 1_data.json
         echo "*Step 1: COG-UK preprocessing complete*\\n" >> 1_data.json
         cat {log} >> 1_data.json
@@ -262,3 +247,18 @@ rule summarize_preprocess_uk:
         curl -X POST -H "Content-type: application/json" -d @1_data.json {params.webhook}
         #rm 1_data.json
         """
+
+        # mkdir -p {params.outdir}
+        # mkdir -p {params.export_dir}
+        # cp {input.full_alignment} {params.prefix}_alignment.full.fasta
+        # cp {input.full_alignment} {params.export_prefix}_alignment.full.fasta
+        # echo "> Full untrimmed COG alignment published to _{params.prefix}_alignment.full.fasta_\\n" >> {log}
+        # echo "> and to _{params.export_prefix}_alignment.full.fasta_\\n" >> {log}
+        # echo ">\\n" >> {log}
+        # cp {input.full_metadata} {params.prefix}_metadata.full.csv
+        # cp {input.full_metadata} {params.export_prefix}_metadata.full.csv
+        # echo "> Full COG only metadata published to _{params.prefix}_metadata.full.csv_\\n" >> {log}
+        # echo "> and to _{params.export_prefix}_metadata.full.csv_\\n" >> {log}
+        # echo ">\\n" >> {log}
+        # cp {input.removed_low_covg_fasta} {params.prefix}_alignment.trimmed.fasta
+        # echo "> Trimmed COG alignment published to _{params.prefix}_alignment.trimmed.fasta_\\n" >> {log}
