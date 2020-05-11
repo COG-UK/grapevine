@@ -152,7 +152,7 @@ rule uk_output_cog:
 
 rule uk_output_cog_public:
     input:
-        fasta = rules.add_snp_finder_result_to_metadata.output.fasta,
+        fasta = rules.uk_remove_duplicates.output.fasta,
         metadata = rules.uk_update_metadata_lineages.output.metadata,
         omit_list = rules.uk_filter_low_coverage_sequences.log
     output:
