@@ -225,7 +225,6 @@ rule label_maxtran_introductions:
           --output {output.tree} &> {log}
         """
 
-
 rule graft:
     input:
          # not sure how to pass this as a space separated list below. Also assuming the order here matches lineages
@@ -234,7 +233,7 @@ rule graft:
     params:
         lineages = sorted(LINEAGES),
     output:
-        tree = config["output_path"] + "/4/cog_gisaid_full.tree",
+        tree = config["output_path"] + "/4/cog_gisaid_full.tree.temp.nexus",
     log:
         config["output_path"] + "/logs/4_graft.log"
     shell:
@@ -243,9 +242,39 @@ rule graft:
         --scions {input.scions} \
         --scion_annotation_name scion_lineage \
         --annotate_scions {params.lineages} \
-        --out-format newick \
         --input {input.guide_tree} \
         --output {output.tree} &> {log}
+        """
+
+rule get_public_newick_tree:
+    input:
+        tree = rules.graft.output.tree
+    output:
+        tree = '/4/cog_gisaid_full.tree.public.newick'
+    log:
+        config["output_path"] + "/logs/4_publish_public_newick_tree.log"
+    shell:
+        """
+        clusterfunk reformat \
+          --input {input.tree} \
+          --output {output.tree} \
+          --out-format newick \
+          --in-format nexus &> {log}
+        """
+
+rule get_private_nexus_tree:
+    input:
+        tree = rules.graft.output.tree
+    output:
+        tree = '/4/cog_gisaid_full.tree.private.nexus'
+    log:
+        config["output_path"] + "/logs/4_publish_nexus_newick_tree.log"
+    shell:
+        """
+        clusterfunk annotate_lineages \
+          --input {input.tree} \
+          --output {output.tree} \
+          --trait lineage
         """
 
 rule output_annotations:
