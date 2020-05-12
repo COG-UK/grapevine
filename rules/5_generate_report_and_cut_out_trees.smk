@@ -53,7 +53,8 @@ rule run_5_subroutine_on_lineages:
         publish_path = config["publish_path"],
         prefix = config["output_path"] + "/5/lineage_"
     output:
-        metadata = config["output_path"] + "/5/cog_gisaid.with_all_traits.with_phylotype_traits.csv"
+        metadata = config["output_path"] + "/5/cog_gisaid.with_all_traits.with_phylotype_traits.csv",
+        full_tree = config["output_path"] + "/5/cog_gisaid_full.tree.nexus"
     log:
         config["output_path"] + "/logs/5_run_5_subroutine_on_lineages.log"
     threads: 40
