@@ -71,7 +71,13 @@ rule run_5_subroutine_on_lineages:
           metadata={input.metadata} &> {log}
         """
 
-rule uk_output_cog:
+
+"""
+the routine above outputs: /5/cog_gisaid.with_all_traits.with_phylotype_traits.csv
+
+"""
+
+rule uk_publish_cog:
     input:
         fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
         metadata = rules.uk_update_metadata_lineages.output.metadata
@@ -99,7 +105,7 @@ rule uk_output_cog:
           --restrict
         """
 
-rule uk_output_cog_public:
+rule uk_publish_cog_public:
     input:
         fasta = rules.uk_remove_duplicates.output.fasta,
         metadata = rules.uk_update_metadata_lineages.output.metadata,
@@ -131,7 +137,7 @@ rule uk_output_cog_public:
           --out-fasta removed.fa
         mv removed.fa {output.fasta}
         """
-        
+
 rule publish_metadata:
     input:
         metadata = rules.run_5_subroutine_on_lineages.output.metadata,
