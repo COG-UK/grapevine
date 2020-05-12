@@ -122,13 +122,42 @@ rule uk_update_metadata_lineages:
         df.to_csv(output.metadata, index=False)
 
 
+rule uk_output_cog:
+    input:
+        fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
+        metadata = rules.uk_update_metadata_lineages.output.metadata
+    output:
+        fasta = config["output_path"] + "/2/uk.regularized.fasta",
+        metadata = config["output_path"] + "/2/uk.regularized.csv"
+    log:
+        config["output_path"] + "/logs/2_uk_output_cog.log"
+    shell:
+        """
+        fastafunk fetch \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata} \
+          --index-column sequence_name \
+          --filter-column sequence_name sample_date epi_week \
+                          country adm1 adm2 outer_postcode \
+                          is_surveillance is_community is_hcw \
+                          is_travel_history travel_history lineage special_lineage \
+                          lineage_support uk_lineage \
+          --where-column epi_week=edin_epi_week country=adm0 \
+                         sample_date=received_date sample_date=collection_date \
+          --out-fasta {output.fasta} \
+          --out-metadata {output.metadata} \
+          --log-file {log} \
+          --restrict
+        """
+
+
 rule summarize_pangolin_lineage_typing:
     input:
         fasta = rules.uk_output_cog.output.fasta,
         metadata = rules.uk_output_cog.output.metadata,
-        public_fasta = rules.uk_output_cog_public.output.fasta,
-        public_metadata = rules.uk_output_cog_public.output.metadata,
-        full_metadata = rules.uk_update_metadata_lineages.output.metadata
+        # public_fasta = rules.uk_output_cog_public.output.fasta,
+        # public_metadata = rules.uk_output_cog_public.output.metadata,
+        # full_metadata = rules.uk_update_metadata_lineages.output.metadata
     params:
         webhook = config["webhook"],
         outdir = config["publish_path"] + "/COG",
