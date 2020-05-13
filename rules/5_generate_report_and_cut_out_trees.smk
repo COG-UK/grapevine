@@ -10,9 +10,11 @@ rule merge_and_create_new_uk_lineages:
         datafunk curate_lineages -i {input} -o {output} &> {log}
         """
 
+
+
 rule update_metadata:
     input:
-        metadata = config["output_path"] + "/3/cog_gisaid.csv",
+        metadata = config["output_path"] + "/3/cog_gisaid.lineages.csv",
         traits = rules.run_4_subroutine_on_lineages.output.traits,
         updated_lineages = rules.merge_and_create_new_uk_lineages.output
     params:
