@@ -56,7 +56,6 @@ rule run_4_subroutine_on_lineages:
     output:
         traits = config["output_path"] + "/4/all_traits.csv",
         public_tree = config["output_path"] + "/4/cog_gisaid_full.tree.public.newick"
-        private_tree = config["output_path"] + "/4/cog_gisaid_full.tree.private.nexus"
     log:
         config["output_path"] + "/logs/4_run_4_subroutine_on_lineages.log"
     threads: 16
