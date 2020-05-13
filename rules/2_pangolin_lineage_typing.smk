@@ -23,13 +23,13 @@ rule uk_extract_new:
           --log {log}
         """
 
-rule update_pangolin_lineages:
-    log:
-        config["output_path"] + "/logs/2_update_pangolin_lineages.log"
-    shell:
-        """
-        #pip install --upgrade git+https://github.com/hCoV-2019/spangolin.git
-        """
+# rule update_pangolin_lineages:
+#     log:
+#         config["output_path"] + "/logs/2_update_pangolin_lineages.log"
+#     shell:
+#         """
+#         #pip install --upgrade git+https://github.com/hCoV-2019/spangolin.git
+#         """
 
 rule uk_pangolin:
     input:
