@@ -16,7 +16,8 @@ print("lineages", LINEAGES)
 
 rule all:
     input:
-        config["output_path"] + "/5/cog_gisaid.with_all_traits.with_phylotype_traits.csv"
+        config["output_path"] + "/5/cog_gisaid.with_all_traits.with_phylotype_traits.csv",
+        config["output_path"] + "/5/cog_gisaid_full.tree.nexus"
 
 rule annotate_tree:
     input:
@@ -120,6 +121,19 @@ def aggregate_input_csv(wildcards):
                             i=glob_wildcards(os.path.join(checkpoint_output_directory, "uk_lineage_UK{i}.tree")).i)
     return (required_files)
 
+def aggregate_input_trees(wildcards):
+    checkpoint_output_directory = checkpoints.cut_out_trees.get(**wildcards).output[0]
+    print(checkpoints.cut_out_trees.get(**wildcards).output[0])
+    lineage = wildcards.lineage
+    required_files = expand( "%s/5/%s/phylotyped_trees/uk_lineage_UK{i}.tree" %(config["output_path"],lineage),
+                            i=glob_wildcards(os.path.join(checkpoint_output_directory, "uk_lineage_UK{i}.tree")).i)
+    return (required_files)
+
+def aggregate_input_labels(wildcards):
+    checkpoint_output_directory = checkpoints.cut_out_trees.get(**wildcards).output[0]
+    print(checkpoints.cut_out_trees.get(**wildcards).output[0])
+    labels = expand( "UK{i}",i=glob_wildcards(os.path.join(checkpoint_output_directory, "uk_lineage_UK{i}.tree")).i)
+    return (labels)
 
 rule combine_phylotypes_csv:
     input:
@@ -144,6 +158,64 @@ rule combine_lineage_csv:
         dfs = [pd.read_csv(x) for x in input]
         result = pd.concat(dfs)
         result.to_csv(output[0], index=False)
+
+# This graft puts uk lineage trees back into the original tree. They will replace their clades in that tree, but now the
+# trait uk_lineage will extend to the mrca of the lineage and the phylotype traits for each lineage will be included.
+#
+rule graft_uk_trees:
+    input:
+        scions = sorted(aggregate_input_trees), #remove sorted if causes error / move to aggregate_input_trees
+        guide_tree= rules.annotate_tree.output.tree
+    output:
+        tree = config["output_path"] + "/5/{lineage}/cog_gisaid.final_linages.tree"
+    params:
+        labels = sorted(aggregate_input_labels) # remove sorted if causes error /  move to aggregate_input_labels
+    log:
+        config["output_path"] + "/logs/5_{lineage}_graft_uk_trees.log"
+    shell:
+        """
+            clusterfunk graft \
+            --scions {input.scions} \
+            --scion_annotation_name uk_lineage \
+            --annotate_scions {params.labels} \
+            --input {input.guide_tree} \
+            --output {output.tree} &> {log}
+        """
+
+# This should create the full tree.
+rule graft_lineages:
+    input:
+        scions = expand(config["output_path"] + "/5/{lineage}/cog_gisaid.final_linages.tree", lineage=sorted(LINEAGES)),
+        guide_tree = config["guide_tree"]
+    params:
+        lineages = sorted(LINEAGES),
+    output:
+        tree = config["output_path"] + "/5/cog_gisaid_full.tree.nexus",
+    log:
+        config["output_path"] + "/logs/5_graft_lineages.log"
+    shell:
+        """
+        clusterfunk graft \
+        --scions {input.scions} \
+        --scion_annotation_name scion_lineage \
+        --annotate_scions {params.lineages} \
+        --input {input.guide_tree} \
+        --output {output.tree} &> {log}
+        """
+# rule get_private_nexus_tree:
+#     input:
+#         tree = rules.graft_lineages.output.tree
+#     output:
+#         tree = '/5/cog_gisaid_full.tree.private.nexus'
+#     log:
+#         config["output_path"] + "/logs/5_publish_private_nexus_tree.log"
+#     shell:
+#         """
+#         clusterfunk annotate_lineages \
+#           --input {input.tree} \
+#           --output {output.tree} \
+#           --trait lineage
+#         """
 
 rule merge_with_metadata:
     input:
