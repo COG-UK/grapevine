@@ -143,7 +143,9 @@ rule uk_output_lineage_table:
           --in-fasta {input.fasta} \
           --in-metadata {input.metadata} \
           --index-column sequence_name \
-          --filter-column sequence_name special_lineage \
+          --filter-column sequence_name country lineage \
+                          special_lineage uk_lineage \
+          --where-column country=adm0 \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --log-file {log} \
