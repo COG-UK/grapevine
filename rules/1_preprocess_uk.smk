@@ -1,10 +1,76 @@
-rule uk_unify_headers:
+
+
+rule uk_add_header_column:
     input:
         fasta = config["latest_uk_fasta"],
         metadata = config["latest_uk_metadata"]
     output:
-        fasta = temp(config["output_path"] + "/1/uk_latest.unify_headers.fasta"),
-        metadata = temp(config["output_path"] + "/1/uk_latest.unify_headers.csv")
+        fasta = config["output_path"] + "/1/uk_latest.add_header.fasta",
+        metadata = config["output_path"] + "/1/uk_latest.add_header.csv"
+    log:
+        config["output_path"] + "/logs/1_add_header_column.log"
+    shell:
+        """
+        datafunk add_header_column
+        --input-fasta {input.fasta} \
+        --input-metadata {input.metadata} \
+        --output-metadata {output.metadata} \
+        --output-fasta {output.fasta} \
+        --cog-uk &> {log}
+        """
+
+
+rule uk_annotate_to_remove_duplicates:
+    input:
+        fasta = rules.uk_add_header_column.output.fasta,
+        metadata = rules.uk_add_header_column.output.metadata
+    output:
+        metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.csv"
+    log:
+        config["output_path"] + "/logs/1_uk_annotate_to_remove_duplicates.log"
+    shell:
+        """
+        fastafunk annotate \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata} \
+          --out-metadata {output.metadata} \
+          --log-file {log} \
+          --add-cov-id \
+          --index-column header \
+          --log-file {log} &> {log}
+        """
+
+
+rule uk_remove_duplicates:
+    input:
+        fasta = rules.uk_add_header_column.output.fasta,
+        metadata = rules.uk_annotate_to_remove_duplicates.output.metadata
+    output:
+        fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.fasta",
+        metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.csv"
+    log:
+        config["output_path"] + "/logs/1_uk_remove_duplicates.log"
+    shell:
+        """
+        fastafunk subsample \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata} \
+          --group-column cov_id \
+          --index-column header \
+          --out-fasta {output.fasta} \
+          --out-metadata {output.metadata} \
+          --sample-size 1 \
+          --select-by-min-column gaps &> {log}
+        """
+
+
+rule uk_unify_headers:
+    input:
+        fasta = rules.uk_remove_duplicates.output.fasta,
+        metadata = rules.uk_remove_duplicates.output.metadata
+    output:
+        fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.unify_headers.fasta",
+        metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.unify_headers.csv"
     log:
         config["output_path"] + "/logs/1_uk_unify_headers.log"
     shell:
@@ -19,6 +85,7 @@ rule uk_unify_headers:
 
         sed --in-place=.tmp 's/United Kingdom/UK/g' {output.metadata}
         """
+
 
 rule uk_add_epi_week:
     input:
@@ -43,46 +110,6 @@ rule uk_add_epi_week:
         --epi-column-name edin_epi_week &>> {log}
         """
 
-
-rule uk_annotate_to_remove_duplicates:
-    input:
-        fasta = rules.uk_unify_headers.output.fasta,
-        metadata = rules.uk_add_epi_week.output.metadata
-    output:
-        metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.annotated.csv"
-    log:
-        config["output_path"] + "/logs/1_uk_annotate_to_remove_duplicates.log"
-    shell:
-        """
-        fastafunk annotate \
-          --in-fasta {input.fasta} \
-          --in-metadata {input.metadata} \
-          --out-metadata {output.metadata} \
-          --log-file {log} \
-          --add-cov-id
-        """
-
-rule uk_remove_duplicates:
-    input:
-        fasta = rules.uk_unify_headers.output.fasta,
-        metadata = rules.uk_annotate_to_remove_duplicates.output.metadata
-    output:
-        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.fasta",
-        metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.csv"
-    log:
-        config["output_path"] + "/logs/1_uk_remove_duplicates.log"
-    shell:
-        """
-        fastafunk subsample \
-          --in-fasta {input.fasta} \
-          --in-metadata {input.metadata} \
-          --group-column cov_id \
-          --index-column sequence_name \
-          --out-fasta {output.fasta} \
-          --out-metadata {output.metadata} \
-          --sample-size 1 \
-          --select-by-min-column gaps &> {log}
-        """
 
 rule uk_minimap2_to_reference:
     input:
