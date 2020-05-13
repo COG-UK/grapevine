@@ -22,7 +22,7 @@ print("outgroups", OUTGROUPS)
 rule all:
     input:
         traits=config["output_path"] + "/4/all_traits.csv",
-        tree=config["output_path"] + "/4/cog_gisaid_full.tree"
+        tree=config["output_path"] + "/4/cog_gisaid_full.tree.public.newick"
 
 
 rule iq_tree:
