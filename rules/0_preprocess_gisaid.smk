@@ -318,17 +318,17 @@ rule gisaid_update_metadata_lineages:
         df.to_csv(output.metadata, index=False)
 
 
-rule gisaid_publish_full_metadata:
-    input:
-        metadata = rules.gisaid_update_metadata_lineages.output.metadata
-    output:
-        published_metadata = config["publish_path"] + "/GISAID/gisaid.metadata.full.csv"
-    log:
-        config["output_path"] + "/logs/0_gisaid_publish_full_metadata.log"
-    shell:
-        """
-        cp {input.metadata} {output.published_metadata} 2> {log}
-        """
+# rule gisaid_publish_full_metadata:
+#     input:
+#         metadata = rules.gisaid_update_metadata_lineages.output.metadata
+#     output:
+#         published_metadata = config["publish_path"] + "/GISAID/gisaid.metadata.full.csv"
+#     log:
+#         config["output_path"] + "/logs/0_gisaid_publish_full_metadata.log"
+#     shell:
+#         """
+#         cp {input.metadata} {output.published_metadata} 2> {log}
+#         """
 
 
 rule gisaid_mask_2:
@@ -348,17 +348,17 @@ rule gisaid_mask_2:
         """
 
 
-rule gisaid_publish_full_alignment:
-    input:
-        fasta = rules.gisaid_mask_2.output.fasta
-    output:
-        published_fasta = config["publish_path"] + "/GISAID/gisaid.trimmed_alignment.full.fasta"
-    log:
-        config["output_path"] + "/logs/0_gisaid_publish_full_alignment.log"
-    shell:
-        """
-        cp {input.fasta} {output.published_fasta} 2> {log}
-        """
+# rule gisaid_publish_full_alignment:
+#     input:
+#         fasta = rules.gisaid_mask_2.output.fasta
+#     output:
+#         published_fasta = config["publish_path"] + "/GISAID/gisaid.trimmed_alignment.full.fasta"
+#     log:
+#         config["output_path"] + "/logs/0_gisaid_publish_full_alignment.log"
+#     shell:
+#         """
+#         cp {input.fasta} {output.published_fasta} 2> {log}
+#         """
 
 
 rule gisaid_distance_QC:
@@ -382,38 +382,60 @@ rule gisaid_distance_QC:
         """
 
 
-rule gisaid_output_gisaid:
+rule gisaid_output_lineage_table:
     input:
         fasta = rules.gisaid_mask_2.output.fasta,
-        metadata = rules.gisaid_update_metadata_lineages.output.metadata
+        metadata = rules.uk_update_metadata_lineages.output.metadata
     output:
         fasta = config["output_path"] + "/0/gisaid.matched.fasta",
-        metadata = config["output_path"] + "/0/gisaid.matched.csv",
-        published_fasta = config["publish_path"] + "/GISAID/gisaid.trimmed_alignment.matched.fasta",
-        published_metadata = config["publish_path"] + "/GISAID/gisaid.metadata.matched.csv"
+        metadata = config["output_path"] + "/0/gisaid.matched.special_linages.csv"
     log:
-        config["output_path"] + "/logs/0_gisaid_output_gisaid.log"
+        config["output_path"] + "/logs/0_gisaid_output_lineage_table.log"
     shell:
         """
         fastafunk fetch \
           --in-fasta {input.fasta} \
           --in-metadata {input.metadata} \
           --index-column sequence_name \
-          --filter-column sequence_name sample_date epi_week \
-                          country adm1 adm2 outer_postcode \
-                          is_surveillance is_community is_hcw \
-                          is_travel_history travel_history special_lineage \
-                          lineage_support uk_lineage lineage \
-          --where-column uk_omit=is_uk sample_date=covv_collection_date epi_week=edin_epi_week \
-                         country=edin_admin_0 travel_history=edin_travel \
+          --filter-column sequence_name  special_lineage \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --log-file {log} \
           --restrict
-
-        cp {output.fasta} {output.published_fasta}
-        cp {output.metadata} {output.published_metadata}
         """
+
+# rule gisaid_output_gisaid:
+#     input:
+#         fasta = rules.gisaid_mask_2.output.fasta,
+#         metadata = rules.gisaid_update_metadata_lineages.output.metadata
+#     output:
+#         fasta = config["output_path"] + "/0/gisaid.matched.fasta",
+#         metadata = config["output_path"] + "/0/gisaid.matched.csv",
+#         published_fasta = config["publish_path"] + "/GISAID/gisaid.trimmed_alignment.matched.fasta",
+#         published_metadata = config["publish_path"] + "/GISAID/gisaid.metadata.matched.csv"
+#     log:
+#         config["output_path"] + "/logs/0_gisaid_output_gisaid.log"
+#     shell:
+#         """
+#         fastafunk fetch \
+#           --in-fasta {input.fasta} \
+#           --in-metadata {input.metadata} \
+#           --index-column sequence_name \
+#           --filter-column sequence_name sample_date epi_week \
+#                           country adm1 adm2 outer_postcode \
+#                           is_surveillance is_community is_hcw \
+#                           is_travel_history travel_history special_lineage \
+#                           lineage_support uk_lineage lineage \
+#           --where-column uk_omit=is_uk sample_date=covv_collection_date epi_week=edin_epi_week \
+#                          country=edin_admin_0 travel_history=edin_travel \
+#           --out-fasta {output.fasta} \
+#           --out-metadata {output.metadata} \
+#           --log-file {log} \
+#           --restrict
+#
+#         cp {output.fasta} {output.published_fasta}
+#         cp {output.metadata} {output.published_metadata}
+#         """
 
 rule summarize_preprocess_gisaid:
     input:
@@ -424,10 +446,12 @@ rule summarize_preprocess_gisaid:
         removed_short_fasta = rules.gisaid_filter_1.output,
         removed_low_covg_fasta = rules.gisaid_filter_2.output.fasta,
         new_fasta_masked = rules.gisaid_mask_1.output.fasta,
-        full_fasta = rules.gisaid_publish_full_alignment.output.published_fasta,
-        full_metadata = rules.gisaid_publish_full_metadata.output.published_metadata,
-        matched_fasta = rules.gisaid_output_gisaid.output.fasta,
-        matched_metadata = rules.gisaid_output_gisaid.output.metadata,
+        # full_fasta = rules.gisaid_publish_full_alignment.output.published_fasta,
+        # full_metadata = rules.gisaid_publish_full_metadata.output.published_metadata,
+        # matched_fasta = rules.gisaid_output_gisaid.output.fasta,
+        # matched_metadata = rules.gisaid_output_gisaid.output.metadata,
+        matched_fasta = rules.gisaid_output_lineage_table.output.fasta,
+        matched_lineage_table = rules.gisaid_output_lineage_table.output.metadata,
     params:
         prefix = config["publish_path"] + "/GISAID/gisaid",
         webhook = config["webhook"]
@@ -442,10 +466,6 @@ rule summarize_preprocess_gisaid:
         echo "Number of sequences after removing sequences <29000bps and with <95%% coverage: $(cat {input.removed_short_fasta} | grep '>' | wc -l)\\n" >> {log}
         echo "Number of sequences after mapping and removing those with <95%% coverage remaining: $(cat {input.removed_low_covg_fasta} | grep '>' | wc -l)\\n" >> {log}
         echo "> \\n" >> {log}
-        echo "> Full masked and trimmed GISAID alignment published to {params.prefix}.trimmed_alignment.full.fasta\\n" >> {log}
-        echo "> Full GISAID metadata published to {params.prefix}.metadata.full.fasta\\n" >> {log}
-        echo ">\\n" >> {log}
-        echo "> Matched GISAID fasta and restricted metadata published to {params.prefix}.trimmed_alignment.matched.fasta and {params.prefix}.metadata.matched.csv\\n" >> {log}
         echo "> Number of sequences in matched GISAID files: $(cat {input.matched_fasta} | grep '>' | wc -l)\\n" >> {log}
         echo ">\\n" >> {log}
         echo "> Counts by country published to {params.prefix}_counts_by_country.csv\\n" >> {log}
@@ -457,3 +477,7 @@ rule summarize_preprocess_gisaid:
         curl -X POST -H "Content-type: application/json" -d @0_data.json {params.webhook}
         # rm 0_data.json
         """
+
+        # echo "> Full masked and trimmed GISAID alignment published to {params.prefix}.trimmed_alignment.full.fasta\\n" >> {log}
+        # echo "> Full GISAID metadata published to {params.prefix}.metadata.full.fasta\\n" >> {log}
+        # echo "> Matched GISAID fasta and restricted metadata published to {params.prefix}.trimmed_alignment.matched.fasta and {params.prefix}.metadata.matched.csv\\n" >> {log}
