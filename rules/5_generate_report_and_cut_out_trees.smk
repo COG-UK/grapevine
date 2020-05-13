@@ -11,7 +11,9 @@ rule merge_and_create_new_uk_lineages:
         """
 
 
-
+"""
+STOPPED HERE FOR THE NIGHT
+"""
 rule update_metadata:
     input:
         metadata = config["output_path"] + "/3/cog_gisaid.lineages.csv",
