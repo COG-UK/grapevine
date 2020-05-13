@@ -134,7 +134,7 @@ rule uk_output_lineage_table:
         metadata = rules.uk_update_metadata_lineages.output.metadata
     output:
         fasta = config["output_path"] + "/2/uk.matched.fasta",
-        metadata = config["output_path"] + "/2/uk.matched.special_linages.csv"
+        metadata = config["output_path"] + "/2/uk.matched.lineages.csv"
     log:
         config["output_path"] + "/logs/2_uk_output_lineage_table.log"
     shell:
