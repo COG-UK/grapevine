@@ -133,8 +133,8 @@ rule uk_output_lineage_table:
         fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
         metadata = rules.uk_update_metadata_lineages.output.metadata
     output:
-        fasta = config["output_path"] + "/2/uk.regularized.fasta",
-        metadata = config["output_path"] + "/2/uk.special_linages.csv"
+        fasta = config["output_path"] + "/2/uk.matched.fasta",
+        metadata = config["output_path"] + "/2/uk.matched.special_linages.csv"
     log:
         config["output_path"] + "/logs/2_uk_output_lineage_table.log"
     shell:
