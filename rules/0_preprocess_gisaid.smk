@@ -388,7 +388,7 @@ rule gisaid_output_lineage_table:
         metadata = rules.uk_update_metadata_lineages.output.metadata
     output:
         fasta = config["output_path"] + "/0/gisaid.matched.fasta",
-        metadata = config["output_path"] + "/0/gisaid.matched.special_linages.csv"
+        metadata = config["output_path"] + "/0/gisaid.matched.lineages.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_output_lineage_table.log"
     shell:

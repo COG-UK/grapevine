@@ -1,13 +1,13 @@
 rule combine_gisaid_and_cog:
     input:
         previous_stage = config["output_path"] + "/logs/2_summarize_pangolin_lineage_typing.log",
-        gisaid_fasta = config["output_path"] + "/0/gisaid.matched.fasta",
-        gisaid_metadata = config["output_path"] + "/0/gisaid.matched.csv",
-        uk_fasta = rules.uk_output_cog.output.fasta,
-        uk_metadata = rules.uk_output_cog.output.metadata
+        gisaid_fasta = rules.gisaid_output_lineage_table.output.fasta,
+        gisaid_metadata = rules.gisaid_output_lineage_table.output.metadata,
+        uk_fasta = rules.uk_output_lineage_table.output.fasta,
+        uk_metadata = rules.uk_output_lineage_table.output.metadata
     output:
         fasta = config["output_path"] + "/3/cog_gisaid.fasta",
-        metadata = config["output_path"] + "/3/cog_gisaid.csv"
+        metadata = config["output_path"] + "/3/cog_gisaid.lineages.csv"
     log:
         config["output_path"] + "/logs/3_combine_gisaid_and_cog.log"
     shell:
