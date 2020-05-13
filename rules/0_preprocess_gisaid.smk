@@ -397,7 +397,7 @@ rule gisaid_output_lineage_table:
           --in-fasta {input.fasta} \
           --in-metadata {input.metadata} \
           --index-column sequence_name \
-          --filter-column sequence_name  special_lineage \
+          --filter-column sequence_name special_lineage \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --log-file {log} \
