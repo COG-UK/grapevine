@@ -79,11 +79,8 @@ rule run_4_subroutine_on_lineages:
 rule summarize_make_trees:
     input:
         traits = rules.run_4_subroutine_on_lineages.output.traits,
-        public_tree = rules.run_4_subroutine_on_lineages.output.public_tree
-        private_tree = rules.run_4_subroutine_on_lineages.output.private_tree
+        public_tree = rules.run_4_subroutine_on_lineages.output.public_tree,
     output:
-        published_tree = config["publish_path"] + "/COG_GISAID/cog_gisaid_full_tree.nexus",
-        exported_tree1 = config["export_path"] + "/trees/cog_global_" + config["date"] + "_tree.nexus"
         exported_tree2 = config["export_path"] + "/public/cog_global_" + config["date"] + "_tree.newick",
     params:
         webhook = config["webhook"],
@@ -95,11 +92,7 @@ rule summarize_make_trees:
         echo "> Lineage trees have been published in _{params.outdir}_\\n" >> {log}
         echo ">\\n" >> {log}
 
-        cp {input.private_tree} {output.published_tree}
-        cp {input.private_tree} {output.exported_tree1}
         cp {input.public_tree} {output.exported_tree2}
-        echo "> Full annotated tree has been published in _{output.published_tree}_\\n" >> {log}
-        echo "> and _{output.exported_tree1}_\\n" >> {log}
         echo "> Full unannotated tree has been published in _{output.exported_tree2}_\\n" >> {log}
 
         echo '{{"text":"' > 4b_data.json
@@ -109,3 +102,7 @@ rule summarize_make_trees:
         echo "webhook {params.webhook}"
         """
         # curl -X POST -H "Content-type: application/json" -d @4b_data.json {params.webhook}
+        # echo "> Full annotated tree has been published in _{output.published_tree}_\\n" >> {log}
+        # echo "> and _{output.exported_tree1}_\\n" >> {log}
+        # cp {input.private_tree} {output.published_tree}
+        # cp {input.private_tree} {output.exported_tree1}
