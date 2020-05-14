@@ -154,8 +154,8 @@ rule uk_output_lineage_table:
 
 rule summarize_pangolin_lineage_typing:
     input:
-        fasta = rules.uk_output_cog.output.fasta,
-        metadata = rules.uk_output_cog.output.metadata,
+        fasta = rules.uk_output_lineage_table.output.fasta,
+        metadata = rules.uk_output_lineage_table.output.metadata,
         # public_fasta = rules.uk_output_cog_public.output.fasta,
         # public_metadata = rules.uk_output_cog_public.output.metadata,
         # full_metadata = rules.uk_update_metadata_lineages.output.metadata

@@ -1,8 +1,8 @@
 rule combine_gisaid_and_cog:
     input:
         previous_stage = config["output_path"] + "/logs/2_summarize_pangolin_lineage_typing.log",
-        gisaid_fasta = rules.gisaid_output_lineage_table.output.fasta,
-        gisaid_metadata = rules.gisaid_output_lineage_table.output.metadata,
+        gisaid_fasta = config["output_path"] + "/0/gisaid.matched.fasta",
+        gisaid_metadata = config["output_path"] + "/0/gisaid.matched.lineages.csv",
         uk_fasta = rules.uk_output_lineage_table.output.fasta,
         uk_metadata = rules.uk_output_lineage_table.output.metadata
     output:
