@@ -127,13 +127,13 @@ def aggregate_input_trees(wildcards):
     lineage = wildcards.lineage
     required_files = expand( "%s/5/%s/phylotyped_trees/uk_lineage_UK{i}.tree" %(config["output_path"],lineage),
                             i=glob_wildcards(os.path.join(checkpoint_output_directory, "uk_lineage_UK{i}.tree")).i)
-    return (required_files)
+    return (sorted(required_files))
 
 def aggregate_input_labels(wildcards):
     checkpoint_output_directory = checkpoints.cut_out_trees.get(**wildcards).output[0]
     print(checkpoints.cut_out_trees.get(**wildcards).output[0])
     labels = expand( "UK{i}",i=glob_wildcards(os.path.join(checkpoint_output_directory, "uk_lineage_UK{i}.tree")).i)
-    return (labels)
+    return (sorted(labels))
 
 rule combine_phylotypes_csv:
     input:
@@ -164,12 +164,12 @@ rule combine_lineage_csv:
 #
 rule graft_uk_trees:
     input:
-        scions = sorted(aggregate_input_trees), #remove sorted if causes error / move to aggregate_input_trees
+        scions = aggregate_input_trees, #remove sorted if causes error / move to aggregate_input_trees
         guide_tree= rules.annotate_tree.output.tree
     output:
         tree = config["output_path"] + "/5/{lineage}/cog_gisaid.final_linages.tree"
     params:
-        labels = sorted(aggregate_input_labels) # remove sorted if causes error /  move to aggregate_input_labels
+        labels = aggregate_input_labels # remove sorted if causes error /  move to aggregate_input_labels
     log:
         config["output_path"] + "/logs/5_{lineage}_graft_uk_trees.log"
     shell:
