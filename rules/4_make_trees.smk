@@ -21,7 +21,7 @@ rule split_based_on_lineages:
           --lineage-csv {input.lineage} \
           --out-folder {params.prefix} &> {log}
 
-        echo {params.webhook}
+        # echo {params.webhook}
 
         echo '{{"text":"' > 4a_data.json
         echo "*Step 4: Ready for tree building*\\n" >> 4a_data.json
@@ -33,12 +33,12 @@ rule split_based_on_lineages:
           echo ">$line\\n" >> 4a_data.json
         done
         echo '"}}' >> 4a_data.json
-        echo "webhook {params.webhook}"
-        curl -X POST -H "Content-type: application/json" -d @4a_data.json {params.webhook}
-        #rm 4a_data.json
+        # echo "webhook {params.webhook}"
 
         touch {output}
         """
+        # curl -X POST -H "Content-type: application/json" -d @4a_data.json {params.webhook}
+
 
 rule run_4_subroutine_on_lineages:
     input:

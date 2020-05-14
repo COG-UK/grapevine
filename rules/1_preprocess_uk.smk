@@ -11,7 +11,7 @@ rule uk_add_header_column:
         config["output_path"] + "/logs/1_add_header_column.log"
     shell:
         """
-        datafunk add_header_column
+        datafunk add_header_column \
         --input-fasta {input.fasta} \
         --input-metadata {input.metadata} \
         --output-metadata {output.metadata} \
@@ -36,8 +36,7 @@ rule uk_annotate_to_remove_duplicates:
           --out-metadata {output.metadata} \
           --log-file {log} \
           --add-cov-id \
-          --index-column header \
-          --log-file {log} &> {log}
+          --index-column header &> {log}
         """
 
 
@@ -80,8 +79,7 @@ rule uk_unify_headers:
           --input-metadata {input.metadata} \
           --output-fasta {output.fasta} \
           --output-metadata {output.metadata} \
-          --log {log} \
-          --cog-uk
+          --cog-uk  &> {log}
 
         sed --in-place=.tmp 's/United Kingdom/UK/g' {output.metadata}
         """
@@ -113,7 +111,7 @@ rule uk_add_epi_week:
 
 rule uk_minimap2_to_reference:
     input:
-        fasta = rules.uk_remove_duplicates.output.fasta,
+        fasta = rules.uk_unify_headers.output.fasta,
         reference = config["reference_fasta"]
     output:
         sam = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.mapped.sam"
@@ -206,7 +204,7 @@ rule run_snp_finder:
 rule add_snp_finder_result_to_metadata:
     input:
         snps = config["snps"],
-        metadata = rules.uk_remove_duplicates.output.metadata,
+        metadata = rules.uk_add_epi_week.output.metadata,
         new_data = rules.run_snp_finder.output.found
     output:
         metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.with_snp_finder.csv"
