@@ -215,8 +215,8 @@ rule summarize_generate_report_and_cut_out_trees:
         cat {log} >> 5b_data.json
         echo '"}}' >> 5b_data.json
         echo "webhook {params.webhook}"
-        #rm 5b_data.json
         """
+
 
 # UNCOMMENT THE BELOW WHEN THINGS ARE WORKING
 # rule summarize_generate_report_and_cut_out_trees:
@@ -249,7 +249,6 @@ rule summarize_generate_report_and_cut_out_trees:
 #         echo '"}}' >> 5b_data.json
 #         echo "webhook {params.webhook}"
 #         curl -X POST -H "Content-type: application/json" -d @5b_data.json {params.webhook}
-#         #rm 5b_data.json
 #         """
 
         #echo "*Step 5: Generate report and UK lineage trees is complete*\\n" >> 5_data.json

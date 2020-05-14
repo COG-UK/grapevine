@@ -31,25 +31,25 @@ rule all:
         config["output_path"] + "/logs/3_summarize_combine_gisaid_and_cog.log",
         config["output_path"] + "/logs/2_summarize_pangolin_lineage_typing.log",
         config["output_path"] + "/logs/1_summarize_preprocess_uk.log",
-        config["output_path"] + "/snakejunk/12345"
-
-rule clean_up:
-    input:
-        config["output_path"] + "/logs/5_summarize_generate_report_and_cut_out_trees.log",
-    output:
-        config["output_path"] + "/snakejunk/12345"
-    shell:
-        """
-        mkdir -p {output}
-        mv slurm-*.out *_data.json {output}/
-        for file in pre trace default.profraw
-        do
-          if [ -f "$file" ]
-          then
-            rm $file
-          fi
-        done
-        """
+#         config["output_path"] + "/snakejunk/12345"
+#
+# rule clean_up:
+#     input:
+#         config["output_path"] + "/logs/5_summarize_generate_report_and_cut_out_trees.log",
+#     output:
+#         config["output_path"] + "/snakejunk/12345"
+#     shell:
+#         """
+#         mkdir -p {output}
+#         mv slurm-*.out *_data.json {output}/
+#         for file in pre trace default.profraw
+#         do
+#           if [ -f "$file" ]
+#           then
+#             rm $file
+#           fi
+#         done
+#         """
 
 ##### Modules #####
 include: "rules/1_preprocess_uk.smk"
