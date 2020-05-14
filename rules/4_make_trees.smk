@@ -107,6 +107,5 @@ rule summarize_make_trees:
         cat {log} >> 4b_data.json
         echo '"}}' >> 4b_data.json
         echo "webhook {params.webhook}"
-        curl -X POST -H "Content-type: application/json" -d @4b_data.json {params.webhook}
-        #rm 4b_data.json
         """
+        # curl -X POST -H "Content-type: application/json" -d @4b_data.json {params.webhook}

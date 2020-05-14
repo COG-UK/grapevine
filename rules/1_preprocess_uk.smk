@@ -253,9 +253,10 @@ rule summarize_preprocess_uk:
         cat {log} >> 1_data.json
         echo '"}}' >> 1_data.json
         echo "webhook {params.webhook}"
-        curl -X POST -H "Content-type: application/json" -d @1_data.json {params.webhook}
-        #rm 1_data.json
         """
+        # curl -X POST -H "Content-type: application/json" -d @1_data.json {params.webhook}
+
+
 
         # mkdir -p {params.outdir}
         # mkdir -p {params.export_dir}

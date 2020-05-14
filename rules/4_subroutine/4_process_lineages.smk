@@ -39,7 +39,7 @@ rule iq_tree:
     shell:
         """
         echo "{params.outgroup} {input.lineage_fasta} {params.lineage}"
-        iqtree -m HKY -bb 1000 -czb \
+        iqtree -m HKY -fast -czb \
         -o \"{params.outgroup}\" \
         -cptime 300 \
         -nt AUTO \
@@ -54,6 +54,9 @@ rule iq_tree:
             --out {output.tree} &>> {log}
         fi
         """
+        # iqtree -m HKY -bb 1000 -czb \
+
+
 
 rule annotate_tree:
     input:
