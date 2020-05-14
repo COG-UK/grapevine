@@ -51,7 +51,8 @@ rule run_5_subroutine_on_lineages:
         path_to_script = workflow.current_basedir,
         output_path = config["output_path"],
         publish_path = config["publish_path"],
-        prefix = config["output_path"] + "/5/lineage_"
+        prefix = config["output_path"] + "/5/lineage_",
+        guide_tree = config["guide_tree"],
     output:
         metadata = config["output_path"] + "/5/cog_gisaid.lineages.with_all_traits.with_phylotype_traits.csv",
         full_tree = config["output_path"] + "/5/cog_gisaid_full.tree.nexus"
@@ -68,6 +69,7 @@ rule run_5_subroutine_on_lineages:
           --config \
           output_path={params.output_path} \
           publish_path={params.publish_path} \
+          guide_tree="{params.guide_tree}" \
           lineages="$lineages" \
           metadata={input.metadata} &> {log}
         """
