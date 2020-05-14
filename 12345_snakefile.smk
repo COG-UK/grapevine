@@ -1,4 +1,4 @@
-configfile: workflow.current_basedir + "/config.yaml"
+# configfile: workflow.current_basedir + "/config.yaml"
 
 import os
 
