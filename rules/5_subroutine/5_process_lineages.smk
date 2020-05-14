@@ -16,7 +16,7 @@ print("lineages", LINEAGES)
 
 rule all:
     input:
-        config["output_path"] + "/5/cog_gisaid.with_all_traits.with_phylotype_traits.csv",
+        config["output_path"] + "/5/cog_gisaid.lineages.with_all_traits.with_phylotype_traits.csv",
         config["output_path"] + "/5/cog_gisaid_full.tree.nexus"
 
 rule annotate_tree:
@@ -222,7 +222,7 @@ rule merge_with_metadata:
         metadata = config["metadata"],
         traits = rules.combine_lineage_csv.output.phylotype_csv
     output:
-        metadata = config["output_path"] + "/5/cog_gisaid.with_all_traits.with_phylotype_traits.csv"
+        metadata = config["output_path"] + "/5/cog_gisaid.lineages.with_all_traits.with_phylotype_traits.csv"
     log:
         config["output_path"] + "/logs/5_merge_with_metadata.log"
     shell:
