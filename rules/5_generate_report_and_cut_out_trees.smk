@@ -95,12 +95,13 @@ rule summarize_generate_report_and_cut_out_trees:
         echo "> UK lineage trees have been published in _{params.outdir}/trees_ and _{params.export_dir1}_\\n" >> {log}
         echo ">\\n" >> {log}
 
-
         echo '{{"text":"' > 5b_data.json
         echo "*Step 5: Generate UK lineage trees is complete*\\n" >> 5b_data.json
         echo '"}}' >> 5b_data.json
         echo "webhook {params.webhook}"
+        curl -X POST -H "Content-type: application/json" -d @5b_data.json {params.webhook}
         """
+
         # cat {log} >> 5b_data.json
 
 

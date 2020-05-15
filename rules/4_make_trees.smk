@@ -95,8 +95,8 @@ rule summarize_make_trees:
         echo "*Step 4: Construct and annotate lineage trees completed*\\n" >> 4b_data.json
         echo '"}}' >> 4b_data.json
         echo "webhook {params.webhook}"
+        curl -X POST -H "Content-type: application/json" -d @4b_data.json {params.webhook}
         """
-        # curl -X POST -H "Content-type: application/json" -d @4b_data.json {params.webhook}
 
 
 

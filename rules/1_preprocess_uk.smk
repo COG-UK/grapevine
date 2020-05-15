@@ -179,13 +179,12 @@ rule uk_full_untrimmed_alignment:
           -r {input.reference} \
           -o {output.fasta} \
           &> {log}
-
-        fastafunk remove \
-          --in-fasta {output.fasta} \
-          --in-metadata {input.omit_list} \
-          --out-fasta removed.fa
-        mv removed.fa {output.fasta}
         """
+        # fastafunk remove \
+        #   --in-fasta {output.fasta} \
+        #   --in-metadata {input.omit_list} \
+        #   --out-fasta removed.fa
+        # mv removed.fa {output.fasta}
 
 
 rule run_snp_finder:
@@ -251,8 +250,8 @@ rule summarize_preprocess_uk:
         cat {log} >> 1_data.json
         echo '"}}' >> 1_data.json
         echo "webhook {params.webhook}"
+        curl -X POST -H "Content-type: application/json" -d @1_data.json {params.webhook}
         """
-        # curl -X POST -H "Content-type: application/json" -d @1_data.json {params.webhook}
 
 
 
