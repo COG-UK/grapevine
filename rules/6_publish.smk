@@ -24,7 +24,7 @@ rule publish_COG_master_metadata:
     input:
         metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata
     output:
-        metadata = config["publish_path"] + "COG/master.csv"
+        metadata = config["publish_path"] + "/COG/master.csv"
     log:
         config["output_path"] + "/logs/6_publish_COG_master_metadata.log"
     shell:
@@ -37,7 +37,7 @@ rule publish_gisaid_master_metadata:
     input:
         metadata = config["output_path"] + "/0/gisaid.combined.updated.csv"
     output:
-        metadata = config["publish_path"] + "GISAID/master.csv"
+        metadata = config["publish_path"] + "/GISAID/master.csv"
     log:
         config["output_path"] + "/logs/6_publish_gisaid_master_metadata.log"
     shell:
@@ -128,10 +128,12 @@ rule publish_full_annotated_tree_and_metadata:
         gisaid_fasta = config["output_path"] + "/0/gisaid.full.masked.fasta",
         gisaid_metadata = config["output_path"] + "/0/gisaid.combined.updated.csv"
     params:
-        intermediate_cog_fasta = config["output_path"] + "/6/cog.publish_full_annotated_tree_and_metadata.temp.fasta",
-        intermediate_cog_metadata = config["output_path"] + "/6/cog.publish_full_annotated_tree_and_metadata.temp.csv",
-        intermediate_gisaid_fasta = config["output_path"] + "/6/gisaid.publish_full_annotated_tree_and_metadata.temp.fasta",
-        intermediate_gisaid_metadata = config["output_path"] + "/6/gisaid.publish_full_annotated_tree_and_metadata.temp.csv"
+        intermediate_cog_fasta = config["output_path"] + "/6/cog.publish_full_annotated_tree_and_metadata.temp.cog.fasta",
+        intermediate_cog_metadata = config["output_path"] + "/6/cog.publish_full_annotated_tree_and_metadata.temp.cog.csv",
+        intermediate_gisaid_fasta = config["output_path"] + "/6/gisaid.publish_full_annotated_tree_and_metadata.temp.gisaid.fasta",
+        intermediate_gisaid_metadata = config["output_path"] + "/6/gisaid.publish_full_annotated_tree_and_metadata.temp.gisaid.csv",
+        intermediate_combined_fasta = config["output_path"] + "/6/gisaid.publish_full_annotated_tree_and_metadata.temp.combined.fasta",
+        intermediate_combined_metadata = config["output_path"] + "/6/gisaid.publish_full_annotated_tree_and_metadata.temp.combined.csv",
     output:
         tree = config["export_path"] + "/trees/cog_global_" + config["date"] + '_tree.nexus',
         metadata = config["export_path"] + "/trees/cog_global_" + config["date"] + '_metadata.csv',
@@ -174,12 +176,26 @@ rule publish_full_annotated_tree_and_metadata:
           --out-metadata {params.intermediate_gisaid_metadata} \
           --restrict &>> {log}
 
-          fastafunk merge \
-            --in-fasta {params.intermediate_gisaid_fasta} {params.intermediate_cog_fasta} \
-            --in-metadata {params.intermediate_gisaid_metadata} {params.intermediate_cog_metadata} \
-            --out-fasta {output.fasta} \
-            --out-metadata {output.metadata} \
-            --index-column sequence_name &>> {log}
+
+        fastafunk merge \
+          --in-fasta {params.intermediate_gisaid_fasta} {params.intermediate_cog_fasta} \
+          --in-metadata {params.intermediate_gisaid_metadata} {params.intermediate_cog_metadata} \
+          --out-fasta {params.intermediate_combined_fasta} \
+          --out-metadata {params.intermediate_combined_metadata} \
+          --index-column sequence_name &>> {log}
+
+        fastafunk fetch \
+          --in-fasta {params.intermediate_combined_fasta} \
+          --in-metadata {params.intermediate_combined_metadata} \
+          --index-column sequence_name \
+          --filter-column sequence_name sample_date epi_week \
+                          country adm1 adm2 outer_postcode \
+                          is_surveillance is_community is_hcw \
+                          is_travel_history travel_history lineage \
+                          lineage_support uk_lineage acc_lineage del_lineage phylotype \
+          --out-fasta {output.fasta} \
+          --out-metadata {output.metadata} \
+          --restrict &>> {log}
         """
 
 
@@ -263,8 +279,8 @@ rule summarize_publish:
         cat {log} >> 6_data.json
         echo '"}}' >> 6_data.json
         echo 'webhook {params.webhook}'
+        curl -X POST -H "Content-type: application/json" -d @6_data.json {params.webhook}
         """
-        # curl -X POST -H "Content-type: application/json" -d @6_data.json {params.webhook}
 
 
 

@@ -43,8 +43,8 @@ rule summarize_combine_gisaid_and_cog:
         cat {log} >> 3_data.json
         echo '"}}' >> 3_data.json
         echo "webhook {params.webhook}"
+        curl -X POST -H "Content-type: application/json" -d @3_data.json {params.webhook}
         """
-        # curl -X POST -H "Content-type: application/json" -d @3_data.json {params.webhook}
 
 
         # mkdir -p {params.outdir}
