@@ -234,8 +234,6 @@ rule summarize_publish:
     params:
         webhook = config["webhook"],
         uk_trees_path = config["export_path"] + "/trees/uk_lineages/",
-    output:
-        json = config["output_path"] + "/6_data.json"
     log:
         config["output_path"] + "/logs/6_summarize_publish.log"
     shell:
@@ -253,17 +251,17 @@ rule summarize_publish:
         echo "> \\n" >> {log}
         echo "> Full, annotated tree published to {input.COG_GISAID_nexus_tree}\\n" >> {log}
         echo "> Matching metadata published to {input.COG_GISAID_meta}\\n" >> {log}
-        echo "> UK lineage subtrees published to {params.uk_trees_path}\\n" >> {log}
+        echo "> UK lineage subtrees published in {params.uk_trees_path}\\n" >> {log}
         echo "> \\n" >> {log}
         echo "> Public tree published to {input.public_COG_GISAID_newick_tree}\\n" >> {log}
         echo "> Associated unaligned sequences published to {input.public_COG_GISAID_seq_all}\\n" >> {log}
         echo "> Matching metadata with public fields only published to {input.public_COG_meta}\\n" >> {log}
         echo "> \\n" >> {log}
 
-        echo '{{"text":"' > {output.json}
-        echo "*Step 6: publish data complete*\\n" >> {output.json}
-        cat {log} >> {output.json}
-        echo '"}}' >> {output.json}
+        echo '{{"text":"' > 6_data.json
+        echo "*Step 6: publish data complete*\\n" >> 6_data.json
+        cat {log} >> 6_data.json
+        echo '"}}' >> 6_data.json
         echo 'webhook {params.webhook}'
         """
         # curl -X POST -H "Content-type: application/json" -d @6_data.json {params.webhook}
