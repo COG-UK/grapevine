@@ -397,14 +397,17 @@ rule gisaid_output_lineage_table:
           --in-fasta {input.fasta} \
           --in-metadata {input.metadata} \
           --index-column sequence_name \
-          --filter-column sequence_name country lineage \
-                          special_lineage uk_lineage \
-          --where-column uk_omit=is_uk country=edin_admin_0 \
+          --filter-column sequence_name country adm2 \
+                          sample_date epi_week \
+                          lineage special_lineage uk_lineage \
+          --where-column uk_omit=is_uk sample_date=covv_collection_date \
+                                 epi_week=edin_epi_week country=edin_admin_0 \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --log-file {log} \
           --restrict
         """
+
 
 # rule gisaid_output_gisaid:
 #     input:

@@ -142,15 +142,24 @@ rule uk_output_lineage_table:
           --in-fasta {input.fasta} \
           --in-metadata {input.metadata} \
           --index-column sequence_name \
-          --filter-column sequence_name country lineage \
-                          special_lineage uk_lineage \
-          --where-column country=adm0 \
+          --filter-column sequence_name country adm2 \
+                          sample_date epi_week \
+                          lineage special_lineage uk_lineage \
+          --where-column epi_week=edin_epi_week country=adm0 \
+                         sample_date=received_date sample_date=collection_date \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --log-file {log} \
           --restrict
         """
 
+sequence_name
+adm2
+sample_date
+epi_week
+lineage
+uk_lineage
+acc_lineage
 
 rule summarize_pangolin_lineage_typing:
     input:
