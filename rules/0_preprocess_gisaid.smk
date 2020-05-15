@@ -385,7 +385,7 @@ rule gisaid_distance_QC:
 rule gisaid_output_lineage_table:
     input:
         fasta = rules.gisaid_mask_2.output.fasta,
-        metadata = rules.uk_update_metadata_lineages.output.metadata
+        metadata = rules.gisaid_update_metadata_lineages.output.metadata
     output:
         fasta = config["output_path"] + "/0/gisaid.matched.fasta",
         metadata = config["output_path"] + "/0/gisaid.matched.lineages.csv"
