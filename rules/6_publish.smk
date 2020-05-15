@@ -21,6 +21,32 @@ rule uk_add_lineage_information_back_to_master_metadata:
         """
 
 
+rule publish_COG_master_metadata:
+    input:
+        metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata
+    output:
+        metadata = config["publish_path"] + "COG/master.csv"
+    log:
+        config["output_path"] + "/logs/6_publish_COG_master_metadata.log"
+    shell:
+        """
+        cp {input.metadata} {output.metadata} &> {log}
+        """
+
+
+rule publish_gisaid_master_metadata:
+    input:
+        metadata = rules.gisaid_update_metadata_lineages.output.metadata
+    output:
+        metadata = config["publish_path"] + "GISAID/master.csv"
+    log:
+        config["output_path"] + "/logs/6_publish_gisaid_master_metadata.log"
+    shell:
+        """
+        cp {input.metadata} {output.metadata} &> {log}
+        """
+
+
 rule publish_unaligned_cog_sequences:
     input:
         fasta = rules.uk_unify_headers.output.fasta
@@ -190,15 +216,58 @@ rule publish_public_cog_data:
 
 rule summarize_publish:
     input:
-        
-    output:
+        GISAID_meta_master = rules.publish_gisaid_master_metadata.otuput.metadata,
+        COG_meta_master = rules.publish_COG_master_metadata.output.metadata,
 
+        COG_seq_all = rules.publish_unaligned_cog_sequences.output.fasta,
+        COG_seq_all_aligned = rules.publish_full_aligned_cog_data.output.fasta,
+        COG_meta_all_aligned = rules.publish_full_aligned_cog_data.output.metadata,
+
+        COG_seq_all_aligned_filtered = rules.publish_filtered_aligned_cog_data.output.metadata,
+        COG_meta_all_aligned_filtered = rules.publish_filtered_aligned_cog_data.output.metadata,
+
+        COG_GISAID_nexus_tree = rules.publish_full_annotated_tree_and_metadata.output.tree,
+        COG_GISAID_meta = rules.publish_full_annotated_tree_and_metadata.output.metadata,
+
+        public_COG_GISAID_newick_tree = rules.publish_public_cog_data.output.tree,
+        public_COG_GISAID_seq_all = rules.publish_unaligned_cog_sequences.output.fasta,
+        public_COG_meta = rules.publish_public_cog_data.output.metadata
+    params:
+        webhook = config["webhook"]
+        uk_trees_path = config["export_path"] + "/trees/uk_lineages/",
+    output:
+        json = config["output_path"] + "/6_data.json"
     log:
         config["output_path"] + "/logs/6_summarize_publish.log"
     shell:
         """
+        echo "> Gisaid master metadata published to {input.GISAID_meta_master}\\n" >> {log}
+        echo "> COG master metadata published to {input.COG_meta_master}\\n" >> {log}
+        echo "> \\n" >> {log}
+        echo "> Unaligned (deduplicated, clean headers) COG sequences published to {input.COG_seq_all}\\n" >> {log}
+        echo "> \\n" >> {log}
+        echo "> Aligned (deduplicated, clean headers) COG sequences published to {input.COG_seq_all_aligned}\\n" >> {log}
+        echo "> Matching metadata published to {input.COG_meta_all_aligned}\\n" >> {log}
+        echo "> \\n" >> {log}
+        echo "> Filtered, aligned COG sequences published to {input.COG_seq_all_aligned_filtered}\\n" >> {log}
+        echo "> Matching metadata with lineage information published to {input.COG_meta_all_aligned_filtered}\\n" >> {log}
+        echo "> \\n" >> {log}
+        echo "> Full, annotated tree published to {input.COG_GISAID_nexus_tree}\\n" >> {log}
+        echo "> Matching metadata published to {input.COG_GISAID_meta}\\n" >> {log}
+        echo "> UK lineage subtrees published to {params.uk_trees_path}\\n" >> {log}
+        echo "> \\n" >> {log}
+        echo "> Public tree published to {input.public_COG_GISAID_newick_tree}\\n" >> {log}
+        echo "> Associated unaligned sequences published to {input.public_COG_GISAID_seq_all}\\n" >> {log}
+        echo "> Matching metadata with public fields only published to {input.public_COG_meta}\\n" >> {log}
+        echo "> \\n" >> {log}
 
+        echo '{{"text":"' > {output.json}
+        echo "*Step 6: publish data complete*\\n" >> {output.json}
+        cat {log} >> {output.json}
+        echo '"}}' >> {output.json}
+        echo 'webhook {params.webhook}'
         """
+        # curl -X POST -H "Content-type: application/json" -d @6_data.json {params.webhook}
 
 
 
