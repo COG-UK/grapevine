@@ -89,19 +89,20 @@ rule summarize_make_trees:
         config["output_path"] + "/logs/4_summarize_make_trees.log"
     shell:
         """
-        echo "> Lineage trees have been published in _{params.outdir}_\\n" >> {log}
-        echo ">\\n" >> {log}
-
-        cp {input.public_tree} {output.exported_tree2}
-        echo "> Full unannotated tree has been published in _{output.exported_tree2}_\\n" >> {log}
+        cp {input.public_tree} {output.exported_tree2} &> {log}
 
         echo '{{"text":"' > 4b_data.json
-        echo "*Step 4: Construct and annotate lineage trees completed*\\n" >> 4_data.json
-        cat {log} >> 4b_data.json
+        echo "*Step 4: Construct and annotate lineage trees completed*\\n" >> 4b_data.json
         echo '"}}' >> 4b_data.json
         echo "webhook {params.webhook}"
         """
         # curl -X POST -H "Content-type: application/json" -d @4b_data.json {params.webhook}
+
+
+
+        # echo "> Lineage trees have been published in _{params.outdir}_\\n" >> {log}
+        # echo ">\\n" >> {log}
+        # echo "> Full unannotated tree has been published in _{output.exported_tree2}_\\n" >> {log}
         # echo "> Full annotated tree has been published in _{output.published_tree}_\\n" >> {log}
         # echo "> and _{output.exported_tree1}_\\n" >> {log}
         # cp {input.private_tree} {output.published_tree}

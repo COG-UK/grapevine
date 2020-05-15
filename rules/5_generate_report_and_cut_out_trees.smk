@@ -97,14 +97,14 @@ rule summarize_generate_report_and_cut_out_trees:
 
 
         echo '{{"text":"' > 5b_data.json
-        echo "*Step 5: Generate UK lineage trees is complete*\\n" >> 5_data.json
-        cat {log} >> 5b_data.json
+        echo "*Step 5: Generate UK lineage trees is complete*\\n" >> 5b_data.json
         echo '"}}' >> 5b_data.json
         echo "webhook {params.webhook}"
         """
+        # cat {log} >> 5b_data.json
 
 
-# UNCOMMENT THE BELOW WHEN THINGS ARE WORKING
+#
 # rule summarize_generate_report_and_cut_out_trees:
 #     input:
 #         #report = rules.generate_report.output
