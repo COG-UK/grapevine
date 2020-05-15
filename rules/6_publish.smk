@@ -1,9 +1,8 @@
-configfile: workflow.current_basedir + "/config.yaml"
 
 
 rule uk_add_lineage_information_back_to_master_metadata:
     input:
-        metadata = rules.uk_update_metadata_lineages.output.metadata
+        metadata = rules.uk_update_metadata_lineages.output.metadata,
         lineage_data = rules.run_5_subroutine_on_lineages.output.metadata
     output:
         metadata = config["output_path"] + "/6/uk.master.csv"
@@ -36,7 +35,7 @@ rule publish_COG_master_metadata:
 
 rule publish_gisaid_master_metadata:
     input:
-        metadata = rules.gisaid_update_metadata_lineages.output.metadata
+        metadata = config["output_path"] + "/0/gisaid.combined.updated.csv"
     output:
         metadata = config["publish_path"] + "GISAID/master.csv"
     log:
@@ -126,12 +125,12 @@ rule publish_full_annotated_tree_and_metadata:
         tree = rules.run_5_subroutine_on_lineages.output.full_tree,
         cog_fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
         cog_metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata,
-        gisaid_fasta = rules.gisaid_mask_2.output.fasta,
-        gisaid_metadata = rules.gisaid_update_metadata_lineages.output.metadata,
+        gisaid_fasta = config["output_path"] + "/0/gisaid.full.masked.fasta",
+        gisaid_metadata = config["output_path"] + "/0/gisaid.combined.updated.csv"
     params:
         intermediate_cog_fasta = config["output_path"] + "/6/cog.publish_full_annotated_tree_and_metadata.temp.fasta",
         intermediate_cog_metadata = config["output_path"] + "/6/cog.publish_full_annotated_tree_and_metadata.temp.csv",
-        intermediate_gisaid_fasta = config["output_path"] + "/6/gisaid.publish_full_annotated_tree_and_metadata.temp.fasta"
+        intermediate_gisaid_fasta = config["output_path"] + "/6/gisaid.publish_full_annotated_tree_and_metadata.temp.fasta",
         intermediate_gisaid_metadata = config["output_path"] + "/6/gisaid.publish_full_annotated_tree_and_metadata.temp.csv"
     output:
         tree = config["export_path"] + "/trees/cog_global_" + config["date"] + '_tree.nexus',
@@ -197,7 +196,7 @@ rule publish_public_cog_data:
         config["output_path"] + "/logs/6_publish_public_cog_data.log"
     shell:
         """
-        cp {input.public_tree} {output.publictree} &> {log}
+        cp {input.public_tree} {output.public_tree} &> {log}
 
         fastafunk fetch \
           --in-fasta {input.fasta} \
@@ -216,7 +215,7 @@ rule publish_public_cog_data:
 
 rule summarize_publish:
     input:
-        GISAID_meta_master = rules.publish_gisaid_master_metadata.otuput.metadata,
+        GISAID_meta_master = rules.publish_gisaid_master_metadata.output.metadata,
         COG_meta_master = rules.publish_COG_master_metadata.output.metadata,
 
         COG_seq_all = rules.publish_unaligned_cog_sequences.output.fasta,
@@ -229,11 +228,11 @@ rule summarize_publish:
         COG_GISAID_nexus_tree = rules.publish_full_annotated_tree_and_metadata.output.tree,
         COG_GISAID_meta = rules.publish_full_annotated_tree_and_metadata.output.metadata,
 
-        public_COG_GISAID_newick_tree = rules.publish_public_cog_data.output.tree,
+        public_COG_GISAID_newick_tree = rules.publish_public_cog_data.output.public_tree,
         public_COG_GISAID_seq_all = rules.publish_unaligned_cog_sequences.output.fasta,
         public_COG_meta = rules.publish_public_cog_data.output.metadata
     params:
-        webhook = config["webhook"]
+        webhook = config["webhook"],
         uk_trees_path = config["export_path"] + "/trees/uk_lineages/",
     output:
         json = config["output_path"] + "/6_data.json"

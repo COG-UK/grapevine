@@ -153,13 +153,6 @@ rule uk_output_lineage_table:
           --restrict
         """
 
-sequence_name
-adm2
-sample_date
-epi_week
-lineage
-uk_lineage
-acc_lineage
 
 rule summarize_pangolin_lineage_typing:
     input:
