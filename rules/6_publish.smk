@@ -122,7 +122,8 @@ rule publish_filtered_aligned_cog_data:
 
 rule publish_full_annotated_tree_and_metadata:
     input:
-        tree = rules.run_5_subroutine_on_lineages.output.full_tree,
+        newick_tree = rules.run_4_subroutine_on_lineages.output.public_tree,
+        annotated_tree = rules.run_5_subroutine_on_lineages.output.full_tree,
         cog_fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
         cog_metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata,
         gisaid_fasta = config["output_path"] + "/0/gisaid.full.masked.fasta",
@@ -135,15 +136,16 @@ rule publish_full_annotated_tree_and_metadata:
         intermediate_combined_fasta = config["output_path"] + "/6/gisaid.publish_full_annotated_tree_and_metadata.temp.combined.fasta",
         intermediate_combined_metadata = config["output_path"] + "/6/gisaid.publish_full_annotated_tree_and_metadata.temp.combined.csv",
     output:
-        tree = config["export_path"] + "/trees/cog_global_" + config["date"] + '_tree.nexus',
+        newick_tree = config["export_path"] + "/trees/cog_global_" + config["date"] + '_tree.newick',
+        annotated_tree = config["export_path"] + "/trees/cog_global_" + config["date"] + '_tree.nexus',
         metadata = config["export_path"] + "/trees/cog_global_" + config["date"] + '_metadata.csv',
         fasta = config["output_path"] + "/6/cog_global.fasta"
     log:
         config["output_path"] + "/logs/6_publish_full_annotated_tree_and_metadata.log"
     shell:
         """
-        cp {input.tree} {output.tree} &> {log}
-
+        cp {input.annotated_tree} {output.annotated_tree} &> {log}
+        cp {input.newick_tree} {output.newick_tree} &>> {log}
 
         fastafunk fetch \
           --in-fasta {input.cog_fasta} \
