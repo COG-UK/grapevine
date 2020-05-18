@@ -23,18 +23,17 @@ rule uk_extract_new:
           --log {log}
         """
 
-rule update_pangolin_lineages:
-    log:
-        config["output_path"] + "/logs/2_update_pangolin_lineages.log"
-    shell:
-        """
-        #pip install --upgrade git+https://github.com/hCoV-2019/spangolin.git
-        """
+# rule update_pangolin_lineages:
+#     log:
+#         config["output_path"] + "/logs/2_update_pangolin_lineages.log"
+#     shell:
+#         """
+#         #pip install --upgrade git+https://github.com/hCoV-2019/spangolin.git
+#         """
 
 rule uk_pangolin:
     input:
         fasta = rules.uk_extract_new.output.fasta,
-        pangolin_updated = rules.update_pangolin_lineages.log
     params:
         outdir = config["output_path"] + "/2/pangolin",
         tmpdir = config["output_path"] + "/2/pangolin/tmp"
@@ -42,7 +41,7 @@ rule uk_pangolin:
         lineages = protected(config["output_path"] + "/2/pangolin/lineage_report.csv")
     log:
         config["output_path"] + "/logs/2_uk_pangolin.log"
-    threads: 16
+    threads: 40
     shell:
         """
         pangolin {input.fasta} \
@@ -51,8 +50,6 @@ rule uk_pangolin:
         --tempdir {params.tmpdir}  >> {log} 2>&1
         """
 
-        # pangolin --lineages-version >> {log}
-        # pangolin --version >> {log}
 
 rule uk_add_previous_uk_lineages_to_metadata:
     input:
@@ -122,26 +119,30 @@ rule uk_update_metadata_lineages:
         df.to_csv(output.metadata, index=False)
 
 
-rule uk_output_cog:
+"""
+Let's output a full-width metadata table here, but restrict it (in length) to
+sequences in the fasta file that we're going to build trees on
+
+NB do we need to check that every row has 'special lineage' at this point?
+"""
+rule uk_output_lineage_table:
     input:
         fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
         metadata = rules.uk_update_metadata_lineages.output.metadata
     output:
-        fasta = config["output_path"] + "/2/uk.regularized.fasta",
-        metadata = config["output_path"] + "/2/uk.regularized.csv"
+        fasta = config["output_path"] + "/2/uk.matched.fasta",
+        metadata = config["output_path"] + "/2/uk.matched.lineages.csv"
     log:
-        config["output_path"] + "/logs/2_uk_output_cog.log"
+        config["output_path"] + "/logs/2_uk_output_lineage_table.log"
     shell:
         """
         fastafunk fetch \
           --in-fasta {input.fasta} \
           --in-metadata {input.metadata} \
           --index-column sequence_name \
-          --filter-column sequence_name sample_date epi_week \
-                          country adm1 adm2 outer_postcode \
-                          is_surveillance is_community is_hcw \
-                          is_travel_history travel_history lineage special_lineage \
-                          lineage_support uk_lineage \
+          --filter-column sequence_name country adm2 \
+                          sample_date epi_week \
+                          lineage special_lineage uk_lineage \
           --where-column epi_week=edin_epi_week country=adm0 \
                          sample_date=received_date sample_date=collection_date \
           --out-fasta {output.fasta} \
@@ -150,46 +151,14 @@ rule uk_output_cog:
           --restrict
         """
 
-rule uk_output_cog_public:
-    input:
-        fasta = rules.uk_remove_duplicates.output.fasta,
-        metadata = rules.uk_update_metadata_lineages.output.metadata,
-        omit_list = rules.uk_filter_low_coverage_sequences.log
-    output:
-        fasta = config["output_path"] + "/2/uk.public.fasta",
-        metadata = config["output_path"] + "/2/uk.public.csv"
-    log:
-        config["output_path"] + "/logs/2_uk_output_cog_public.log"
-    shell:
-        """
-        fastafunk fetch \
-          --in-fasta {input.fasta} \
-          --in-metadata {input.metadata} \
-          --index-column sequence_name \
-          --filter-column sequence_name country adm1 \
-                          sample_date epi_week lineage \
-                          lineage_support \
-          --where-column epi_week=edin_epi_week country=adm0 \
-                         sample_date=received_date sample_date=collection_date \
-          --out-fasta {output.fasta} \
-          --out-metadata {output.metadata} \
-          --log-file {log} \
-          --restrict
-
-        fastafunk remove \
-          --in-fasta {output.fasta} \
-          --in-metadata {input.omit_list} \
-          --out-fasta removed.fa
-        mv removed.fa {output.fasta}
-        """
 
 rule summarize_pangolin_lineage_typing:
     input:
-        fasta = rules.uk_output_cog.output.fasta,
-        metadata = rules.uk_output_cog.output.metadata,
-        public_fasta = rules.uk_output_cog_public.output.fasta,
-        public_metadata = rules.uk_output_cog_public.output.metadata,
-        full_metadata = rules.uk_update_metadata_lineages.output.metadata
+        fasta = rules.uk_output_lineage_table.output.fasta,
+        metadata = rules.uk_output_lineage_table.output.metadata,
+        # public_fasta = rules.uk_output_cog_public.output.fasta,
+        # public_metadata = rules.uk_output_cog_public.output.metadata,
+        # full_metadata = rules.uk_update_metadata_lineages.output.metadata
     params:
         webhook = config["webhook"],
         outdir = config["publish_path"] + "/COG",
@@ -202,37 +171,37 @@ rule summarize_pangolin_lineage_typing:
         config["output_path"] + "/logs/2_summarize_pangolin_lineage_typing.log"
     shell:
         """
-        mkdir -p {params.outdir}
-        mkdir -p {params.export_dir1}
-        mkdir -p {params.export_dir2}
-
-        cp {input.full_metadata} {params.prefix}_metadata.full.csv
-        echo "> Full COG metadata published to _{params.prefix}_metadata.csv_\\n" >> {log}
-        echo ">\\n" >> {log}
-
-        cp {input.fasta} {params.prefix}_alignment.trimmed.matched.fasta
-        cp {input.metadata} {params.prefix}_metadata.matched.csv
-        cp {input.fasta} {params.export_prefix2}_alignment.fasta
-        cp {input.metadata} {params.export_prefix2}_metadata.csv
-        echo "> Matched COG trimmed alignment and restricted metadata published to _{params.prefix}_alignment.trimmed.matched.fasta_ and _{params.prefix}_metadata.matched.csv_\\n" >> {log}
-        echo "> and to _{params.export_prefix2}_alignment.fasta_ and _{params.export_prefix2}_metadata.csv_\\n" >> {log}
-        echo "> Number of sequences in matched COG files: $(cat {input.fasta} | grep ">" | wc -l)\\n" &>> {log}
-        echo ">\\n" >> {log}
-
-        cp {input.public_fasta} {params.prefix}_sequences.public.fasta
-        cp {input.public_metadata} {params.prefix}_metadata.public.csv
-        cp {input.public_fasta} {params.export_prefix1}_sequences.fasta
-        cp {input.public_metadata} {params.export_prefix1}_metadata.csv
-        echo "> Public unaligned COG fasta and restricted metadata published to _{params.prefix}_sequences.public.fasta_ and _{params.prefix}_metadata.public.csv_\\n" >> {log}
-        echo "> and to _{params.export_prefix1}_sequences.fasta_ and _{params.export_prefix1}_metadata.csv_\\n" >> {log}
-        echo "> Number of sequences in public COG files: $(cat {input.public_fasta} | grep ">" | wc -l)\\n" &>> {log}
-        echo ">\\n" >> {log}
-
         echo '{{"text":"' > 2_data.json
         echo "*Step 2: COG-UK pangolin typing complete*\\n" >> 2_data.json
-        cat {log} >> 2_data.json
         echo '"}}' >> 2_data.json
         echo "webhook {params.webhook}"
         curl -X POST -H "Content-type: application/json" -d @2_data.json {params.webhook}
-        #rm 2_data.json
         """
+        # cat {log} >> 2_data.json
+
+
+        # mkdir -p {params.outdir}
+        # mkdir -p {params.export_dir1}
+        # mkdir -p {params.export_dir2}
+        #
+        # cp {input.full_metadata} {params.prefix}_metadata.full.csv
+        # echo "> Full COG metadata published to _{params.prefix}_metadata.csv_\\n" >> {log}
+        # echo ">\\n" >> {log}
+
+        # cp {input.fasta} {params.prefix}_alignment.trimmed.matched.fasta
+        # cp {input.metadata} {params.prefix}_metadata.matched.csv
+        # cp {input.fasta} {params.export_prefix2}_alignment.fasta
+        # cp {input.metadata} {params.export_prefix2}_metadata.csv
+        # echo "> Matched COG trimmed alignment and restricted metadata published to _{params.prefix}_alignment.trimmed.matched.fasta_ and _{params.prefix}_metadata.matched.csv_\\n" >> {log}
+        # echo "> and to _{params.export_prefix2}_alignment.fasta_ and _{params.export_prefix2}_metadata.csv_\\n" >> {log}
+        # echo "> Number of sequences in matched COG files: $(cat {input.fasta} | grep ">" | wc -l)\\n" &>> {log}
+        # echo ">\\n" >> {log}
+
+        # cp {input.public_fasta} {params.prefix}_sequences.public.fasta
+        # cp {input.public_metadata} {params.prefix}_metadata.public.csv
+        # cp {input.public_fasta} {params.export_prefix1}_sequences.fasta
+        # cp {input.public_metadata} {params.export_prefix1}_metadata.csv
+        # echo "> Public unaligned COG fasta and restricted metadata published to _{params.prefix}_sequences.public.fasta_ and _{params.prefix}_metadata.public.csv_\\n" >> {log}
+        # echo "> and to _{params.export_prefix1}_sequences.fasta_ and _{params.export_prefix1}_metadata.csv_\\n" >> {log}
+        # echo "> Number of sequences in public COG files: $(cat {input.public_fasta} | grep ">" | wc -l)\\n" &>> {log}
+        # echo ">\\n" >> {log}
