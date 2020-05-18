@@ -31,25 +31,24 @@ rule uk_extract_new:
 #         #pip install --upgrade git+https://github.com/hCoV-2019/spangolin.git
 #         """
 
-# rule uk_pangolin:
-#     input:
-#         fasta = rules.uk_extract_new.output.fasta,
-#         pangolin_updated = rules.update_pangolin_lineages.log
-#     params:
-#         outdir = config["output_path"] + "/2/pangolin",
-#         tmpdir = config["output_path"] + "/2/pangolin/tmp"
-#     output:
-#         lineages = protected(config["output_path"] + "/2/pangolin/lineage_report.csv")
-#     log:
-#         config["output_path"] + "/logs/2_uk_pangolin.log"
-#     threads: 16
-#     shell:
-#         """
-#         pangolin {input.fasta} \
-#         --threads {threads} \
-#         --outdir {params.outdir} \
-#         --tempdir {params.tmpdir}  >> {log} 2>&1
-#         """
+rule uk_pangolin:
+    input:
+        fasta = rules.uk_extract_new.output.fasta,
+    params:
+        outdir = config["output_path"] + "/2/pangolin",
+        tmpdir = config["output_path"] + "/2/pangolin/tmp"
+    output:
+        lineages = protected(config["output_path"] + "/2/pangolin/lineage_report.csv")
+    log:
+        config["output_path"] + "/logs/2_uk_pangolin.log"
+    threads: 40
+    shell:
+        """
+        pangolin {input.fasta} \
+        --threads {threads} \
+        --outdir {params.outdir} \
+        --tempdir {params.tmpdir}  >> {log} 2>&1
+        """
 
 
 rule uk_add_previous_uk_lineages_to_metadata:
@@ -75,8 +74,7 @@ rule uk_add_pangolin_lineages_to_metadata:
     input:
         metadata = rules.uk_add_previous_uk_lineages_to_metadata.output.metadata,
         new_metadata = rules.uk_extract_new.output.metadata,
-        # lineages = rules.uk_pangolin.output.lineages
-        lineages = config["output_path"] + "/2/pangolin/lineage_report.csv"
+        lineages = rules.uk_pangolin.output.lineages
     output:
         metadata = config["output_path"] + "/2/uk.with_new_lineages.csv",
         tmp_metadata = temp(config["output_path"] + "/2/uk.with_new_lineages.csv.tmp")

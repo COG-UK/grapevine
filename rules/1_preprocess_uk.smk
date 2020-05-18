@@ -224,8 +224,8 @@ rule add_snp_finder_result_to_metadata:
 rule summarize_preprocess_uk:
     input:
         raw_fasta = config["latest_uk_fasta"],
-        unify_headers_fasta = rules.uk_unify_headers.output.fasta,
         deduplicated_fasta = rules.uk_remove_duplicates.output.fasta,
+        unify_headers_fasta = rules.uk_unify_headers.output.fasta,
         removed_low_covg_fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
         full_alignment = rules.uk_full_untrimmed_alignment.output.fasta,
         full_metadata = rules.add_snp_finder_result_to_metadata.output.metadata
@@ -240,8 +240,8 @@ rule summarize_preprocess_uk:
     shell:
         """
         echo "> Number of sequences in raw UK fasta: $(cat {input.raw_fasta} | grep ">" | wc -l)\\n" &> {log}
-        echo "> Number of sequences in raw UK fasta after unifying headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after deduplication: $(cat {input.deduplicated_fasta} | grep ">" | wc -l)\\n" &>> {log}
+        echo "> Number of sequences in raw UK fasta after unifying headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after trimming and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo ">\\n" >> {log}
 

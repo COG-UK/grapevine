@@ -39,7 +39,7 @@ rule iq_tree:
     shell:
         """
         echo "{params.outgroup} {input.lineage_fasta} {params.lineage}"
-        iqtree -m HKY -fast -czb \
+        iqtree -m HKY -bb 1000 -czb \
         -o \"{params.outgroup}\" \
         -cptime 300 \
         -nt AUTO \
