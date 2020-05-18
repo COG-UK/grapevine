@@ -36,8 +36,8 @@ rule split_based_on_lineages:
         # echo "webhook {params.webhook}"
 
         touch {output}
+        curl -X POST -H "Content-type: application/json" -d @4a_data.json {params.webhook}
         """
-        # curl -X POST -H "Content-type: application/json" -d @4a_data.json {params.webhook}
 
 
 rule run_4_subroutine_on_lineages:

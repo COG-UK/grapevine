@@ -238,7 +238,7 @@ rule summarize_publish:
         COG_seq_all_aligned = rules.publish_full_aligned_cog_data.output.fasta,
         COG_meta_all_aligned = rules.publish_full_aligned_cog_data.output.metadata,
 
-        COG_seq_all_aligned_filtered = rules.publish_filtered_aligned_cog_data.output.metadata,
+        COG_seq_all_aligned_filtered = rules.publish_filtered_aligned_cog_data.output.fasta,
         COG_meta_all_aligned_filtered = rules.publish_filtered_aligned_cog_data.output.metadata,
 
         COG_GISAID_nexus_tree = rules.publish_full_annotated_tree_and_metadata.output.tree,
