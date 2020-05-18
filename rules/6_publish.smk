@@ -189,7 +189,7 @@ rule publish_full_annotated_tree_and_metadata:
         newick_tree = config["export_path"] + "/trees/cog_global_" + config["date"] + '_tree.newick',
         annotated_tree = config["export_path"] + "/trees/cog_global_" + config["date"] + '_tree.nexus',
         metadata = config["export_path"] + "/trees/cog_global_" + config["date"] + '_metadata.csv',
-        fasta = config["output_path"] + "/6/cog_global.fasta"
+        fasta = config["output_path"] + "/6/cog_global.fasta",
     log:
         config["output_path"] + "/logs/6_publish_full_annotated_tree_and_metadata.log"
     shell:
@@ -252,7 +252,7 @@ rule publish_microreact_specific_output:
         newick_tree = config["export_path"] + "/microreact/cog_global_" + config["date"] + '_tree.newick',
         public_metadata = config["export_path"] + "/microreact/cog_global_" + config["date"] + '_metadata_public.csv',
         private_metadata = config["export_path"] + "/microreact/cog_global_" + config["date"] + '_metadata_private.csv',
-        fasta1 = temp(config["output_path"] + "/6/cog_global_microreact1.fasta")
+        fasta1 = temp(config["output_path"] + "/6/cog_global_microreact1.fasta"),
         fasta2 = temp(config["output_path"] + "/6/cog_global_microreact2.fasta")
     log:
         config["output_path"] + "/logs/6_publish_microreact_specific_output.log"
@@ -261,8 +261,8 @@ rule publish_microreact_specific_output:
         cp {input.newick_tree} {output.newick_tree}
 
         fastafunk fetch \
-          --in-fasta {input.combined_fasta} \
-          --in-metadata {input.combined_metadata} \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata} \
           --index-column sequence_name \
           --filter-column sequence_name sample_date epi_week \
                           country adm1 adm2 submission_org_code lineage \
@@ -272,13 +272,13 @@ rule publish_microreact_specific_output:
           --restrict &>> {log}
 
         fastafunk fetch \
-          --in-fasta {input.combined_fasta} \
-          --in-metadata {input.combined_metadata} \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata} \
           --index-column sequence_name \
           --filter-column sequence_name sample_date epi_week \
                           country adm1 adm2 submission_org_code \
                           is_hcw travel_history \
-                          lineage lineage_support uk_lineage D614G \
+                          lineage lineage_support uk_lineage d614g \
           --out-fasta {output.fasta2} \
           --out-metadata {output.private_metadata} \
           --restrict &>> {log}
@@ -297,16 +297,16 @@ rule summarize_publish:
         COG_seq_all_aligned_filtered = rules.publish_filtered_aligned_cog_data.output.fasta,
         COG_meta_all_aligned_filtered = rules.publish_filtered_aligned_cog_data.output.metadata,
 
-        COG_GISAID_nexus_tree = rules.publish_full_annotated_tree_and_metadata.output.tree,
+        COG_GISAID_nexus_tree = rules.publish_full_annotated_tree_and_metadata.output.annotated_tree,
         COG_GISAID_meta = rules.publish_full_annotated_tree_and_metadata.output.metadata,
 
         public_COG_GISAID_newick_tree = rules.publish_public_cog_data.output.public_tree,
         public_COG_GISAID_seq_all = rules.publish_unaligned_cog_sequences.output.fasta,
-        public_COG_meta = rules.publish_public_cog_data.output.metadata
+        public_COG_meta = rules.publish_public_cog_data.output.metadata,
 
-        microreact_tree = rules.publish_microreact_specific_output.output.newick_tree
-        microreact_public_metadata = rules.publish_microreact_specific_output.output.public_metadata
-        microreact_private_metadata = rules.publish_microreact_specific_output.output.private_metadata
+        microreact_tree = rules.publish_microreact_specific_output.output.newick_tree,
+        microreact_public_metadata = rules.publish_microreact_specific_output.output.public_metadata,
+        microreact_private_metadata = rules.publish_microreact_specific_output.output.private_metadata,
     params:
         webhook = config["webhook"],
         uk_trees_path = config["export_path"] + "/trees/uk_lineages/",
