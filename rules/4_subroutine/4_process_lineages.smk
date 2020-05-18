@@ -22,7 +22,7 @@ print("outgroups", OUTGROUPS)
 rule all:
     input:
         traits=config["output_path"] + "/4/all_traits.csv",
-        tree=config["output_path"] + "/4/cog_gisaid_full.tree"
+        tree=config["output_path"] + "/4/cog_gisaid_full.tree.public.newick"
 
 
 rule iq_tree:
@@ -54,6 +54,9 @@ rule iq_tree:
             --out {output.tree} &>> {log}
         fi
         """
+        # iqtree -m HKY -bb 1000 -czb \
+
+
 
 rule annotate_tree:
     input:
@@ -225,7 +228,7 @@ rule label_maxtran_introductions:
           --output {output.tree} &> {log}
         """
 
-
+# now outputs a newick tree for publication. The private nexus tree will be made in stage 5.
 rule graft:
     input:
          # not sure how to pass this as a space separated list below. Also assuming the order here matches lineages
@@ -234,7 +237,7 @@ rule graft:
     params:
         lineages = sorted(LINEAGES),
     output:
-        tree = config["output_path"] + "/4/cog_gisaid_full.tree",
+        tree = config["output_path"] + '/4/cog_gisaid_full.tree.public.newick',
     log:
         config["output_path"] + "/logs/4_graft.log"
     shell:
@@ -243,10 +246,28 @@ rule graft:
         --scions {input.scions} \
         --scion_annotation_name scion_lineage \
         --annotate_scions {params.lineages} \
-        --out-format newick \
         --input {input.guide_tree} \
+        --out-format newick \
         --output {output.tree} &> {log}
         """
+# not needed since graft outputs a newick tree now.
+# rule get_public_newick_tree:
+#     input:
+#         tree = rules.graft.output.tree
+#     output:
+#         tree = '/4/cog_gisaid_full.tree.public.newick'
+#     log:
+#         config["output_path"] + "/logs/4_publish_public_newick_tree.log"
+#     shell:
+#         """
+#         clusterfunk reformat \
+#           --input {input.tree} \
+#           --output {output.tree} \
+#           --out-format newick \
+#           --in-format nexus &> {log}
+#         """
+
+
 
 rule output_annotations:
     input:

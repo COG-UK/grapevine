@@ -1,10 +1,75 @@
-rule uk_unify_headers:
+
+
+rule uk_add_header_column:
     input:
         fasta = config["latest_uk_fasta"],
         metadata = config["latest_uk_metadata"]
     output:
-        fasta = temp(config["output_path"] + "/1/uk_latest.unify_headers.fasta"),
-        metadata = temp(config["output_path"] + "/1/uk_latest.unify_headers.csv")
+        fasta = config["output_path"] + "/1/uk_latest.add_header.fasta",
+        metadata = config["output_path"] + "/1/uk_latest.add_header.csv"
+    log:
+        config["output_path"] + "/logs/1_add_header_column.log"
+    shell:
+        """
+        datafunk add_header_column \
+        --input-fasta {input.fasta} \
+        --input-metadata {input.metadata} \
+        --output-metadata {output.metadata} \
+        --output-fasta {output.fasta} \
+        --cog-uk &> {log}
+        """
+
+
+rule uk_annotate_to_remove_duplicates:
+    input:
+        fasta = rules.uk_add_header_column.output.fasta,
+        metadata = rules.uk_add_header_column.output.metadata
+    output:
+        metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.csv"
+    log:
+        config["output_path"] + "/logs/1_uk_annotate_to_remove_duplicates.log"
+    shell:
+        """
+        fastafunk annotate \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata} \
+          --out-metadata {output.metadata} \
+          --log-file {log} \
+          --add-cov-id \
+          --index-column header &> {log}
+        """
+
+
+rule uk_remove_duplicates:
+    input:
+        fasta = rules.uk_add_header_column.output.fasta,
+        metadata = rules.uk_annotate_to_remove_duplicates.output.metadata
+    output:
+        fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.fasta",
+        metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.csv"
+    log:
+        config["output_path"] + "/logs/1_uk_remove_duplicates.log"
+    shell:
+        """
+        fastafunk subsample \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata} \
+          --group-column cov_id \
+          --index-column header \
+          --out-fasta {output.fasta} \
+          --out-metadata {output.metadata} \
+          --sample-size 1 \
+          --select-by-min-column gaps &> {log}
+        """
+
+
+rule uk_unify_headers:
+    input:
+        fasta = rules.uk_remove_duplicates.output.fasta,
+        metadata = rules.uk_remove_duplicates.output.metadata
+    output:
+        fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.unify_headers.fasta",
+        metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.unify_headers.csv"
     log:
         config["output_path"] + "/logs/1_uk_unify_headers.log"
     shell:
@@ -14,11 +79,11 @@ rule uk_unify_headers:
           --input-metadata {input.metadata} \
           --output-fasta {output.fasta} \
           --output-metadata {output.metadata} \
-          --log {log} \
-          --cog-uk
+          --cog-uk  &> {log}
 
         sed --in-place=.tmp 's/United Kingdom/UK/g' {output.metadata}
         """
+
 
 rule uk_add_epi_week:
     input:
@@ -43,68 +108,10 @@ rule uk_add_epi_week:
         --epi-column-name edin_epi_week &>> {log}
         """
 
-rule uk_add_previous_uk_duplicates_to_metadata:
-    input:
-        previous_metadata = config["previous_uk_metadata"],
-        metadata = rules.uk_add_epi_week.output.metadata,
-    output:
-        metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.add_previous.csv",
-    log:
-        config["output_path"] + "/logs/1_uk_add_previous_uk_duplicates_to_metadata.log"
-    shell:
-        """
-        fastafunk add_columns \
-          --in-metadata {input.metadata} \
-          --in-data {input.previous_metadata} \
-          --index-column sequence_name \
-          --join-on sequence_name \
-          --new-columns subsample_omit \
-          --out-metadata {output.metadata} &>> {log}
-        """
-
-rule uk_annotate_to_remove_duplicates:
-    input:
-        fasta = rules.uk_unify_headers.output.fasta,
-        metadata = rules.uk_add_previous_uk_duplicates_to_metadata.output.metadata
-    output:
-        metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.annotated.csv"
-    log:
-        config["output_path"] + "/logs/1_uk_annotate_to_remove_duplicates.log"
-    shell:
-        """
-        fastafunk annotate \
-          --in-fasta {input.fasta} \
-          --in-metadata {input.metadata} \
-          --out-metadata {output.metadata} \
-          --log-file {log} \
-          --add-cov-id
-        """
-
-rule uk_remove_duplicates:
-    input:
-        fasta = rules.uk_unify_headers.output.fasta,
-        metadata = rules.uk_annotate_to_remove_duplicates.output.metadata
-    output:
-        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.fasta",
-        metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.csv"
-    log:
-        config["output_path"] + "/logs/1_uk_remove_duplicates.log"
-    shell:
-        """
-        fastafunk subsample \
-          --in-fasta {input.fasta} \
-          --in-metadata {input.metadata} \
-          --group-column cov_id \
-          --index-column sequence_name \
-          --out-fasta {output.fasta} \
-          --out-metadata {output.metadata} \
-          --sample-size 1 \
-          --select-by-min-column gaps &> {log}
-        """
 
 rule uk_minimap2_to_reference:
     input:
-        fasta = rules.uk_remove_duplicates.output.fasta,
+        fasta = rules.uk_unify_headers.output.fasta,
         reference = config["reference_fasta"]
     output:
         sam = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.mapped.sam"
@@ -172,13 +179,12 @@ rule uk_full_untrimmed_alignment:
           -r {input.reference} \
           -o {output.fasta} \
           &> {log}
-
-        fastafunk remove \
-          --in-fasta {output.fasta} \
-          --in-metadata {input.omit_list} \
-          --out-fasta removed.fa
-        mv removed.fa {output.fasta}
         """
+        # fastafunk remove \
+        #   --in-fasta {output.fasta} \
+        #   --in-metadata {input.omit_list} \
+        #   --out-fasta removed.fa
+        # mv removed.fa {output.fasta}
 
 
 rule run_snp_finder:
@@ -197,7 +203,7 @@ rule run_snp_finder:
 rule add_snp_finder_result_to_metadata:
     input:
         snps = config["snps"],
-        metadata = rules.uk_remove_duplicates.output.metadata,
+        metadata = rules.uk_add_epi_week.output.metadata,
         new_data = rules.run_snp_finder.output.found
     output:
         metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.with_snp_finder.csv"
@@ -218,8 +224,8 @@ rule add_snp_finder_result_to_metadata:
 rule summarize_preprocess_uk:
     input:
         raw_fasta = config["latest_uk_fasta"],
-        unify_headers_fasta = rules.uk_unify_headers.output.fasta,
         deduplicated_fasta = rules.uk_remove_duplicates.output.fasta,
+        unify_headers_fasta = rules.uk_unify_headers.output.fasta,
         removed_low_covg_fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
         full_alignment = rules.uk_full_untrimmed_alignment.output.fasta,
         full_metadata = rules.add_snp_finder_result_to_metadata.output.metadata
@@ -234,24 +240,9 @@ rule summarize_preprocess_uk:
     shell:
         """
         echo "> Number of sequences in raw UK fasta: $(cat {input.raw_fasta} | grep ">" | wc -l)\\n" &> {log}
-        echo "> Number of sequences in raw UK fasta after unifying headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after deduplication: $(cat {input.deduplicated_fasta} | grep ">" | wc -l)\\n" &>> {log}
+        echo "> Number of sequences in raw UK fasta after unifying headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after trimming and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)\\n" &>> {log}
-        echo ">\\n" >> {log}
-
-        mkdir -p {params.outdir}
-        mkdir -p {params.export_dir}
-        cp {input.full_alignment} {params.prefix}_alignment.full.fasta
-        cp {input.full_alignment} {params.export_prefix}_alignment.full.fasta
-        echo "> Full untrimmed COG alignment published to _{params.prefix}_alignment.full.fasta_\\n" >> {log}
-        echo "> and to _{params.export_prefix}_alignment.full.fasta_\\n" >> {log}
-        #echo ">\\n" >> {log}
-        # cp {input.removed_low_covg_fasta} {params.prefix}_alignment.trimmed.fasta
-        # echo "> Trimmed COG alignment published to _{params.prefix}_alignment.trimmed.fasta_\\n" >> {log}
-        cp {input.full_metadata} {params.prefix}_metadata.full.csv
-        cp {input.full_metadata} {params.export_prefix}_metadata.full.csv
-        echo "> Full COG only metadata published to _{params.prefix}_metadata.full.csv_\\n" >> {log}
-        echo "> and to _{params.export_prefix}_metadata.full.csv_\\n" >> {log}
         echo ">\\n" >> {log}
 
         echo '{{"text":"' > 1_data.json
@@ -260,5 +251,21 @@ rule summarize_preprocess_uk:
         echo '"}}' >> 1_data.json
         echo "webhook {params.webhook}"
         curl -X POST -H "Content-type: application/json" -d @1_data.json {params.webhook}
-        #rm 1_data.json
         """
+
+
+
+        # mkdir -p {params.outdir}
+        # mkdir -p {params.export_dir}
+        # cp {input.full_alignment} {params.prefix}_alignment.full.fasta
+        # cp {input.full_alignment} {params.export_prefix}_alignment.full.fasta
+        # echo "> Full untrimmed COG alignment published to _{params.prefix}_alignment.full.fasta_\\n" >> {log}
+        # echo "> and to _{params.export_prefix}_alignment.full.fasta_\\n" >> {log}
+        # echo ">\\n" >> {log}
+        # cp {input.full_metadata} {params.prefix}_metadata.full.csv
+        # cp {input.full_metadata} {params.export_prefix}_metadata.full.csv
+        # echo "> Full COG only metadata published to _{params.prefix}_metadata.full.csv_\\n" >> {log}
+        # echo "> and to _{params.export_prefix}_metadata.full.csv_\\n" >> {log}
+        # echo ">\\n" >> {log}
+        # cp {input.removed_low_covg_fasta} {params.prefix}_alignment.trimmed.fasta
+        # echo "> Trimmed COG alignment published to _{params.prefix}_alignment.trimmed.fasta_\\n" >> {log}
