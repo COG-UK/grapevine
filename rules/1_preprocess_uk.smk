@@ -40,13 +40,13 @@ rule uk_annotate_to_remove_duplicates:
         """
 
 
-rule uk_remove_duplicates:
+rule uk_remove_duplicates_covid_by_gaps:
     input:
         fasta = rules.uk_add_header_column.output.fasta,
         metadata = rules.uk_annotate_to_remove_duplicates.output.metadata
     output:
-        fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.fasta",
-        metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.csv"
+        fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id.fasta",
+        metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id.csv"
     log:
         config["output_path"] + "/logs/1_uk_remove_duplicates.log"
     shell:
@@ -63,10 +63,33 @@ rule uk_remove_duplicates:
         """
 
 
+rule uk_remove_duplicates_biosamplesourceid_by_date:
+    input:
+        fasta = rules.uk_remove_duplicates_covid_by_gaps.output.fasta,
+        metadata = rules.uk_remove_duplicates_covid_by_gaps.output.metadata
+    output:
+        fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id_biosample_source_id.fasta",
+        metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id_biosample_source_id.csv"
+    log:
+        config["output_path"] + "/logs/1_uk_remove_duplicates.log"
+    shell:
+        """
+        fastafunk subsample \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata} \
+          --group-column biosample_source_id \
+          --index-column header \
+          --out-fasta {output.fasta} \
+          --out-metadata {output.metadata} \
+          --sample-size 1 \
+          --select-by-min-column collection_date &> {log}
+        """
+
+
 rule uk_unify_headers:
     input:
-        fasta = rules.uk_remove_duplicates.output.fasta,
-        metadata = rules.uk_remove_duplicates.output.metadata
+        fasta = rules.uk_remove_duplicates_biosamplesourceid_by_date.output.fasta,
+        metadata = rules.uk_remove_duplicates_biosamplesourceid_by_date.output.metadata
     output:
         fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.unify_headers.fasta",
         metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.unify_headers.csv"
