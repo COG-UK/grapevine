@@ -143,7 +143,7 @@ rule combine_cog_gisaid:
           --in-metadata {input.cog_metadata} \
           --index-column sequence_name \
           --filter-column sequence_name sample_date epi_week \
-                          country adm1 adm2 outer_postcode submission_org_code \
+                          country adm1 adm2 submission_org_code \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
                           lineage_support uk_lineage acc_lineage del_lineage phylotype \
@@ -159,7 +159,7 @@ rule combine_cog_gisaid:
           --in-metadata {input.gisaid_metadata} \
           --index-column sequence_name \
           --filter-column sequence_name sample_date epi_week \
-                          country adm1 adm2 outer_postcode submission_org_code \
+                          country adm1 adm2 submission_org_code \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
                           lineage_support uk_lineage acc_lineage del_lineage phylotype \
@@ -276,7 +276,7 @@ rule publish_microreact_specific_output:
           --in-metadata {input.combined_metadata} \
           --index-column sequence_name \
           --filter-column sequence_name sample_date epi_week \
-                          country adm1 adm2 submission_org_code outer_postcode \
+                          country adm1 adm2 submission_org_code \
                           is_hcw travel_history \
                           lineage lineage_support uk_lineage D614G \
           --out-fasta {output.fasta2} \
