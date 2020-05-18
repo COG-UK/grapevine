@@ -120,39 +120,30 @@ rule publish_filtered_aligned_cog_data:
         """
 
 
-rule publish_full_annotated_tree_and_metadata:
+rule combine_cog_gisaid:
     input:
-        newick_tree = rules.run_4_subroutine_on_lineages.output.public_tree,
-        annotated_tree = rules.run_5_subroutine_on_lineages.output.full_tree,
         cog_fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
         cog_metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata,
         gisaid_fasta = config["output_path"] + "/0/gisaid.full.masked.fasta",
         gisaid_metadata = config["output_path"] + "/0/gisaid.combined.updated.csv"
     params:
-        intermediate_cog_fasta = config["output_path"] + "/6/cog.publish_full_annotated_tree_and_metadata.temp.cog.fasta",
-        intermediate_cog_metadata = config["output_path"] + "/6/cog.publish_full_annotated_tree_and_metadata.temp.cog.csv",
-        intermediate_gisaid_fasta = config["output_path"] + "/6/gisaid.publish_full_annotated_tree_and_metadata.temp.gisaid.fasta",
-        intermediate_gisaid_metadata = config["output_path"] + "/6/gisaid.publish_full_annotated_tree_and_metadata.temp.gisaid.csv",
-        intermediate_combined_fasta = config["output_path"] + "/6/gisaid.publish_full_annotated_tree_and_metadata.temp.combined.fasta",
-        intermediate_combined_metadata = config["output_path"] + "/6/gisaid.publish_full_annotated_tree_and_metadata.temp.combined.csv",
+        intermediate_cog_fasta = config["output_path"] + "/6/cog.combine_cog_gisaid.temp.cog.fasta",
+        intermediate_cog_metadata = config["output_path"] + "/6/cog.combine_cog_gisaid.temp.cog.csv",
+        intermediate_gisaid_fasta = config["output_path"] + "/6/gisaid.combine_cog_gisaid.temp.gisaid.fasta",
+        intermediate_gisaid_metadata = config["output_path"] + "/6/gisaid.combine_cog_gisaid.temp.gisaid.csv",
     output:
-        newick_tree = config["export_path"] + "/trees/cog_global_" + config["date"] + '_tree.newick',
-        annotated_tree = config["export_path"] + "/trees/cog_global_" + config["date"] + '_tree.nexus',
-        metadata = config["export_path"] + "/trees/cog_global_" + config["date"] + '_metadata.csv',
-        fasta = config["output_path"] + "/6/cog_global.fasta"
+        fasta = config["output_path"] + "/6/gisaid.combine_cog_gisaid.combined.fasta",
+        metadata = config["output_path"] + "/6/gisaid.combine_cog_gisaid.combined.csv",
     log:
-        config["output_path"] + "/logs/6_publish_full_annotated_tree_and_metadata.log"
+        config["output_path"] + "/logs/6_combine_cog_gisaid.log"
     shell:
         """
-        cp {input.annotated_tree} {output.annotated_tree} &> {log}
-        cp {input.newick_tree} {output.newick_tree} &>> {log}
-
         fastafunk fetch \
           --in-fasta {input.cog_fasta} \
           --in-metadata {input.cog_metadata} \
           --index-column sequence_name \
           --filter-column sequence_name sample_date epi_week \
-                          country adm1 adm2 outer_postcode \
+                          country adm1 adm2 outer_postcode submission_org_code \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
                           lineage_support uk_lineage acc_lineage del_lineage phylotype \
@@ -168,7 +159,7 @@ rule publish_full_annotated_tree_and_metadata:
           --in-metadata {input.gisaid_metadata} \
           --index-column sequence_name \
           --filter-column sequence_name sample_date epi_week \
-                          country adm1 adm2 outer_postcode \
+                          country adm1 adm2 outer_postcode submission_org_code \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
                           lineage_support uk_lineage acc_lineage del_lineage phylotype \
@@ -182,13 +173,34 @@ rule publish_full_annotated_tree_and_metadata:
         fastafunk merge \
           --in-fasta {params.intermediate_gisaid_fasta} {params.intermediate_cog_fasta} \
           --in-metadata {params.intermediate_gisaid_metadata} {params.intermediate_cog_metadata} \
-          --out-fasta {params.intermediate_combined_fasta} \
-          --out-metadata {params.intermediate_combined_metadata} \
+          --out-fasta {output.fasta} \
+          --out-metadata {output.metadata} \
           --index-column sequence_name &>> {log}
+        """
+
+
+rule publish_full_annotated_tree_and_metadata:
+    input:
+        newick_tree = rules.run_4_subroutine_on_lineages.output.public_tree,
+        annotated_tree = rules.run_5_subroutine_on_lineages.output.full_tree,
+        combined_fasta = rules.combine_cog_gisaid.output.fasta,
+        combined_metadata = rules.combine_cog_gisaid.output.metadata,
+    output:
+        newick_tree = config["export_path"] + "/trees/cog_global_" + config["date"] + '_tree.newick',
+        annotated_tree = config["export_path"] + "/trees/cog_global_" + config["date"] + '_tree.nexus',
+        metadata = config["export_path"] + "/trees/cog_global_" + config["date"] + '_metadata.csv',
+        fasta = config["output_path"] + "/6/cog_global.fasta"
+    log:
+        config["output_path"] + "/logs/6_publish_full_annotated_tree_and_metadata.log"
+    shell:
+        """
+        cp {input.annotated_tree} {output.annotated_tree} &> {log}
+        cp {input.newick_tree} {output.newick_tree} &>> {log}
+
 
         fastafunk fetch \
-          --in-fasta {params.intermediate_combined_fasta} \
-          --in-metadata {params.intermediate_combined_metadata} \
+          --in-fasta {input.combined_fasta} \
+          --in-metadata {input.combined_metadata} \
           --index-column sequence_name \
           --filter-column sequence_name sample_date epi_week \
                           country adm1 adm2 outer_postcode \
@@ -231,6 +243,48 @@ rule publish_public_cog_data:
         """
 
 
+rule publish_microreact_specific_output:
+    input:
+        newick_tree = rules.run_4_subroutine_on_lineages.output.public_tree,
+        metadata = rules.combine_cog_gisaid.output.metadata,
+        fasta = rules.combine_cog_gisaid.output.fasta,
+    output:
+        newick_tree = config["export_path"] + "/microreact/cog_global_" + config["date"] + '_tree.newick',
+        public_metadata = config["export_path"] + "/microreact/cog_global_" + config["date"] + '_metadata_public.csv',
+        private_metadata = config["export_path"] + "/microreact/cog_global_" + config["date"] + '_metadata_private.csv',
+        fasta1 = temp(config["output_path"] + "/6/cog_global_microreact1.fasta")
+        fasta2 = temp(config["output_path"] + "/6/cog_global_microreact2.fasta")
+    log:
+        config["output_path"] + "/logs/6_publish_microreact_specific_output.log"
+    shell:
+        """
+        cp {input.newick_tree} {output.newick_tree}
+
+        fastafunk fetch \
+          --in-fasta {input.combined_fasta} \
+          --in-metadata {input.combined_metadata} \
+          --index-column sequence_name \
+          --filter-column sequence_name sample_date epi_week \
+                          country adm1 adm2 submission_org_code lineage \
+                          lineage_support uk_lineage \
+          --out-fasta {output.fasta1} \
+          --out-metadata {output.public_metadata} \
+          --restrict &>> {log}
+
+        fastafunk fetch \
+          --in-fasta {input.combined_fasta} \
+          --in-metadata {input.combined_metadata} \
+          --index-column sequence_name \
+          --filter-column sequence_name sample_date epi_week \
+                          country adm1 adm2 submission_org_code outer_postcode \
+                          is_hcw travel_history \
+                          lineage lineage_support uk_lineage D614G \
+          --out-fasta {output.fasta2} \
+          --out-metadata {output.private_metadata} \
+          --restrict &>> {log}
+        """
+
+
 rule summarize_publish:
     input:
         GISAID_meta_master = rules.publish_gisaid_master_metadata.output.metadata,
@@ -249,6 +303,10 @@ rule summarize_publish:
         public_COG_GISAID_newick_tree = rules.publish_public_cog_data.output.public_tree,
         public_COG_GISAID_seq_all = rules.publish_unaligned_cog_sequences.output.fasta,
         public_COG_meta = rules.publish_public_cog_data.output.metadata
+
+        microreact_tree = rules.publish_microreact_specific_output.output.newick_tree
+        microreact_public_metadata = rules.publish_microreact_specific_output.output.public_metadata
+        microreact_private_metadata = rules.publish_microreact_specific_output.output.private_metadata
     params:
         webhook = config["webhook"],
         uk_trees_path = config["export_path"] + "/trees/uk_lineages/",
@@ -274,6 +332,10 @@ rule summarize_publish:
         echo "> Public tree published to {input.public_COG_GISAID_newick_tree}\\n" >> {log}
         echo "> Associated unaligned sequences published to {input.public_COG_GISAID_seq_all}\\n" >> {log}
         echo "> Matching metadata with public fields only published to {input.public_COG_meta}\\n" >> {log}
+        echo "> \\n" >> {log}
+        echo "> Newick tree for microreact published to {input.microreact_tree}\\n" >> {log}
+        echo "> Public metadata for microreact published to {input.microreact_public_metadata}\\n" >> {log}
+        echo "> Private metadata for microreact published to {input.microreact_private_metadata}\\n" >> {log}
         echo "> \\n" >> {log}
 
         echo '{{"text":"' > 6_data.json
