@@ -1,5 +1,5 @@
 # grapevine
-snakemake pipelines to run all the funky funcs
+phylogenetic pipeline for the COG-UK project
 
 ## Install
 ```
