@@ -143,31 +143,31 @@ rule deltran_ancestral_reconstruction:
         --output {output.tree} &> {log}
         """
 
-rule push_lineage_to_tips:
+# rule push_lineage_to_tips:
+#     input:
+#         tree = rules.deltran_ancestral_reconstruction.output.tree
+#     params:
+#         lineage = "{lineage}",
+#     output:
+#         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.uk_lineages.tree"
+#     log:
+#         config["output_path"] + "/logs/4_push_lineage_to_tips_{lineage}.log"
+#     shell:
+#         """
+#         clusterfunk push_annotations_to_tips \
+#           --traits uk_lineage \
+#           --stop-where-trait country_uk_acctran=False \
+#           --input {input.tree} \
+#           --output {output.tree} &> {log}
+#         """
+
+rule label_acctran_introductions:
     input:
         tree = rules.deltran_ancestral_reconstruction.output.tree
     params:
         lineage = "{lineage}",
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.uk_lineages.tree"
-    log:
-        config["output_path"] + "/logs/4_push_lineage_to_tips_{lineage}.log"
-    shell:
-        """
-        clusterfunk push_annotations_to_tips \
-          --traits uk_lineage \
-          --stop-where-trait country_uk_acctran=False \
-          --input {input.tree} \
-          --output {output.tree} &> {log}
-        """
-
-rule label_acctran_introductions:
-    input:
-        tree = rules.push_lineage_to_tips.output.tree
-    params:
-        lineage = "{lineage}",
-    output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.uk_lineages.acc_labelled.tree"
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.acc_labelled.tree"
     log:
         config["output_path"] + "/logs/4_label_acctran_introductions_{lineage}.log"
     shell:
@@ -190,7 +190,7 @@ rule label_deltran_introductions:
         outdir = config["publish_path"] + "/COG_GISAID",
         prefix = config["publish_path"] + "/COG_GISAID/cog_gisaid"
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.uk_lineages.acc_labelled.del_labelled.tree"
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.acc_labelled.del_labelled.tree"
     log:
         config["output_path"] + "/logs/4_label_deltran_introductions_{lineage}.log"
     shell:
@@ -213,7 +213,7 @@ rule label_maxtran_introductions:
     params:
         lineage = "{lineage}",
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.uk_lineages.acc_labelled.del_labelled.max_labelled.tree"
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.acc_labelled.del_labelled.max_labelled.tree"
     log:
         config["output_path"] + "/logs/4_label_acctran_introductions_{lineage}.log"
     shell:
@@ -232,7 +232,7 @@ rule label_maxtran_introductions:
 rule graft:
     input:
          # not sure how to pass this as a space separated list below. Also assuming the order here matches lineages
-        scions = expand(config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.uk_lineages.acc_labelled.del_labelled.max_labelled.tree", lineage=sorted(LINEAGES)),
+        scions = expand(config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.acc_labelled.del_labelled.max_labelled.tree", lineage=sorted(LINEAGES)),
         guide_tree = config["guide_tree"]
     params:
         lineages = sorted(LINEAGES),
