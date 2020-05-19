@@ -40,13 +40,13 @@ rule uk_annotate_to_remove_duplicates:
         """
 
 
-rule uk_remove_duplicates:
+rule uk_remove_duplicates_covid_by_gaps:
     input:
         fasta = rules.uk_add_header_column.output.fasta,
         metadata = rules.uk_annotate_to_remove_duplicates.output.metadata
     output:
-        fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.fasta",
-        metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.csv"
+        fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id.fasta",
+        metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id.csv"
     log:
         config["output_path"] + "/logs/1_uk_remove_duplicates.log"
     shell:
@@ -63,10 +63,33 @@ rule uk_remove_duplicates:
         """
 
 
+rule uk_remove_duplicates_biosamplesourceid_by_date:
+    input:
+        fasta = rules.uk_remove_duplicates_covid_by_gaps.output.fasta,
+        metadata = rules.uk_remove_duplicates_covid_by_gaps.output.metadata
+    output:
+        fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id_biosample_source_id.fasta",
+        metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id_biosample_source_id.csv"
+    log:
+        config["output_path"] + "/logs/1_uk_remove_duplicates.log"
+    shell:
+        """
+        fastafunk subsample \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata} \
+          --group-column biosample_source_id \
+          --index-column header \
+          --out-fasta {output.fasta} \
+          --out-metadata {output.metadata} \
+          --sample-size 1 \
+          --select-by-min-column collection_date &> {log}
+        """
+
+
 rule uk_unify_headers:
     input:
-        fasta = rules.uk_remove_duplicates.output.fasta,
-        metadata = rules.uk_remove_duplicates.output.metadata
+        fasta = rules.uk_remove_duplicates_biosamplesourceid_by_date.output.fasta,
+        metadata = rules.uk_remove_duplicates_biosamplesourceid_by_date.output.metadata
     output:
         fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.unify_headers.fasta",
         metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.unify_headers.csv"
@@ -224,7 +247,8 @@ rule add_snp_finder_result_to_metadata:
 rule summarize_preprocess_uk:
     input:
         raw_fasta = config["latest_uk_fasta"],
-        deduplicated_fasta = rules.uk_remove_duplicates.output.fasta,
+        deduplicated_fasta_by_covid = rules.uk_remove_duplicates_covid_by_gaps.output.fasta,
+        deduplicated_fasta_by_biosampleid = rules.uk_remove_duplicates_biosamplesourceid_by_date.output.fasta,
         unify_headers_fasta = rules.uk_unify_headers.output.fasta,
         removed_low_covg_fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
         full_alignment = rules.uk_full_untrimmed_alignment.output.fasta,
@@ -240,7 +264,8 @@ rule summarize_preprocess_uk:
     shell:
         """
         echo "> Number of sequences in raw UK fasta: $(cat {input.raw_fasta} | grep ">" | wc -l)\\n" &> {log}
-        echo "> Number of sequences after deduplication: $(cat {input.deduplicated_fasta} | grep ">" | wc -l)\\n" &>> {log}
+        echo "> Number of sequences after deduplication by cov_id: $(cat {input.deduplicated_fasta_by_covid} | grep ">" | wc -l)\\n" &>> {log}
+        echo "> Number of sequences after deduplication by bio_sample_id: $(cat {input.deduplicated_fasta_by_biosampleid} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences in raw UK fasta after unifying headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after trimming and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo ">\\n" >> {log}

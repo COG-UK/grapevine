@@ -54,7 +54,6 @@ rule iq_tree:
             --out {output.tree} &>> {log}
         fi
         """
-        # iqtree -m HKY -bb 1000 -czb \
 
 
 

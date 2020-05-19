@@ -140,7 +140,7 @@ rule uk_output_lineage_table:
           --in-fasta {input.fasta} \
           --in-metadata {input.metadata} \
           --index-column sequence_name \
-          --filter-column sequence_name country adm2 \
+          --filter-column sequence_name country adm1 adm2 \
                           sample_date epi_week \
                           lineage special_lineage uk_lineage \
           --where-column epi_week=edin_epi_week country=adm0 \
