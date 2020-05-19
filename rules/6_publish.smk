@@ -2,8 +2,8 @@
 
 rule uk_add_lineage_information_back_to_master_metadata:
     input:
-        metadata = rules.uk_update_metadata_lineages.output.metadata,
-        lineage_data = rules.run_5_subroutine_on_lineages.output.metadata
+        metadata = config["output_path"] + "/2/uk.with_new_lineages.special.csv",
+        lineage_data = config["output_path"] + "/5/cog_gisaid.lineages.with_all_traits.with_phylotype_traits.csv",
     output:
         metadata = config["output_path"] + "/6/uk.master.csv"
     log:
@@ -48,7 +48,7 @@ rule publish_gisaid_master_metadata:
 
 rule publish_unaligned_cog_sequences:
     input:
-        fasta = rules.uk_unify_headers.output.fasta
+        fasta = config["export_path"] + "/1/uk_latest.add_header.annotated.deduplicated.unify_headers.fasta",
     output:
         fasta = config["export_path"] + "/alignments/cog_" + config["date"] + '_all.fasta'
     log:
@@ -61,7 +61,7 @@ rule publish_unaligned_cog_sequences:
 
 rule publish_full_aligned_cog_data:
     input:
-        fasta = rules.uk_full_untrimmed_alignment.output.fasta,
+        fasta = config["export_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.full.fasta",
         metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata
     output:
         fasta = config["export_path"] + "/alignments/cog_" + config["date"] + '_all_alignment.fasta',
@@ -94,7 +94,7 @@ rule publish_full_aligned_cog_data:
 
 rule publish_filtered_aligned_cog_data:
     input:
-        fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
+        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.fasta",
         metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata
     output:
         fasta = config["export_path"] + "/alignments/cog_" + config["date"] + '_alignment.fasta',
@@ -122,7 +122,7 @@ rule publish_filtered_aligned_cog_data:
 
 rule combine_cog_gisaid:
     input:
-        cog_fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
+        cog_fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.fasta",
         cog_metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata,
         gisaid_fasta = config["output_path"] + "/0/gisaid.full.masked.fasta",
         gisaid_metadata = config["output_path"] + "/0/gisaid.combined.updated.csv"
@@ -181,8 +181,8 @@ rule combine_cog_gisaid:
 
 rule publish_full_annotated_tree_and_metadata:
     input:
-        newick_tree = rules.run_4_subroutine_on_lineages.output.public_tree,
-        annotated_tree = rules.run_5_subroutine_on_lineages.output.full_tree,
+        newick_tree = config["output_path"] + "/4/cog_gisaid_full.tree.public.newick",
+        annotated_tree = config["output_path"] + "/5/cog_gisaid_full.tree.nexus",
         combined_fasta = rules.combine_cog_gisaid.output.fasta,
         combined_metadata = rules.combine_cog_gisaid.output.metadata,
     output:
@@ -215,8 +215,8 @@ rule publish_full_annotated_tree_and_metadata:
 
 rule publish_public_cog_data:
     input:
-        public_tree = rules.run_4_subroutine_on_lineages.output.public_tree,
-        fasta = rules.uk_unify_headers.output.fasta,
+        public_tree = config["output_path"] + "/4/cog_gisaid_full.tree.public.newick",
+        fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.unify_headers.fasta",
         metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata
     output:
         public_tree = config["export_path"] + "/public/cog_global_" + config["date"] + "_tree.newick",
@@ -245,7 +245,7 @@ rule publish_public_cog_data:
 
 rule publish_microreact_specific_output:
     input:
-        newick_tree = rules.run_4_subroutine_on_lineages.output.public_tree,
+        newick_tree = config["output_path"] + "/4/cog_gisaid_full.tree.public.newick",
         metadata = rules.combine_cog_gisaid.output.metadata,
         fasta = rules.combine_cog_gisaid.output.fasta,
     output:
