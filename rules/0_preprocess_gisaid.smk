@@ -369,13 +369,11 @@ rule gisaid_distance_QC:
         config["output_path"] + "/logs/0_gisaid_distance_QC.log"
     output:
         table = config["output_path"] + "/0/QC_distances.tsv",
-        plot = config["output_path"] + "/0/QC_distances.png"
     shell:
         """
         datafunk distance_to_root \
           --input-fasta {input.fasta} \
-          --input-metadata {input.metadata} \
-          --plot &> {log}
+          --input-metadata {input.metadata} &> {log}
 
         mv distances.tsv {output.table}
         mv distances.png {output.plot}
