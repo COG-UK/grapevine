@@ -159,38 +159,17 @@ rule combine_lineage_csv:
         result = pd.concat(dfs)
         result.to_csv(output[0], index=False)
 
-# This graft puts uk lineage trees back into the original tree. They will replace their clades in that tree, but now the
-# trait uk_lineage will extend to the mrca of the lineage and the phylotype traits for each lineage will be included.
-#
-rule graft_uk_trees:
-    input:
-        scions = aggregate_input_trees, #remove sorted if causes error / move to aggregate_input_trees
-        guide_tree= rules.annotate_tree.output.tree
-    output:
-        tree = config["output_path"] + "/5/{lineage}/cog_gisaid.final_linages.tree"
-    params:
-        labels = aggregate_input_labels # remove sorted if causes error /  move to aggregate_input_labels
-    log:
-        config["output_path"] + "/logs/5_{lineage}_graft_uk_trees.log"
-    shell:
-        """
-            clusterfunk graft \
-            --scions {input.scions} \
-            --scion_annotation_name uk_lineage \
-            --annotate_scions {params.labels} \
-            --input {input.guide_tree} \
-            --output {output.tree} &> {log}
-        """
+
 
 # This should create the full tree.
 rule graft_lineages:
     input:
-        scions = expand(config["output_path"] + "/5/{lineage}/cog_gisaid.final_linages.tree", lineage=sorted(LINEAGES)),
+        scions = expand(config["output_path"] + "/5/{lineage}/cog_gisaid_{lineage}.annotated.tree", lineage=sorted(LINEAGES)),
         guide_tree = config["guide_tree"]
     params:
         lineages = sorted(LINEAGES),
     output:
-        tree = config["output_path"] + "/5/cog_gisaid_full.tree.nexus",
+        tree = config["output_path"] + "/5/cog_gisaid_full.no_phylotypes.tree.nexus",
     log:
         config["output_path"] + "/logs/5_graft_lineages.log"
     shell:
@@ -202,6 +181,8 @@ rule graft_lineages:
         --input {input.guide_tree} \
         --output {output.tree} &> {log}
         """
+
+
 # rule get_private_nexus_tree:
 #     input:
 #         tree = rules.graft_lineages.output.tree
@@ -234,4 +215,22 @@ rule merge_with_metadata:
           --join-on taxon \
           --new-columns phylotype \
           --out-metadata {output.metadata} &> {log}
+        """
+
+rule annotate_phylotypes:
+    input:
+        tree=rules.graft_lineages.output.tree,
+        metadata = rules.merge_with_metadata.output.metadata
+    output:
+        tree = config["output_path"] + "/5/cog_gisaid_full.tree.nexus",
+    log:
+        config["output_path"] + "/logs/5_annotate_phylotypes.log"
+    shell:
+        """
+        clusterfunk annotate_tips \
+          --in-metadata {input.metadata} \
+          --trait-columns phylotype \
+          --index-column sequence_name \
+          --input {input.tree} \
+          --output {output.tree} &> {log}
         """
