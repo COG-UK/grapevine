@@ -1,48 +1,49 @@
-rule split_based_on_lineages:
-    input:
-        previous_stage = config["output_path"] + "/logs/3_summarize_combine_gisaid_and_cog.log",
-        fasta = config["output_path"] + "/3/cog_gisaid.fasta",
-        metadata = config["output_path"] + "/3/cog_gisaid.lineages.csv",
-        lineage = config["lineage_splits"]
-    params:
-        prefix = config["output_path"] + "/4/lineage_",
-        webhook = config["webhook"]
-    output:
-        temp(config["output_path"] + "/4/split_done")
-    log:
-        config["output_path"] + "/logs/4_split_based_on_lineages.log"
-    shell:
-        """
-        fastafunk split \
-          --in-fasta {input.fasta} \
-          --in-metadata {input.metadata} \
-          --index-column sequence_name \
-          --index-field special_lineage \
-          --lineage-csv {input.lineage} \
-          --out-folder {params.prefix} &> {log}
-
-        # echo {params.webhook}
-
-        echo '{{"text":"' > 4a_data.json
-        echo "*Step 4: Ready for tree building*\\n" >> 4a_data.json
-        num_lineages=$(cat {input.lineage} | wc -l)
-        range={{$num_lineages..1}}
-        for i in $(eval echo ${{range}})
-        do
-          line=$(tail -n$i {log} | head -n1)
-          echo ">$line\\n" >> 4a_data.json
-        done
-        echo '"}}' >> 4a_data.json
-        # echo "webhook {params.webhook}"
-
-        touch {output}
-        curl -X POST -H "Content-type: application/json" -d @4a_data.json {params.webhook}
-        """
+# rule split_based_on_lineages:
+#     input:
+#         previous_stage = config["output_path"] + "/logs/3_summarize_combine_gisaid_and_cog.log",
+#         fasta = config["output_path"] + "/3/cog_gisaid.fasta",
+#         metadata = config["output_path"] + "/3/cog_gisaid.lineages.csv",
+#         lineage = config["lineage_splits"]
+#     params:
+#         prefix = config["output_path"] + "/4/lineage_",
+#         webhook = config["webhook"]
+#     output:
+#         temp(config["output_path"] + "/4/split_done")
+#     log:
+#         config["output_path"] + "/logs/4_split_based_on_lineages.log"
+#     shell:
+#         """
+#         fastafunk split \
+#           --in-fasta {input.fasta} \
+#           --in-metadata {input.metadata} \
+#           --index-column sequence_name \
+#           --index-field special_lineage \
+#           --lineage-csv {input.lineage} \
+#           --out-folder {params.prefix} &> {log}
+#
+#         # echo {params.webhook}
+#
+#         echo '{{"text":"' > 4a_data.json
+#         echo "*Step 4: Ready for tree building*\\n" >> 4a_data.json
+#         num_lineages=$(cat {input.lineage} | wc -l)
+#         range={{$num_lineages..1}}
+#         for i in $(eval echo ${{range}})
+#         do
+#           line=$(tail -n$i {log} | head -n1)
+#           echo ">$line\\n" >> 4a_data.json
+#         done
+#         echo '"}}' >> 4a_data.json
+#         # echo "webhook {params.webhook}"
+#
+#         touch {output}
+#         curl -X POST -H "Content-type: application/json" -d @4a_data.json {params.webhook}
+#         """
 
 
 rule run_4_subroutine_on_lineages:
     input:
-        split_done = rules.split_based_on_lineages.output,
+        # split_done = rules.split_based_on_lineages.output,
+        split_done = config["output_path"] + "/logs/4_split_based_on_lineages.log",
         metadata = config["output_path"] + "/3/cog_gisaid.lineages.csv",
         lineage = config["lineage_splits"]
     params:
