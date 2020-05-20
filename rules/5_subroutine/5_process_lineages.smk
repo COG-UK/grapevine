@@ -21,7 +21,7 @@ rule all:
 
 rule annotate_tree:
     input:
-        tree=config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.uk_lineages.acc_labelled.del_labelled.max_labelled.tree",
+        tree=config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.acc_labelled.del_labelled.max_labelled.tree",
         metadata=config["metadata"]
     params:
         lineage="{lineage}",
