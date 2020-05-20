@@ -48,7 +48,7 @@ rule publish_gisaid_master_metadata:
 
 rule publish_unaligned_cog_sequences:
     input:
-        fasta = config["export_path"] + "/1/uk_latest.add_header.annotated.deduplicated.unify_headers.fasta",
+        fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.unify_headers.fasta",
     output:
         fasta = config["export_path"] + "/alignments/cog_" + config["date"] + '_all.fasta'
     log:
@@ -61,7 +61,7 @@ rule publish_unaligned_cog_sequences:
 
 rule publish_full_aligned_cog_data:
     input:
-        fasta = config["export_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.full.fasta",
+        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.full.fasta",
         metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata
     output:
         fasta = config["export_path"] + "/alignments/cog_" + config["date"] + '_all_alignment.fasta',
