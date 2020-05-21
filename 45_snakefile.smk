@@ -27,25 +27,25 @@ rule all:
     input:
         config["output_path"] + "/logs/5_summarize_generate_report_and_cut_out_trees.log",
         config["output_path"] + "/logs/4_summarize_make_trees.log",
-        config["output_path"] + "/snakejunk/45"
-
-rule clean_up:
-    input:
-        config["output_path"] + "/logs/5_summarize_generate_report_and_cut_out_trees.log",
-    output:
-        config["output_path"] + "/snakejunk/45"
-    shell:
-        """
-        mkdir -p {output}
-        mv slurm-*.out *_data.json {output}/
-        for file in pre trace default.profraw
-        do
-          if [ -f "$file" ]
-          then
-            rm $file
-          fi
-        done
-        """
+        # config["output_path"] + "/snakejunk/45"
+#
+# rule clean_up:
+#     input:
+#         config["output_path"] + "/logs/5_summarize_generate_report_and_cut_out_trees.log",
+#     output:
+#         config["output_path"] + "/snakejunk/45"
+#     shell:
+#         """
+#         mkdir -p {output}
+#         mv slurm-*.out *_data.json {output}/
+#         for file in pre trace default.profraw
+#         do
+#           if [ -f "$file" ]
+#           then
+#             rm $file
+#           fi
+#         done
+#         """
 
 ##### Modules #####
 include: "rules/4_make_trees.smk"
