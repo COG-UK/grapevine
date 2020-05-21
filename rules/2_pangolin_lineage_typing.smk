@@ -66,7 +66,7 @@ rule uk_add_previous_uk_lineages_to_metadata:
           --in-data {input.previous_metadata} \
           --index-column sequence_name \
           --join-on sequence_name \
-          --new-columns uk_lineage special_lineage lineage lineage_support edin_date_stamp \
+          --new-columns uk_lineage special_lineage lineage_support edin_date_stamp \
           --out-metadata {output.metadata} &>> {log}
         """
 
@@ -100,23 +100,23 @@ rule uk_add_pangolin_lineages_to_metadata:
           --out-metadata {output.metadata} &>> {log}
         """
 
-rule uk_update_metadata_lineages:
-    input:
-        metadata = rules.uk_add_pangolin_lineages_to_metadata.output.metadata
-    output:
-        metadata = config["output_path"] + "/2/uk.with_new_lineages.special.csv",
-    log:
-        config["output_path"] + "/logs/2_uk_update_metadata_lineages.log"
-    run:
-        df = pd.read_csv(input.metadata)
-        lineages = []
-        for i,row in df.iterrows():
-            if row['special_lineage']:
-                lineages.append(str(row['special_lineage']).replace(".X","").replace(".Y",""))
-            else:
-                lineages.append(row['lineage'])
-        df['lineage'] = lineages
-        df.to_csv(output.metadata, index=False)
+# rule uk_update_metadata_lineages:
+#     input:
+#         metadata = rules.uk_add_pangolin_lineages_to_metadata.output.metadata
+#     output:
+#         metadata = config["output_path"] + "/2/uk.with_new_lineages.special.csv",
+#     log:
+#         config["output_path"] + "/logs/2_uk_update_metadata_lineages.log"
+#     run:
+#         df = pd.read_csv(input.metadata)
+#         lineages = []
+#         for i,row in df.iterrows():
+#             if row['special_lineage']:
+#                 lineages.append(str(row['special_lineage']).replace(".X","").replace(".Y",""))
+#             else:
+#                 lineages.append(row['lineage'])
+#         df['lineage'] = lineages
+#         df.to_csv(output.metadata, index=False)
 
 
 """
@@ -128,7 +128,7 @@ NB do we need to check that every row has 'special lineage' at this point?
 rule uk_output_lineage_table:
     input:
         fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
-        metadata = rules.uk_update_metadata_lineages.output.metadata
+        metadata = rules.uk_add_pangolin_lineages_to_metadata.output.metadata
     output:
         fasta = config["output_path"] + "/2/uk.matched.fasta",
         metadata = config["output_path"] + "/2/uk.matched.lineages.csv"
@@ -142,7 +142,7 @@ rule uk_output_lineage_table:
           --index-column sequence_name \
           --filter-column sequence_name country adm1 adm2 \
                           sample_date epi_week \
-                          lineage special_lineage uk_lineage \
+                          special_lineage uk_lineage \
           --where-column epi_week=edin_epi_week country=adm0 \
                          sample_date=received_date sample_date=collection_date \
           --out-fasta {output.fasta} \
