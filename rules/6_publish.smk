@@ -173,7 +173,8 @@ rule combine_cog_gisaid:
           --in-fasta {input.cog_fasta} \
           --in-metadata {input.cog_metadata} \
           --index-column sequence_name \
-          --filter-column sequence_name sample_date epi_week \
+          --filter-column covv_accession_id \
+                          sequence_name sample_date epi_week \
                           country adm1 adm2 submission_org_code \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
@@ -189,7 +190,8 @@ rule combine_cog_gisaid:
           --in-fasta {input.gisaid_fasta} \
           --in-metadata {input.gisaid_metadata} \
           --index-column sequence_name \
-          --filter-column sequence_name sample_date epi_week \
+          --filter-column covv_accession_id \
+                          sequence_name sample_date epi_week \
                           country adm1 adm2 submission_org_code \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
@@ -238,6 +240,28 @@ rule publish_full_annotated_tree_and_metadata:
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
                           lineage_support uk_lineage acc_lineage del_lineage phylotype \
+          --out-fasta {output.fasta} \
+          --out-metadata {output.metadata} \
+          --restrict &>> {log}
+        """
+
+
+rule publish_cog_gisaid_data_for_lineage_release_work:
+    input:
+        combined_fasta = rules.combine_cog_gisaid.output.fasta,
+        combined_metadata = rules.combine_cog_gisaid.output.metadata,
+    output:
+        fasta = config["export_path"] + "/lineage_release/cog_gisaid.fasta",
+        metadata = config["export_path"] + "/lineage_release/cog_gisaid.csv",
+    log:
+        config["output_path"] + "/logs/6_publish_cog_gisaid_data_for_lineage_release_work.log"
+    shell:
+        """
+        fastafunk fetch \
+          --in-fasta {input.combined_fasta} \
+          --in-metadata {input.combined_metadata} \
+          --index-column sequence_name \
+          --filter-column covv_accession_id sequence_name country travel_history sample_date epi_week \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --restrict &>> {log}
