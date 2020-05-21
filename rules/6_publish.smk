@@ -1,22 +1,33 @@
 
 
+
 rule uk_add_lineage_information_back_to_master_metadata:
     input:
-        metadata = config["output_path"] + "/2/uk.with_new_lineages.special.csv",
-        lineage_data = config["output_path"] + "/5/cog_gisaid.lineages.with_all_traits.with_phylotype_traits.csv",
+        metadata = config["output_path"] + "/2/uk.with_new_lineages.csv",
+        uk_lineage_data = config["output_path"] + "/5/cog_gisaid.lineages.with_all_traits.with_phylotype_traits.csv",
+        global_lineage_data = config["global_lineages"]
     output:
+        metadata_temp = temp(config["output_path"] + "/6/temp.uk.master.csv")
         metadata = config["output_path"] + "/6/uk.master.csv"
     log:
-        config["output_path"] + "/logs/6_uk_update_master_metadata.log"
+        config["output_path"] + "/logs/6_uk_add_lineage_information_back_to_master_metadata.log"
     shell:
         """
         fastafunk add_columns \
           --in-metadata {input.metadata} \
-          --in-data {input.lineage_data} \
+          --in-data {input.uk_lineage_data} \
           --index-column sequence_name \
           --join-on sequence_name \
           --new-columns uk_lineage acc_lineage del_lineage phylotype \
-          --out-metadata {output.metadata} &> {log}
+          --out-metadata {output.metadata_temp} &> {log}
+
+        fastafunk add_columns \
+          --in-metadata {output.metadata_temp} \
+          --in-data {input.global_lineage_data} \
+          --index-column sequence_name \
+          --join-on taxon  \
+          --new-columns lineage \
+          --out-metadata {output.metadata} &>> {log}
         """
 
 
@@ -33,9 +44,29 @@ rule publish_COG_master_metadata:
         """
 
 
+rule gisaid_add_lineage_information_back_to_master_metadata:
+    input:
+        metadata = config["output_path"] + "/0/gisaid.combined.csv",
+        global_lineage_data = config["global_lineages"]
+    output:
+        metadata = config["output_path"] + "/6/gisaid.master.csv"
+    log:
+        config["output_path"] + "/logs/6_gisaid_add_lineage_information_back_to_master_metadata.log"
+    shell:
+        """
+      fastafunk add_columns \
+        --in-metadata {input.metadata} \
+        --in-data {input.global_lineage_data} \
+        --index-column sequence_name \
+        --join-on taxon  \
+        --new-columns lineage \
+        --out-metadata {output.metadata} &>> {log}
+        """
+
+
 rule publish_gisaid_master_metadata:
     input:
-        metadata = config["output_path"] + "/0/gisaid.combined.updated.csv"
+        metadata = rules.gisaid_add_lineage_information_back_to_master_metadata.output.metadata,
     output:
         metadata = config["publish_path"] + "/GISAID/master.csv"
     log:
