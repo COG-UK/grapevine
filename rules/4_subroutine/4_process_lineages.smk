@@ -77,7 +77,7 @@ rule annotate_tree:
           country uk_lineage \
           --index-column sequence_name \
           --boolean-for-trait country='UK' country='UK' country='UK' country='UK' \
-          --boolean-trait-names country_uk country_uk_acctran country_uk_deltran country_uk_maxtran\
+          --boolean-trait-names country_uk country_uk_acctran country_uk_deltran\
           --in-format newick \
           --out-format nexus \
           --collapse_to_polytomies {params.collapse} \
@@ -104,32 +104,13 @@ rule acctran_ancestral_reconstruction:
         --output {output.tree} &> {log}
         """
 
-rule maxtran_ancestral_reconstruction:
+rule deltran_ancestral_reconstruction:
     input:
         tree = rules.acctran_ancestral_reconstruction.output.tree
     params:
         lineage = "{lineage}",
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.tree"
-    log:
-        config["output_path"] + "/logs/4_maxtran_ancestral_reconstructionn_{lineage}.log"
-    shell:
-        """
-        clusterfunk ancestral_reconstruction \
-        --traits country_uk_maxtran \
-        --maxtran-with-value True \
-        --ancestral_state False \
-        --input {input.tree} \
-        --output {output.tree} &> {log}
-        """
-
-rule deltran_ancestral_reconstruction:
-    input:
-        tree = rules.maxtran_ancestral_reconstruction.output.tree
-    params:
-        lineage = "{lineage}",
-    output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.tree"
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.del.tree"
     log:
         config["output_path"] + "/logs/4_deltran_ancestral_reconstruction_{lineage}.log"
     shell:
@@ -148,7 +129,7 @@ rule deltran_ancestral_reconstruction:
 #     params:
 #         lineage = "{lineage}",
 #     output:
-#         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.uk_lineages.tree"
+#         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.del.uk_lineages.tree"
 #     log:
 #         config["output_path"] + "/logs/4_push_lineage_to_tips_{lineage}.log"
 #     shell:
@@ -166,7 +147,7 @@ rule label_acctran_introductions:
     params:
         lineage = "{lineage}",
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.acc_labelled.tree"
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.del.acc_labelled.tree"
     log:
         config["output_path"] + "/logs/4_label_acctran_introductions_{lineage}.log"
     shell:
@@ -174,9 +155,10 @@ rule label_acctran_introductions:
         clusterfunk label_transitions \
           --trait country_uk_acctran \
           --to True \
-          --transition-name acc_lineage \
+          --transition-name acc_introduction \
           --transition-prefix {params.lineage}_ \
           --include_root \
+          --stubborn \
           --input {input.tree} \
           --output {output.tree} &> {log}
         """
@@ -186,10 +168,8 @@ rule label_deltran_introductions:
         tree = rules.label_acctran_introductions.output.tree
     params:
         lineage = "{lineage}",
-        outdir = config["publish_path"] + "/COG_GISAID",
-        prefix = config["publish_path"] + "/COG_GISAID/cog_gisaid"
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.acc_labelled.del_labelled.tree"
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.del.acc_labelled.del_labelled.tree"
     log:
         config["output_path"] + "/logs/4_label_deltran_introductions_{lineage}.log"
     shell:
@@ -197,41 +177,65 @@ rule label_deltran_introductions:
         clusterfunk label_transitions \
           --trait country_uk_deltran \
           --to True \
-          --transition-name del_lineage \
+          --transition-name del_introduction \
           --transition-prefix {params.lineage}_ \
+          --stubborn \
           --input {input.tree} \
           --output {output.tree} &> {log}
 
-        mkdir -p {params.outdir}
-        cp {output.tree} {params.prefix}_lineage_{params.lineage}.tree
         """
 
-rule label_maxtran_introductions:
+rule merge_sibling_acc_introduction:
     input:
         tree = rules.label_deltran_introductions.output.tree
     params:
         lineage = "{lineage}",
+
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.acc_labelled.del_labelled.max_labelled.tree"
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.del.acc_labelled.del_labelled.acc_merged.tree"
     log:
-        config["output_path"] + "/logs/4_label_acctran_introductions_{lineage}.log"
+        config["output_path"] + "/logs/4_merge_acctran_introductions_{lineage}.log"
     shell:
         """
-        clusterfunk label_transitions \
-          --trait country_uk_maxtran \
-          --to True \
-          --transition-name max_lineage \
-          --transition-prefix {params.lineage}_ \
-          --include_root \
+        clusterfunk merge_transitions \
+          --trait-to-merge acc_introduction \
+          --merged-trait-name acc_lineage \
+          --max-merge 1 \
+          --prefix {params.lineage}_ \
           --input {input.tree} \
           --output {output.tree} &> {log}
+        """
+
+rule merge_sibling_del_introduction:
+    input:
+        tree = rules.merge_sibling_acc_introduction.output.tree
+    params:
+        lineage = "{lineage}",
+        outdir = config["publish_path"] + "/COG_GISAID",
+        prefix = config["publish_path"] + "/COG_GISAID/cog_gisaid"
+    output:
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.del.acc_labelled.del_labelled.acc_merged.del_merged.tree"
+    log:
+        config["output_path"] + "/logs/4_merge_deltran_introductions_{lineage}.log"
+    shell:
+        """
+        clusterfunk merge_transitions \
+          --trait-to-merge del_introduction \
+          --merged-trait-name del_lineage \
+          --max-merge 1 \
+          --prefix {params.lineage}_ \
+          --input {input.tree} \
+          --output {output.tree} &> {log}
+          
+        mkdir -p {params.outdir}
+        cp {output.tree} {params.prefix}_lineage_{params.lineage}.tree
         """
 
 # now outputs a newick tree for publication. The private nexus tree will be made in stage 5.
 rule graft:
     input:
          # not sure how to pass this as a space separated list below. Also assuming the order here matches lineages
-        scions = expand(config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.max.del.acc_labelled.del_labelled.max_labelled.tree", lineage=sorted(LINEAGES)),
+        scions = expand(config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.del.acc_labelled.del_labelled.acc_merged.del_merged.tree", lineage=sorted(LINEAGES)),
         guide_tree = config["guide_tree"]
     params:
         lineages = sorted(LINEAGES),
@@ -270,7 +274,7 @@ rule graft:
 
 rule output_annotations:
     input:
-        tree = rules.label_maxtran_introductions.output.tree,
+        tree = rules.merge_sibling_del_introduction.output.tree,
     params:
         lineage = "{lineage}",
     output:
@@ -280,7 +284,7 @@ rule output_annotations:
     shell:
         """
         clusterfunk extract_tip_annotations \
-          --traits country lineage uk_lineage acc_lineage del_lineage max_lineage\
+          --traits country lineage uk_lineage acc_introduction acc_lineage del_introduction del_lineage \
           --input {input.tree} \
           --output {output.traits} &> {log}
         """
