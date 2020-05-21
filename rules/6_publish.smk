@@ -362,6 +362,9 @@ rule summarize_publish:
         microreact_tree = rules.publish_microreact_specific_output.output.newick_tree,
         microreact_public_metadata = rules.publish_microreact_specific_output.output.public_metadata,
         microreact_private_metadata = rules.publish_microreact_specific_output.output.private_metadata,
+
+        lineage_report_fasta = rules.publish_cog_gisaid_data_for_lineage_release_work.output.fasta,
+        lineage_report_metadata = rules.publish_cog_gisaid_data_for_lineage_release_work.output.csv,
     params:
         webhook = config["webhook"],
         uk_trees_path = config["export_path"] + "/trees/uk_lineages/",
