@@ -1,4 +1,3 @@
-import pandas as pd
 
 rule gisaid_process_json:
     input:
@@ -336,7 +335,7 @@ rule gisaid_mask_2:
         fasta = rules.gisaid_combine_previous_and_new.output.fasta,
         mask = config["gisaid_mask_file"]
     output:
-        fasta = config["output_path"] + "/0/gisaid.full.masked.fasta",
+        fasta = config["output_path"] + "/0/gisaid.combined.masked2.fasta",
     log:
         config["output_path"] + "/logs/0_gisaid_mask_2.log"
     shell:
@@ -380,9 +379,37 @@ rule gisaid_distance_QC:
         """
 
 
-rule gisaid_output_lineage_table:
+rule gisaid_filter_on_distance_to_WH04:
     input:
         fasta = rules.gisaid_mask_2.output.fasta,
+        table = rules.gisaid_distance_QC.output.table,
+    output:
+        fasta = config["output_path"] + "/0/gisaid.full.masked.filtered.fasta",
+    log:
+        config["output_path"] + "/logs/0_gisaid_filter_on_distance_to_WH04.log"
+    run:
+        from Bio import SeqIO
+        import pandas as pd
+
+        fasta_in = SeqIO.index(input.fasta)
+        df = pd.read_csv(input.table)
+
+        with open(output.fasta, 'w') as fasta_out, open(log, 'w') as log_out:
+            for i,row in df.iterrows():
+                sequence_name = row['sequence_name']
+                distance = row['distance_stdevs']
+                if distance < 4.0:
+                    if sequence_name in fasta_in:
+                        record = fasta_in[sequence_name]
+                        fasta_out.write('>' + record.id + '\n')
+                        fasta_out.write(str(record.seq )+ '\n')
+                else:
+                    log_out.write(sequence_name + ' was filtered for having too high a distance to WH04 (' + str(distance) + ') epi-week std devs\n')
+
+
+rule gisaid_output_lineage_table:
+    input:
+        fasta = rules.gisaid_filter_on_distance_to_WH04.output.fasta,
         metadata = rules.gisaid_combine_previous_and_new.output.metadata
     output:
         fasta = config["output_path"] + "/0/gisaid.matched.fasta",
@@ -449,6 +476,7 @@ rule summarize_preprocess_gisaid:
         removed_short_fasta = rules.gisaid_filter_1.output,
         removed_low_covg_fasta = rules.gisaid_filter_2.output.fasta,
         new_fasta_masked = rules.gisaid_mask_1.output.fasta,
+        removed_distance_to_root_fasta = rules.gisaid_filter_on_distance_to_WH04.output.fasta,
         # full_fasta = rules.gisaid_publish_full_alignment.output.published_fasta,
         # full_metadata = rules.gisaid_publish_full_metadata.output.published_metadata,
         # matched_fasta = rules.gisaid_output_gisaid.output.fasta,
@@ -468,6 +496,7 @@ rule summarize_preprocess_gisaid:
         echo "Number of new sequences: $(cat {input.new_fasta} | grep '>' | wc -l)\\n" >> {log}
         echo "Number of sequences after removing sequences <29000bps and with <95%% coverage: $(cat {input.removed_short_fasta} | grep '>' | wc -l)\\n" >> {log}
         echo "Number of sequences after mapping and removing those with <95%% coverage remaining: $(cat {input.removed_low_covg_fasta} | grep '>' | wc -l)\\n" >> {log}
+        echo "Number of sequences after removing those >4 epi-week stddevs to WH04 remaining: $(cat {input.removed_distance_to_root_fasta} | grep '>' | wc -l)\\n" >> {log}
         echo "> \\n" >> {log}
         echo "> Number of sequences in matched GISAID files: $(cat {input.matched_fasta} | grep '>' | wc -l)\\n" >> {log}
         echo ">\\n" >> {log}
