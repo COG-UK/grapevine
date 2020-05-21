@@ -299,23 +299,23 @@ rule gisaid_combine_previous_and_new:
         """
 
 
-rule gisaid_update_metadata_lineages:
-    input:
-        metadata = rules.gisaid_combine_previous_and_new.output.metadata
-    output:
-        metadata = config["output_path"] + "/0/gisaid.combined.updated.csv",
-    log:
-        config["output_path"] + "/logs/0_gisaid_update_metadata_lineages.log"
-    run:
-        df = pd.read_csv(input.metadata)
-        lineages = []
-        for i,row in df.iterrows():
-            if row['special_lineage']:
-                lineages.append(str(row['special_lineage']).replace(".X","").replace(".Y",""))
-            else:
-                lineages.append(row['lineage'])
-        df['lineage'] = lineages
-        df.to_csv(output.metadata, index=False)
+# rule gisaid_update_metadata_lineages:
+#     input:
+#         metadata = rules.gisaid_combine_previous_and_new.output.metadata
+#     output:
+#         metadata = config["output_path"] + "/0/gisaid.combined.updated.csv",
+#     log:
+#         config["output_path"] + "/logs/0_gisaid_update_metadata_lineages.log"
+#     run:
+#         df = pd.read_csv(input.metadata)
+#         lineages = []
+#         for i,row in df.iterrows():
+#             if row['special_lineage']:
+#                 lineages.append(str(row['special_lineage']).replace(".X","").replace(".Y",""))
+#             else:
+#                 lineages.append(row['lineage'])
+#         df['lineage'] = lineages
+#         df.to_csv(output.metadata, index=False)
 
 
 # rule gisaid_publish_full_metadata:
@@ -364,7 +364,7 @@ rule gisaid_mask_2:
 rule gisaid_distance_QC:
     input:
         fasta = rules.gisaid_mask_2.output.fasta,
-        metadata = rules.gisaid_update_metadata_lineages.output.metadata
+        metadata = rules.gisaid_combine_previous_and_new.output.metadata
     log:
         config["output_path"] + "/logs/0_gisaid_distance_QC.log"
     output:
@@ -383,7 +383,7 @@ rule gisaid_distance_QC:
 rule gisaid_output_lineage_table:
     input:
         fasta = rules.gisaid_mask_2.output.fasta,
-        metadata = rules.gisaid_update_metadata_lineages.output.metadata
+        metadata = rules.gisaid_combine_previous_and_new.output.metadata
     output:
         fasta = config["output_path"] + "/0/gisaid.matched.fasta",
         metadata = config["output_path"] + "/0/gisaid.matched.lineages.csv"
@@ -397,7 +397,7 @@ rule gisaid_output_lineage_table:
           --index-column sequence_name \
           --filter-column sequence_name country adm1 adm2 \
                           sample_date epi_week \
-                          lineage special_lineage uk_lineage \
+                          special_lineage uk_lineage \
           --where-column uk_omit=is_uk sample_date=covv_collection_date \
                                  epi_week=edin_epi_week country=edin_admin_0 \
           --out-fasta {output.fasta} \
