@@ -155,7 +155,7 @@ rule combine_cog_gisaid:
     input:
         cog_fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.fasta",
         cog_metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata,
-        gisaid_fasta = config["output_path"] + "/0/gisaid.full.masked.fasta",
+        gisaid_fasta = config["output_path"] + "/0/gisaid.full.masked.filtered.fasta",
         gisaid_metadata = config["output_path"] + "/0/gisaid.combined.updated.csv"
     params:
         intermediate_cog_fasta = config["output_path"] + "/6/cog.combine_cog_gisaid.temp.cog.fasta",
