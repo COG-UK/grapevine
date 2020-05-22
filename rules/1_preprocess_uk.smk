@@ -341,7 +341,7 @@ rule uk_extract_lineageless:
         from Bio import SeqIO
         import pandas as pd
 
-        fasta_in = SeqIO.index(input.fasta)
+        fasta_in = SeqIO.index(input.fasta, "fasta")
         df = pd.read_csv(input.metadata)
 
         with open(output.fasta, 'w') as fasta_out:
@@ -351,7 +351,7 @@ rule uk_extract_lineageless:
                     if sequence_name in fasta_in:
                         record = fasta_in[sequence_name]
                         fasta_out.write('>' + record.id + '\n')
-                        fasta_out.write(str(record.seq )+ '\n')
+                        fasta_out.write(str(record.seq) + '\n')
 
 
 rule summarize_preprocess_uk:
