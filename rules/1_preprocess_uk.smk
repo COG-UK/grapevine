@@ -63,10 +63,34 @@ rule uk_remove_duplicates_covid_by_gaps:
         """
 
 
+rule uk_add_epi_week:
+    input:
+        metadata = rules.uk_remove_duplicates_covid_by_gaps.output.metadata
+    output:
+        metadata = config["output_path"] + "/1/uk_latest.epi_week.csv",
+        tmp_metadata = temp(config["output_path"] + "/1/uk_latest.epi_week.csv.tmp")
+    log:
+        config["output_path"] + "/logs/1_uk_add_epi_week.log"
+    shell:
+        """
+        datafunk add_epi_week \
+        --input-metadata {input.metadata} \
+        --output-metadata {output.tmp_metadata} \
+        --date-column received_date \
+        --epi-column-name edin_epi_week &> {log}
+
+        datafunk add_epi_week \
+        --input-metadata {output.tmp_metadata} \
+        --output-metadata {output.metadata} \
+        --date-column collection_date \
+        --epi-column-name edin_epi_week &>> {log}
+        """
+
+
 rule uk_remove_duplicates_biosamplesourceid_by_date:
     input:
         fasta = rules.uk_remove_duplicates_covid_by_gaps.output.fasta,
-        metadata = rules.uk_remove_duplicates_covid_by_gaps.output.metadata
+        metadata = rules.uk_add_epi_week.output.metadata
     output:
         fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id_biosample_source_id.fasta",
         metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id_biosample_source_id.csv"
@@ -82,7 +106,7 @@ rule uk_remove_duplicates_biosamplesourceid_by_date:
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --sample-size 1 \
-          --select-by-min-column collection_date &> {log}
+          --select-by-min-column edin_epi_week &> {log}
         """
 
 
@@ -105,30 +129,6 @@ rule uk_unify_headers:
           --cog-uk  &> {log}
 
         sed --in-place=.tmp 's/United Kingdom/UK/g' {output.metadata}
-        """
-
-
-rule uk_add_epi_week:
-    input:
-        metadata = rules.uk_unify_headers.output.metadata
-    output:
-        metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.csv",
-        tmp_metadata = temp(config["output_path"] + "/1/uk_latest.unify_headers.epi_week.csv.tmp")
-    log:
-        config["output_path"] + "/logs/1_uk_add_epi_week.log"
-    shell:
-        """
-        datafunk add_epi_week \
-        --input-metadata {input.metadata} \
-        --output-metadata {output.tmp_metadata} \
-        --date-column received_date \
-        --epi-column-name edin_epi_week &> {log}
-
-        datafunk add_epi_week \
-        --input-metadata {output.tmp_metadata} \
-        --output-metadata {output.metadata} \
-        --date-column collection_date \
-        --epi-column-name edin_epi_week &>> {log}
         """
 
 
@@ -258,7 +258,7 @@ rule run_snp_finder:
 rule add_snp_finder_result_to_metadata:
     input:
         snps = config["snps"],
-        metadata = rules.uk_add_epi_week.output.metadata,
+        metadata = rules.uk_unify_headers.output.metadata,
         new_data = rules.run_snp_finder.output.found
     output:
         metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.with_snp_finder.csv"
