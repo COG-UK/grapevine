@@ -334,7 +334,6 @@ rule uk_extract_lineageless:
         previous_metadata = config["previous_uk_metadata"]
     output:
         fasta = config["output_path"] + "/1/uk.new.fasta",
-        metadata = config["output_path"] + "/1/uk.new.csv",
     log:
         config["output_path"] + "/logs/1_extract_lineageless.log"
     run:
