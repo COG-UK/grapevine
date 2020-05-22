@@ -28,7 +28,7 @@ rule update_lineage_metadata:
           --in-data {input.traits} \
           --index-column sequence_name \
           --join-on taxon \
-          --new-columns uk_lineage acc_lineage del_lineage \
+          --new-columns uk_lineage acc_lineage del_lineage acc_introduction del_introduction \
           --out-metadata {output.traits_metadata} &> {log} ;
 
         fastafunk add_columns \
