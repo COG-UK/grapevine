@@ -266,7 +266,7 @@ rule uk_add_previous_uk_lineages_to_metadata:
           --in-data {input.previous_metadata} \
           --index-column sequence_name \
           --join-on sequence_name \
-          --new-columns uk_lineage special_lineage lineage_support edin_date_stamp \
+          --new-columns uk_lineage special_lineage edin_date_stamp \
           --out-metadata {output.metadata} &>> {log}
         """
 

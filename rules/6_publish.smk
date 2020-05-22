@@ -26,7 +26,8 @@ rule uk_add_lineage_information_back_to_master_metadata:
           --in-data {input.global_lineage_data} \
           --index-column sequence_name \
           --join-on taxon  \
-          --new-columns lineage lineages_version \
+          --new-columns lineage lineages_version lineage_support \
+          --where-column lineage_support=UFbootstrap \
           --out-metadata {output.metadata} &>> {log}
         """
 
@@ -59,7 +60,8 @@ rule gisaid_add_lineage_information_back_to_master_metadata:
         --in-data {input.global_lineage_data} \
         --index-column sequence_name \
         --join-on taxon  \
-        --new-columns lineage lineages_version \
+        --new-columns lineage lineages_version lineage_support \
+        --where-column lineage_support=UFbootstrap \
         --out-metadata {output.metadata} &>> {log}
         """
 
