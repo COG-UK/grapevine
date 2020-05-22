@@ -340,10 +340,10 @@ rule uk_extract_lineageless:
         from Bio import SeqIO
         import pandas as pd
 
-        fasta_in = SeqIO.index(input.fasta, "fasta")
+        fasta_in = SeqIO.index(str(input.fasta), "fasta")
         df = pd.read_csv(input.metadata)
 
-        with open(output.fasta, 'w') as fasta_out:
+        with open(str(output.fasta), 'w') as fasta_out:
             for i,row in df.iterrows():
                 if pd.isnull(row['special_lineage']):
                     sequence_name = row['sequence_name']
