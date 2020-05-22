@@ -18,7 +18,7 @@ rule uk_add_lineage_information_back_to_master_metadata:
           --in-data {input.uk_lineage_data} \
           --index-column sequence_name \
           --join-on sequence_name \
-          --new-columns uk_lineage acc_lineage del_lineage phylotype \
+          --new-columns uk_lineage microreact_lineages acc_lineage del_lineage phylotype \
           --out-metadata {output.metadata_temp} &> {log}
 
         fastafunk add_columns \
