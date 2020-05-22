@@ -18,7 +18,7 @@ rule uk_add_lineage_information_back_to_master_metadata:
           --in-data {input.uk_lineage_data} \
           --index-column sequence_name \
           --join-on sequence_name \
-          --new-columns uk_lineage acc_lineage del_lineage phylotype \
+          --new-columns uk_lineage microreact_lineages acc_lineage del_lineage phylotype \
           --out-metadata {output.metadata_temp} &> {log}
 
         fastafunk add_columns \
@@ -155,7 +155,7 @@ rule combine_cog_gisaid:
     input:
         cog_fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.fasta",
         cog_metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata,
-        gisaid_fasta = config["output_path"] + "/0/gisaid.full.masked.fasta",
+        gisaid_fasta = config["output_path"] + "/0/gisaid.full.masked.filtered.fasta",
         gisaid_metadata = config["output_path"] + "/0/gisaid.combined.updated.csv"
     params:
         intermediate_cog_fasta = config["output_path"] + "/6/cog.combine_cog_gisaid.temp.cog.fasta",
@@ -173,7 +173,8 @@ rule combine_cog_gisaid:
           --in-fasta {input.cog_fasta} \
           --in-metadata {input.cog_metadata} \
           --index-column sequence_name \
-          --filter-column sequence_name sample_date epi_week \
+          --filter-column covv_accession_id \
+                          sequence_name sample_date epi_week \
                           country adm1 adm2 submission_org_code \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
@@ -189,7 +190,8 @@ rule combine_cog_gisaid:
           --in-fasta {input.gisaid_fasta} \
           --in-metadata {input.gisaid_metadata} \
           --index-column sequence_name \
-          --filter-column sequence_name sample_date epi_week \
+          --filter-column covv_accession_id \
+                          sequence_name sample_date epi_week \
                           country adm1 adm2 submission_org_code \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
@@ -238,6 +240,28 @@ rule publish_full_annotated_tree_and_metadata:
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
                           lineage_support uk_lineage acc_lineage del_lineage phylotype \
+          --out-fasta {output.fasta} \
+          --out-metadata {output.metadata} \
+          --restrict &>> {log}
+        """
+
+
+rule publish_cog_gisaid_data_for_lineage_release_work:
+    input:
+        combined_fasta = rules.combine_cog_gisaid.output.fasta,
+        combined_metadata = rules.combine_cog_gisaid.output.metadata,
+    output:
+        fasta = config["export_path"] + "/lineage_release/cog_gisaid.fasta",
+        metadata = config["export_path"] + "/lineage_release/cog_gisaid.csv",
+    log:
+        config["output_path"] + "/logs/6_publish_cog_gisaid_data_for_lineage_release_work.log"
+    shell:
+        """
+        fastafunk fetch \
+          --in-fasta {input.combined_fasta} \
+          --in-metadata {input.combined_metadata} \
+          --index-column sequence_name \
+          --filter-column covv_accession_id sequence_name country travel_history sample_date epi_week \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --restrict &>> {log}
@@ -338,6 +362,9 @@ rule summarize_publish:
         microreact_tree = rules.publish_microreact_specific_output.output.newick_tree,
         microreact_public_metadata = rules.publish_microreact_specific_output.output.public_metadata,
         microreact_private_metadata = rules.publish_microreact_specific_output.output.private_metadata,
+
+        lineage_report_fasta = rules.publish_cog_gisaid_data_for_lineage_release_work.output.fasta,
+        lineage_report_metadata = rules.publish_cog_gisaid_data_for_lineage_release_work.output.csv,
     params:
         webhook = config["webhook"],
         uk_trees_path = config["export_path"] + "/trees/uk_lineages/",
