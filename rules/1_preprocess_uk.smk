@@ -87,7 +87,7 @@ rule uk_add_epi_week:
         """
 
 
-rule annotate_to_remove_duplicates_by_biosample:
+rule uk_annotate_to_remove_duplicates_by_biosample:
     input:
         metadata = rules.uk_add_epi_week.output.metadata,
     output:
@@ -115,7 +115,7 @@ rule annotate_to_remove_duplicates_by_biosample:
 rule uk_remove_duplicates_biosamplesourceid_by_date:
     input:
         fasta = rules.uk_remove_duplicates_covid_by_gaps.output.fasta,
-        metadata = rules.annotate_to_remove_duplicates_by_biosample.output.metadata
+        metadata = rules.uk_annotate_to_remove_duplicates_by_biosample.output.metadata
     output:
         fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id_biosample_source_id.fasta",
         metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id_biosample_source_id.csv"
