@@ -87,10 +87,35 @@ rule uk_add_epi_week:
         """
 
 
+rule annotate_to_remove_duplicates_by_biosample:
+    input:
+        metadata = rules.uk_add_epi_week.output.metadata,
+    output:
+        metadata = config["output_path"] + "/1/uk_latest.epi_week.annotated2.csv",
+    log:
+        config["output_path"] + "/logs/1_uk_remove_duplicates_by_biosample.log",
+    run:
+        import pandas as pd
+
+        df = pd.read_csv(input.metadata)
+
+        edin_biosample = []
+
+        for i,row in df.iterrows():
+            if pd.isnull(row['biosample_source_id']):
+                edin_biosample.append(row['cov_id'])
+            else:
+                edin_biosample.append(row['biosample_source_id'])
+
+        df['edin_biosample'] = edin_biosample
+        df.to_csv(output.metadata, index=False)
+
+
+
 rule uk_remove_duplicates_biosamplesourceid_by_date:
     input:
         fasta = rules.uk_remove_duplicates_covid_by_gaps.output.fasta,
-        metadata = rules.uk_add_epi_week.output.metadata
+        metadata = rules.annotate_to_remove_duplicates_by_biosample.output.metadata
     output:
         fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id_biosample_source_id.fasta",
         metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id_biosample_source_id.csv"
@@ -101,7 +126,7 @@ rule uk_remove_duplicates_biosamplesourceid_by_date:
         fastafunk subsample \
           --in-fasta {input.fasta} \
           --in-metadata {input.metadata} \
-          --group-column biosample_source_id \
+          --group-column edin_biosample \
           --index-column header \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
