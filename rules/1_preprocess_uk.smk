@@ -169,9 +169,27 @@ rule uk_remove_insertions_and_trim_and_pad:
         mv insertions.txt {params.insertions}
         """
 
+
+rule uk_mask_1:
+    input:
+        fasta = rules.uk_remove_insertions_and_trim_and_pad.output.fasta,
+        mask = config["gisaid_mask_file"]
+    output:
+        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.trimmed.masked.fasta",
+    log:
+        config["output_path"] + "/logs/1_uk_mask_1.log"
+    shell:
+        """
+        datafunk mask \
+          --input-fasta {input.fasta} \
+          --output-fasta {output.fasta} \
+          --mask-file \"{input.mask}\" 2> {log}
+        """
+
+
 rule uk_filter_low_coverage_sequences:
     input:
-        fasta = rules.uk_remove_insertions_and_trim_and_pad.output.fasta
+        fasta = rules.uk_mask_1.output.fasta
     params:
         min_covg = config["min_covg"]
     output:
@@ -185,6 +203,7 @@ rule uk_filter_low_coverage_sequences:
           -o {output.fasta} \
           --min-covg {params.min_covg} &> {log}
         """
+
 
 rule uk_full_untrimmed_alignment:
     input:
@@ -203,16 +222,28 @@ rule uk_full_untrimmed_alignment:
           -o {output.fasta} \
           &> {log}
         """
-        # fastafunk remove \
-        #   --in-fasta {output.fasta} \
-        #   --in-metadata {input.omit_list} \
-        #   --out-fasta removed.fa
-        # mv removed.fa {output.fasta}
+
+
+rule uk_mask_2:
+    input:
+        fasta = rules.uk_full_untrimmed_alignment.output.fasta,
+        mask = config["gisaid_mask_file"]
+    output:
+        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.full.masked.fasta"
+    log:
+        config["output_path"] + "/logs/1_uk_mask_2.log"
+    shell:
+        """
+        datafunk mask \
+          --input-fasta {input.fasta} \
+          --output-fasta {output.fasta} \
+          --mask-file \"{input.mask}\" 2> {log}
+        """
 
 
 rule run_snp_finder:
     input:
-        fasta = rules.uk_full_untrimmed_alignment.output.fasta,
+        fasta = rules.uk_mask_2.output.fasta,
         snps = config["snps"]
     output:
         found = config["output_path"] + "/1/cog.snp_finder.csv",
