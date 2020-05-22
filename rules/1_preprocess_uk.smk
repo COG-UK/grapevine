@@ -48,7 +48,7 @@ rule uk_remove_duplicates_covid_by_gaps:
         fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id.fasta",
         metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id.csv"
     log:
-        config["output_path"] + "/logs/1_uk_remove_duplicates.log"
+        config["output_path"] + "/logs/1_uk_remove_duplicates_bycovid.log"
     shell:
         """
         fastafunk subsample \
@@ -120,7 +120,7 @@ rule uk_remove_duplicates_biosamplesourceid_by_date:
         fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id_biosample_source_id.fasta",
         metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id_biosample_source_id.csv"
     log:
-        config["output_path"] + "/logs/1_uk_remove_duplicates.log"
+        config["output_path"] + "/logs/1_uk_remove_duplicates_by_biosample.log"
     shell:
         """
         fastafunk subsample \
