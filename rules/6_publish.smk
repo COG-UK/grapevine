@@ -34,14 +34,31 @@ rule uk_add_lineage_information_back_to_master_metadata:
 
 rule publish_COG_master_metadata:
     input:
+        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.fasta",
         metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata
     output:
-        metadata = config["publish_path"] + "/COG/master.csv"
+        metadata_master = config["publish_path"] + "/COG/master.csv",
+        metadata_report = config["publish_path"] + "/COG/master_report.csv",
+        fasta = temp(config["output_path"] + "/logs/6_publish_COG_master_metadata.fasta")
     log:
         config["output_path"] + "/logs/6_publish_COG_master_metadata.log"
     shell:
         """
-        cp {input.metadata} {output.metadata} &> {log}
+        cp {input.metadata} {output.metadata_master} &> {log}
+
+        fastafunk fetch \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata} \
+          --index-column sequence_name \
+          --filter-column sequence_name sample_date epi_week \
+                          country adm1 adm2 \
+                          lineage lineages_version uk_lineage acc_lineage del_lineage phylotype acc_introduction del_introduction \
+                          sequencing_org_code \
+          --where-column epi_week=edin_epi_week country=adm0 \
+                         sample_date=received_date sample_date=collection_date \
+          --out-fasta {output.fasta} \
+          --out-metadata {output.metadata_report} \
+          --restrict &>> {log}
         """
 
 
