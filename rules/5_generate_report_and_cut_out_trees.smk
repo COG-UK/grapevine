@@ -57,7 +57,7 @@ rule update_lineage_metadata:
           --in-data {input.updated_lineages} \
           --index-column sequence_name \
           --join-on taxon \
-          --new-columns uk_lineage \
+          --new-columns uk_lineage microreact_lineage \
           --out-metadata {output.all_metadata} &> {log}
         """
 
