@@ -38,7 +38,7 @@ rule publish_COG_master_metadata:
         metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata
     output:
         metadata_master = config["publish_path"] + "/COG/master.csv",
-        metadata_report = config["publish_path"] + "/COG/master_report.csv",
+        metadata_report = config["publish_path"] + "/COG/report_metadata.csv",
         fasta = temp(config["output_path"] + "/logs/6_publish_COG_master_metadata.fasta")
     log:
         config["output_path"] + "/logs/6_publish_COG_master_metadata.log"
