@@ -7,7 +7,7 @@ rule uk_add_lineage_information_back_to_master_metadata:
         uk_lineage_data = config["output_path"] + "/5/cog_gisaid.lineages.with_all_traits.with_phylotype_traits.csv",
         global_lineage_data = config["global_lineages"]
     output:
-        metadata_temp = temp(config["output_path"] + "/6/temp.uk.master.csv")
+        metadata_temp = temp(config["output_path"] + "/6/temp.uk.master.csv"),
         metadata = config["output_path"] + "/6/uk.master.csv"
     log:
         config["output_path"] + "/logs/6_uk_add_lineage_information_back_to_master_metadata.log"
@@ -18,7 +18,7 @@ rule uk_add_lineage_information_back_to_master_metadata:
           --in-data {input.uk_lineage_data} \
           --index-column sequence_name \
           --join-on sequence_name \
-          --new-columns uk_lineage microreact_lineages acc_lineage del_lineage acc_introduction del_introduction phylotype \
+          --new-columns uk_lineage microreact_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype \
           --out-metadata {output.metadata_temp} &> {log}
 
         fastafunk add_columns \
@@ -197,7 +197,7 @@ rule combine_cog_gisaid:
                           country adm1 adm2 submission_org_code \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
-                          lineage_support uk_lineage acc_lineage del_lineage phylotype \
+                          lineage_support uk_lineage microreact_lineage acc_lineage del_lineage phylotype d614g \
           --where-column epi_week=edin_epi_week country=adm0 \
                          sample_date=received_date sample_date=collection_date \
           --out-fasta {params.intermediate_cog_fasta} \
@@ -214,7 +214,7 @@ rule combine_cog_gisaid:
                           country adm1 adm2 submission_org_code \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
-                          lineage_support uk_lineage acc_lineage del_lineage phylotype \
+                          lineage_support uk_lineage microreact_lineage acc_lineage del_lineage phylotype d614g \
           --where-column uk_omit=is_uk sample_date=covv_collection_date epi_week=edin_epi_week \
                          country=edin_admin_0 travel_history=edin_travel \
           --out-fasta {params.intermediate_gisaid_fasta} \
@@ -340,7 +340,7 @@ rule publish_microreact_specific_output:
           --index-column sequence_name \
           --filter-column sequence_name sample_date epi_week \
                           country adm1 adm2 submission_org_code lineage \
-                          lineage_support uk_lineage \
+                          lineage_support uk_lineage microreact_lineage \
           --out-fasta {output.fasta1} \
           --out-metadata {output.public_metadata} \
           --restrict &>> {log}
@@ -352,7 +352,7 @@ rule publish_microreact_specific_output:
           --filter-column sequence_name sample_date epi_week \
                           country adm1 adm2 submission_org_code \
                           is_hcw travel_history \
-                          lineage lineage_support uk_lineage d614g \
+                          lineage lineage_support uk_lineage microreact_lineage d614g \
           --out-fasta {output.fasta2} \
           --out-metadata {output.private_metadata} \
           --restrict &>> {log}
@@ -362,7 +362,7 @@ rule publish_microreact_specific_output:
 rule summarize_publish:
     input:
         GISAID_meta_master = rules.publish_gisaid_master_metadata.output.metadata,
-        COG_meta_master = rules.publish_COG_master_metadata.output.metadata,
+        COG_meta_master = rules.publish_COG_master_metadata.output.metadata_master,
 
         COG_seq_all = rules.publish_unaligned_cog_sequences.output.fasta,
         COG_seq_all_aligned = rules.publish_full_aligned_cog_data.output.fasta,
@@ -383,7 +383,7 @@ rule summarize_publish:
         microreact_private_metadata = rules.publish_microreact_specific_output.output.private_metadata,
 
         lineage_report_fasta = rules.publish_cog_gisaid_data_for_lineage_release_work.output.fasta,
-        lineage_report_metadata = rules.publish_cog_gisaid_data_for_lineage_release_work.output.csv,
+        lineage_report_metadata = rules.publish_cog_gisaid_data_for_lineage_release_work.output.metadata,
     params:
         webhook = config["webhook"],
         uk_trees_path = config["export_path"] + "/trees/uk_lineages/",
