@@ -323,16 +323,18 @@ rule publish_microreact_specific_output:
         metadata = rules.combine_cog_gisaid.output.metadata,
         fasta = rules.combine_cog_gisaid.output.fasta,
     output:
-        newick_tree = config["export_path"] + "/microreact/cog_global_" + config["date"] + '_tree.newick',
+        public_tree = config["export_path"] + "/microreact/cog_global_" + config["date"] + '_tree_public.newick',
+        private_tree = config["export_path"] + "/microreact/cog_global_" + config["date"] + '_tree_private.newick',
         public_metadata = config["export_path"] + "/microreact/cog_global_" + config["date"] + '_metadata_public.csv',
         private_metadata = config["export_path"] + "/microreact/cog_global_" + config["date"] + '_metadata_private.csv',
+        temp_public_metadata = temp(config["output_path"] + "/6/cog_global_microreact1.csv")
         fasta1 = temp(config["output_path"] + "/6/cog_global_microreact1.fasta"),
         fasta2 = temp(config["output_path"] + "/6/cog_global_microreact2.fasta")
     log:
         config["output_path"] + "/logs/6_publish_microreact_specific_output.log"
     shell:
         """
-        cp {input.newick_tree} {output.newick_tree}
+        cp {input.newick_tree} {output.private_tree} &>> {log}
 
         fastafunk fetch \
           --in-fasta {input.fasta} \
@@ -343,8 +345,14 @@ rule publish_microreact_specific_output:
                           lineage_support uk_lineage primary_uk_lineage \
           --where-column primary_uk_lineage=microreact_lineage \
           --out-fasta {output.fasta1} \
-          --out-metadata {output.public_metadata} \
+          --out-metadata {output.temp_public_metadata} \
           --restrict &>> {log}
+
+        datafunk anonymize_microreact \
+          --input-tree {input.newick_tree} \
+          --input-metadata {output.temp_public_metadata} \
+          --output-tree {output.public_tree} \
+          --output-metadata {output.public_metadata} &>> {log}
 
         fastafunk fetch \
           --in-fasta {input.fasta} \
