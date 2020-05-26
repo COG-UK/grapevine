@@ -39,7 +39,8 @@ rule iq_tree:
     shell:
         """
         echo "{params.outgroup} {input.lineage_fasta} {params.lineage}"
-        iqtree -m HKY -bb 1000 -czb \
+        iqtree -m HKY -czb \
+        -fast \
         -o \"{params.outgroup}\" \
         -cptime 300 \
         -nt AUTO \
@@ -54,13 +55,34 @@ rule iq_tree:
             --out {output.tree} &>> {log}
         fi
         """
+        # iqtree -m HKY -bb 1000 -czb \
 
+
+rule subroutine_4_add_global_lineages_to_metadata:
+    input:
+        metadata = config["metadata"],
+        global_lineages = config["globallineages"]
+    output:
+        metadata = config["output_path"] + "/4/cog_gisaid.global.lineages.csv"
+    log:
+        config["output_path"] + "/logs/4_add_global_lineages_to_metadata.log"
+    shell:
+        """
+        fastafunk add_columns \
+          --in-metadata {input.metadata} \
+          --in-data {input.global_lineages} \
+          --index-column sequence_name \
+          --join-on taxon  \
+          --new-columns lineage lineage_support lineages_version \
+          --where-column lineage_support=UFbootstrap \
+          --out-metadata {output.metadata} &>> {log}
+        """
 
 
 rule annotate_tree:
     input:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.tree",
-        metadata = config["metadata"]
+        metadata = rules.subroutine_4_add_global_lineages_to_metadata.output.metadata,
     params:
         lineage = "{lineage}",
         collapse=0.000005,
@@ -226,7 +248,7 @@ rule merge_sibling_del_introduction:
           --prefix {params.lineage}_ \
           --input {input.tree} \
           --output {output.tree} &> {log}
-          
+
         mkdir -p {params.outdir}
         cp {output.tree} {params.prefix}_lineage_{params.lineage}.tree
         """

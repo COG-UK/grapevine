@@ -48,7 +48,7 @@ rule uk_remove_duplicates_covid_by_gaps:
         fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id.fasta",
         metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id.csv"
     log:
-        config["output_path"] + "/logs/1_uk_remove_duplicates.log"
+        config["output_path"] + "/logs/1_uk_remove_duplicates_bycovid.log"
     shell:
         """
         fastafunk subsample \
@@ -63,26 +63,75 @@ rule uk_remove_duplicates_covid_by_gaps:
         """
 
 
+rule uk_add_epi_week:
+    input:
+        metadata = rules.uk_remove_duplicates_covid_by_gaps.output.metadata
+    output:
+        metadata = config["output_path"] + "/1/uk_latest.epi_week.csv",
+        tmp_metadata = temp(config["output_path"] + "/1/uk_latest.epi_week.csv.tmp")
+    log:
+        config["output_path"] + "/logs/1_uk_add_epi_week.log"
+    shell:
+        """
+        datafunk add_epi_week \
+        --input-metadata {input.metadata} \
+        --output-metadata {output.tmp_metadata} \
+        --date-column received_date \
+        --epi-column-name edin_epi_week &> {log}
+
+        datafunk add_epi_week \
+        --input-metadata {output.tmp_metadata} \
+        --output-metadata {output.metadata} \
+        --date-column collection_date \
+        --epi-column-name edin_epi_week &>> {log}
+        """
+
+
+rule uk_annotate_to_remove_duplicates_by_biosample:
+    input:
+        metadata = rules.uk_add_epi_week.output.metadata,
+    output:
+        metadata = config["output_path"] + "/1/uk_latest.epi_week.annotated2.csv",
+    log:
+        config["output_path"] + "/logs/1_uk_remove_duplicates_by_biosample.log",
+    run:
+        import pandas as pd
+
+        df = pd.read_csv(input.metadata)
+
+        edin_biosample = []
+
+        for i,row in df.iterrows():
+            if pd.isnull(row['biosample_source_id']):
+                edin_biosample.append(row['cov_id'])
+            else:
+                edin_biosample.append(row['biosample_source_id'])
+
+        df['edin_biosample'] = edin_biosample
+        df.to_csv(output.metadata, index=False)
+
+
+
 rule uk_remove_duplicates_biosamplesourceid_by_date:
     input:
         fasta = rules.uk_remove_duplicates_covid_by_gaps.output.fasta,
-        metadata = rules.uk_remove_duplicates_covid_by_gaps.output.metadata
+        metadata = rules.uk_annotate_to_remove_duplicates_by_biosample.output.metadata
     output:
         fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id_biosample_source_id.fasta",
         metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id_biosample_source_id.csv"
     log:
-        config["output_path"] + "/logs/1_uk_remove_duplicates.log"
+        config["output_path"] + "/logs/1_uk_remove_duplicates_by_biosample.log"
     shell:
         """
         fastafunk subsample \
           --in-fasta {input.fasta} \
           --in-metadata {input.metadata} \
-          --group-column biosample_source_id \
+          --group-column edin_biosample \
           --index-column header \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --sample-size 1 \
-          --select-by-min-column collection_date &> {log}
+          --select-by-min-column edin_epi_week &> {log}
         """
 
 
@@ -105,30 +154,6 @@ rule uk_unify_headers:
           --cog-uk  &> {log}
 
         sed --in-place=.tmp 's/United Kingdom/UK/g' {output.metadata}
-        """
-
-
-rule uk_add_epi_week:
-    input:
-        metadata = rules.uk_unify_headers.output.metadata
-    output:
-        metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.csv",
-        tmp_metadata = temp(config["output_path"] + "/1/uk_latest.unify_headers.epi_week.csv.tmp")
-    log:
-        config["output_path"] + "/logs/1_uk_add_epi_week.log"
-    shell:
-        """
-        datafunk add_epi_week \
-        --input-metadata {input.metadata} \
-        --output-metadata {output.tmp_metadata} \
-        --date-column received_date \
-        --epi-column-name edin_epi_week &> {log}
-
-        datafunk add_epi_week \
-        --input-metadata {output.tmp_metadata} \
-        --output-metadata {output.metadata} \
-        --date-column collection_date \
-        --epi-column-name edin_epi_week &>> {log}
         """
 
 
@@ -169,9 +194,27 @@ rule uk_remove_insertions_and_trim_and_pad:
         mv insertions.txt {params.insertions}
         """
 
+
+rule uk_mask_1:
+    input:
+        fasta = rules.uk_remove_insertions_and_trim_and_pad.output.fasta,
+        mask = config["gisaid_mask_file"]
+    output:
+        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.trimmed.masked.fasta",
+    log:
+        config["output_path"] + "/logs/1_uk_mask_1.log"
+    shell:
+        """
+        datafunk mask \
+          --input-fasta {input.fasta} \
+          --output-fasta {output.fasta} \
+          --mask-file \"{input.mask}\" 2> {log}
+        """
+
+
 rule uk_filter_low_coverage_sequences:
     input:
-        fasta = rules.uk_remove_insertions_and_trim_and_pad.output.fasta
+        fasta = rules.uk_mask_1.output.fasta
     params:
         min_covg = config["min_covg"]
     output:
@@ -185,6 +228,7 @@ rule uk_filter_low_coverage_sequences:
           -o {output.fasta} \
           --min-covg {params.min_covg} &> {log}
         """
+
 
 rule uk_full_untrimmed_alignment:
     input:
@@ -203,16 +247,28 @@ rule uk_full_untrimmed_alignment:
           -o {output.fasta} \
           &> {log}
         """
-        # fastafunk remove \
-        #   --in-fasta {output.fasta} \
-        #   --in-metadata {input.omit_list} \
-        #   --out-fasta removed.fa
-        # mv removed.fa {output.fasta}
+
+
+rule uk_mask_2:
+    input:
+        fasta = rules.uk_full_untrimmed_alignment.output.fasta,
+        mask = config["gisaid_mask_file"]
+    output:
+        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.full.masked.fasta"
+    log:
+        config["output_path"] + "/logs/1_uk_mask_2.log"
+    shell:
+        """
+        datafunk mask \
+          --input-fasta {input.fasta} \
+          --output-fasta {output.fasta} \
+          --mask-file \"{input.mask}\" 2> {log}
+        """
 
 
 rule run_snp_finder:
     input:
-        fasta = rules.uk_full_untrimmed_alignment.output.fasta,
+        fasta = rules.uk_mask_2.output.fasta,
         snps = config["snps"]
     output:
         found = config["output_path"] + "/1/cog.snp_finder.csv",
@@ -227,7 +283,7 @@ rule run_snp_finder:
 rule add_snp_finder_result_to_metadata:
     input:
         snps = config["snps"],
-        metadata = rules.uk_add_epi_week.output.metadata,
+        metadata = rules.uk_unify_headers.output.metadata,
         new_data = rules.run_snp_finder.output.found
     output:
         metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.with_snp_finder.csv"
@@ -266,7 +322,7 @@ rule uk_add_previous_uk_lineages_to_metadata:
           --in-data {input.previous_metadata} \
           --index-column sequence_name \
           --join-on sequence_name \
-          --new-columns uk_lineage special_lineage lineage_support edin_date_stamp \
+          --new-columns uk_lineage special_lineage edin_date_stamp \
           --out-metadata {output.metadata} &>> {log}
         """
 
@@ -278,24 +334,23 @@ rule uk_extract_lineageless:
         previous_metadata = config["previous_uk_metadata"]
     output:
         fasta = config["output_path"] + "/1/uk.new.fasta",
-        metadata = config["output_path"] + "/1/uk.new.csv",
     log:
         config["output_path"] + "/logs/1_extract_lineageless.log"
     run:
         from Bio import SeqIO
         import pandas as pd
 
-        fasta_in = SeqIO.index(input.fasta)
+        fasta_in = SeqIO.index(str(input.fasta), "fasta")
         df = pd.read_csv(input.metadata)
 
-        with open(output.fasta, 'w') as fasta_out:
+        with open(str(output.fasta), 'w') as fasta_out:
             for i,row in df.iterrows():
                 if pd.isnull(row['special_lineage']):
                     sequence_name = row['sequence_name']
                     if sequence_name in fasta_in:
                         record = fasta_in[sequence_name]
                         fasta_out.write('>' + record.id + '\n')
-                        fasta_out.write(str(record.seq )+ '\n')
+                        fasta_out.write(str(record.seq) + '\n')
 
 
 rule summarize_preprocess_uk:
