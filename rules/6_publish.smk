@@ -265,6 +265,40 @@ rule publish_full_annotated_tree_and_metadata:
         """
 
 
+rule publish_uk_lineage_specific_fasta_and_metadata_files:
+    input:
+        tree = config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.tree",
+        metadata = rules.publish_full_annotated_tree_and_metadata.output.metadata,
+        fasta = rules.publish_full_annotated_tree_and_metadata.output.fasta
+    params:
+        temp_fasta = temp(config["output_path"] + "/6/uk_lineage_UK{i}.fasta")
+    output:
+        fasta = config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.fasta",
+        metadata = config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.csv"
+    log:
+        config["output_path"] + "/logs/6_publish_uk_lineage_specific_fasta_and_metadata_files.log"
+    shell:
+        """
+        fastafunk extract \
+          --in-fasta {input.fasta} \
+          --in-tree {input.tree} \
+          --out-fasta {output.fasta} &>> {log}
+
+          fastafunk fetch \
+          --in-fasta {output.fasta} \
+          --in-metadata {input.metadata} \
+          --index-column sequence_name \
+          --filter-column sequence_name sample_date epi_week \
+                          country adm1 adm2 outer_postcode \
+                          is_surveillance is_community is_hcw \
+                          is_travel_history travel_history lineage \
+                          lineage_support uk_lineage acc_lineage del_lineage phylotype \
+          --out-fasta {params.temp_fasta} \
+          --out-metadata {output.metadata} \
+          --restrict &>> {log}
+        """
+
+
 rule publish_cog_gisaid_data_for_lineage_release_work:
     input:
         combined_fasta = rules.combine_cog_gisaid.output.fasta,
