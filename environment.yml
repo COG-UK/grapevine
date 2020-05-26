@@ -21,3 +21,4 @@ dependencies:
     - git+https://github.com/cov-ert/clusterfunk.git
     - git+https://github.com/hCoV-2019/lineages.git
     - git+https://github.com/cov-ert/Reports.git
+    - git+https://github.com/neherlab/treetime
