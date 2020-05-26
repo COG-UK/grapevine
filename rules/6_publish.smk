@@ -340,7 +340,8 @@ rule publish_microreact_specific_output:
           --index-column sequence_name \
           --filter-column sequence_name sample_date epi_week \
                           country adm1 adm2 submission_org_code lineage \
-                          lineage_support uk_lineage microreact_lineage \
+                          lineage_support uk_lineage primary_uk_lineage \
+          --where-column primary_uk_lineage=microreact_lineage \
           --out-fasta {output.fasta1} \
           --out-metadata {output.public_metadata} \
           --restrict &>> {log}
@@ -352,7 +353,8 @@ rule publish_microreact_specific_output:
           --filter-column sequence_name sample_date epi_week \
                           country adm1 adm2 submission_org_code \
                           is_hcw travel_history \
-                          lineage lineage_support uk_lineage microreact_lineage d614g \
+                          lineage lineage_support uk_lineage primary_uk_lineage d614g \
+          --where-column primary_uk_lineage=microreact_lineage \
           --out-fasta {output.fasta2} \
           --out-metadata {output.private_metadata} \
           --restrict &>> {log}
