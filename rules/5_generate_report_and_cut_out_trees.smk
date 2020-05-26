@@ -11,9 +11,30 @@ rule merge_and_create_new_uk_lineages:
         """
 
 
-rule update_lineage_metadata:
+rule five_update_global_lineage_metadata:
     input:
         metadata = config["output_path"] + "/3/cog_gisaid.lineages.csv",
+        global_lineages = config["global_lineages"]
+    output:
+        metadata = config["output_path"] + "/5/cog_gisaid.global.lineages.with_all_traits.csv"
+    log:
+        config["output_path"] + "/logs/5_five_update_global_lineage_metadata.log"
+    shell:
+        """
+        fastafunk add_columns \
+          --in-metadata {input.metadata} \
+          --in-data {input.global_lineages} \
+          --index-column sequence_name \
+          --join-on taxon \
+          --new-columns lineage lineage_support lineages_version \
+          --where-column lineage_support=UFbootstrap \
+          --out-metadata {output.metadata} &> {log}
+        """
+
+
+rule update_lineage_metadata:
+    input:
+        metadata = rules.five_update_global_lineage_metadata.output.metadata,
         traits = rules.run_4_subroutine_on_lineages.output.traits,
         updated_lineages = rules.merge_and_create_new_uk_lineages.output
     output:
@@ -28,7 +49,7 @@ rule update_lineage_metadata:
           --in-data {input.traits} \
           --index-column sequence_name \
           --join-on taxon \
-          --new-columns uk_lineage acc_lineage del_lineage \
+          --new-columns uk_lineage acc_lineage del_lineage acc_introduction del_introduction \
           --out-metadata {output.traits_metadata} &> {log} ;
 
         fastafunk add_columns \
@@ -36,7 +57,7 @@ rule update_lineage_metadata:
           --in-data {input.updated_lineages} \
           --index-column sequence_name \
           --join-on taxon \
-          --new-columns uk_lineage \
+          --new-columns uk_lineage microreact_lineage \
           --out-metadata {output.all_metadata} &> {log}
         """
 

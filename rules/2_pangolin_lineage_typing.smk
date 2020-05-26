@@ -36,8 +36,8 @@ rule uk_add_pangolin_lineages_to_metadata:
           --in-data {input.lineages} \
           --index-column sequence_name \
           --join-on taxon \
-          --new-columns special_lineage lineage_support \
-          --where-column lineage_support=UFbootstrap special_lineage=lineage\
+          --new-columns special_lineage \
+          --where-column special_lineage=lineage\
           --out-metadata {output.metadata} &>> {log}
         """
 
