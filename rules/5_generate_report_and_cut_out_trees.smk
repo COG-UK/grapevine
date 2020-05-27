@@ -73,7 +73,8 @@ rule run_5_subroutine_on_lineages:
         guide_tree = config["guide_tree"],
     output:
         metadata = config["output_path"] + "/5/cog_gisaid.lineages.with_all_traits.with_phylotype_traits.csv",
-        full_tree = config["output_path"] + "/5/cog_gisaid_full.tree.nexus"
+        full_tree = config["output_path"] + "/5/cog_gisaid_full.tree.nexus",
+        timetree_log = config["output_path"] + "/logs/5_timetree_run.log"
     log:
         config["output_path"] + "/logs/5_run_5_subroutine_on_lineages.log"
     threads: 40

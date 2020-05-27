@@ -234,3 +234,77 @@ rule annotate_phylotypes:
           --input {input.tree} \
           --output {output.tree} &> {log}
         """
+
+
+rule timetree_make_input:
+    input:
+        tree = config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}.tree",
+        metadata = config["output_path"] + "/5/cog_gisaid.lineages.with_all_traits.with_phylotype_traits.csv",
+        fasta = config["output_path"] + "/3/cog_gisaid.fasta",
+    output:
+        fasta = config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}.fasta",
+        metadata = config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}.timetree.csv",
+        tree = config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}.nexus",
+    params:
+        temp_fasta = temp(config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}.temp.fasta")
+    log:
+        config["output_path"] + "/logs/5_timetree_make_input.log"
+    shell:
+        """
+        cp {input.tree} {output.tree}
+        sed -i.bak "s/'//g" {output.tree}
+
+        fastafunk extract \
+          --in-fasta {input.fasta} \
+          --in-tree {input.tree} \
+          --out-fasta {output.fasta} &>> {log}
+
+        fastafunk fetch \
+          --in-fasta {output.fasta} \
+          --in-metadata {input.metadata} \
+          --index-column sequence_name \
+          --filter-column sequence_name sample_date \
+          --out-fasta {params.temp_fasta} \
+          --out-metadata {output.metadata} \
+          --restrict &>> {log}
+        """
+
+
+rule timetree_run:
+    input:
+        tree = config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}.nexus,
+        metadata = config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}.timetree.csv",
+        fasta = config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}.fasta",
+    params:
+        outdir = config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}_timetree/"
+    log:
+        config["output_path"] + "/logs/5_timetree_run.log"
+    shell:
+        """
+        treetime \
+        --aln {input.fasta} \
+        --tree {input.tree} \
+        --dates {input.csv} \
+        --name-column sequence_name \
+        --date-column sample_date \
+        --outdir {params.outdir} &>> {log}
+        """
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#
