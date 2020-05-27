@@ -264,7 +264,9 @@ rule publish_full_annotated_tree_and_metadata:
           --restrict &>> {log}
         """
 
-
+"""
+This needs altering to do some of the lifting in step 5
+"""
 rule publish_uk_lineage_specific_fasta_and_metadata_files:
     input:
         tree = config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.tree",
