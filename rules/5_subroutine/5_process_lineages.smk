@@ -17,7 +17,11 @@ print("lineages", LINEAGES)
 rule all:
     input:
         config["output_path"] + "/5/cog_gisaid.lineages.with_all_traits.with_phylotype_traits.csv",
-        config["output_path"] + "/5/cog_gisaid_full.tree.nexus"
+        config["output_path"] + "/5/cog_gisaid_full.tree.nexus",
+        config["output_path"] + "/logs/5_summarize_timetree.log"
+
+        # expand(config["output_path"] + "/logs/5_timetree_run_lineage{lineage}_uk{j}.log", lineage = LINEAGES,
+        #        j = glob_wildcards(config["output_path"] + "/5/{lineage}/phylotyped_trees/uk_lineage_UK{j}.tree").j)
 
 rule annotate_tree:
     input:
@@ -236,23 +240,24 @@ rule annotate_phylotypes:
         """
 
 
-rule timetree_make_input:
+rule treetime_make_input:
     input:
         tree = config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}.tree",
         metadata = config["output_path"] + "/5/cog_gisaid.lineages.with_all_traits.with_phylotype_traits.csv",
         fasta = config["output_path"] + "/3/cog_gisaid.fasta",
+    params:
+        lineage="{lineage}",
+        i="{i}"
     output:
+        temp_fasta = temp(config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}.temp.fasta"),
         fasta = config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}.fasta",
         metadata = config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}.timetree.csv",
         tree = config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}.nexus",
-    params:
-        temp_fasta = temp(config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}.temp.fasta")
     log:
-        config["output_path"] + "/logs/5_timetree_make_input.log"
+        config["output_path"] + "/logs/5_timetree_make_input_lineage_{lineage}_uk{i}.log"
     shell:
         """
-        cp {input.tree} {output.tree}
-        sed -i.bak "s/'//g" {output.tree}
+        sed "s/'//g" {input.tree} > {output.tree}
 
         fastafunk extract \
           --in-fasta {input.fasta} \
@@ -270,26 +275,42 @@ rule timetree_make_input:
         """
 
 
-rule timetree_run:
+rule treetime_run:
     input:
-        tree = config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}.nexus,
+        tree = config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}.nexus",
         metadata = config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}.timetree.csv",
         fasta = config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}.fasta",
     params:
-        outdir = config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}_timetree/"
+        lineage="{lineage}",
+        i="{i}",
+    output:
+        directory = directory(config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}_timetree/")
     log:
-        config["output_path"] + "/logs/5_timetree_run.log"
+        config["output_path"] + "/logs/5_timetree_run_lineage{lineage}_uk{i}.log"
     shell:
         """
+        mkdir -p {params.outdir}
+
         treetime \
         --aln {input.fasta} \
         --tree {input.tree} \
         --dates {input.csv} \
         --name-column sequence_name \
         --date-column sample_date \
-        --outdir {params.outdir} &>> {log}
+        --outdir {output} &>> {log}
         """
 
+
+rule summarize_treetime:
+    input:
+        expand(config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{j}_timetree/", lineage = LINEAGES,
+               j = glob_wildcards(config["output_path"] + "/5/{lineage}/phylotyped_trees/uk_lineage_UK{j}.tree").j)
+    log:
+        config["output_path"] + "/logs/5_summarize_timetree.log"
+    shell:
+        """
+        echo "treetime done" > {log}
+        """
 
 
 
