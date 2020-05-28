@@ -1,3 +1,11 @@
+import pandas as pd
+
+LINEAGES = []
+LINEAGES_df = pd.read_csv(config["lineage_splits"])
+for i,row in LINEAGES_df.iterrows():
+    LINEAGES.append(row["lineage"])
+
+
 rule merge_and_create_new_uk_lineages:
     input:
         config["output_path"] + "/4/all_traits.csv"
@@ -74,7 +82,8 @@ rule run_5_subroutine_on_lineages:
     output:
         metadata = config["output_path"] + "/5/cog_gisaid.lineages.with_all_traits.with_phylotype_traits.csv",
         full_tree = config["output_path"] + "/5/cog_gisaid_full.tree.nexus",
-        timetree_log = config["output_path"] + "/logs/5_timetree_run.log"
+        timetrees = expand(config["output_path"] + "/logs/5_timetree_run_lineage{lineage}_uk{j}.log", lineage = LINEAGES,
+               j = glob_wildcards(config["output_path"] + "/5/{lineage}/phylotyped_trees/uk_lineage_UK{j}.tree").j)
     log:
         config["output_path"] + "/logs/5_run_5_subroutine_on_lineages.log"
     threads: 40
