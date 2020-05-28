@@ -173,9 +173,57 @@ rule gisaid_mask:
           --mask-file \"{input.mask}\"
         """
 
-rule gisaid_snp_finder:
+
+rule gisaid_distance_QC:
     input:
         fasta = rules.gisaid_mask.output.fasta,
+        metadata = rules.gisaid_unify_headers.output.metadata
+    log:
+        config["output_path"] + "/logs/0_gisaid_distance_QC.log"
+    output:
+        table = config["output_path"] + "/0/QC_distances.tsv",
+    shell:
+        """
+        datafunk distance_to_root \
+          --input-fasta {input.fasta} \
+          --input-metadata {input.metadata} &> {log}
+
+        mv distances.tsv {output.table}
+        """
+
+
+rule gisaid_filter_on_distance_to_WH04:
+    input:
+        fasta = rules.gisaid_mask.output.fasta,
+        table = rules.gisaid_distance_QC.output.table,
+    output:
+        fasta = config["output_path"] + "/0/gisaid.RD.UH.filt.mapped.filt2.masked.filt3.fasta",
+    log:
+        config["output_path"] + "/logs/0_gisaid_filter_on_distance_to_WH04.log"
+    run:
+        from Bio import SeqIO
+        import pandas as pd
+
+        fasta_in = SeqIO.index(str(input.fasta), "fasta")
+        df = pd.read_csv(input.table, sep='\t')
+
+        with open(str(output.fasta), 'w') as fasta_out, open(str(log), 'w') as log_out:
+            for i,row in df.iterrows():
+                sequence_name = row['sequence_name']
+                distance = row['distance_stdevs']
+                if distance < 4.0:
+                    if sequence_name in fasta_in:
+                        record = fasta_in[sequence_name]
+                        fasta_out.write('>' + record.id + '\n')
+                        fasta_out.write(str(record.seq) + '\n')
+                else:
+                    log_out.write(sequence_name + ' was filtered for having too high a distance to WH04 (' + str(distance) + ') epi-week std devs\n')
+
+
+
+rule gisaid_snp_finder:
+    input:
+        fasta = rules.gisaid_filter_on_distance_to_WH04.output.fasta,
         snps = config["snps"]
     output:
         found = config["output_path"] + "/0/gisaid.snp_finder.csv",
@@ -211,7 +259,7 @@ rule gisaid_add_snp_finder_result_to_metadata:
 
 rule gisaid_extract_lineageless:
     input:
-        fasta = rules.gisaid_mask.output,
+        fasta = rules.gisaid_filter_on_distance_to_WH04.output,
         metadata = rules.gisaid_add_snp_finder_result_to_metadata.output.metadata,
     output:
         fasta = config["output_path"] + "/0/gisaid.new.fasta",
@@ -259,7 +307,7 @@ rule gisaid_add_pangolin_lineages_to_metadata:
         metadata = rules.gisaid_add_snp_finder_result_to_metadata.output.metadata,
         lineages = rules.gisaid_pangolin.output.lineages
     output:
-        metadata = config["output_path"] + "/0/gisaid.RD.UH.SNPfinder.lineages.csv"
+        metadata = config["output_path"] + "/0/gisaid.all.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_add_pangolin_lineages_to_metadata.log"
     shell:
@@ -273,52 +321,6 @@ rule gisaid_add_pangolin_lineages_to_metadata:
           --where-column special_lineage=lineage \
           --out-metadata {output.metadata} &> {log}
         """
-
-
-rule gisaid_distance_QC:
-    input:
-        fasta = rules.gisaid_mask.output.fasta,
-        metadata = rules.gisaid_add_pangolin_lineages_to_metadata.output.metadata
-    log:
-        config["output_path"] + "/logs/0_gisaid_distance_QC.log"
-    output:
-        table = config["output_path"] + "/0/QC_distances.tsv",
-    shell:
-        """
-        datafunk distance_to_root \
-          --input-fasta {input.fasta} \
-          --input-metadata {input.metadata} &> {log}
-
-        mv distances.tsv {output.table}
-        """
-
-
-rule gisaid_filter_on_distance_to_WH04:
-    input:
-        fasta = rules.gisaid_mask.output.fasta,
-        table = rules.gisaid_distance_QC.output.table,
-    output:
-        fasta = config["output_path"] + "/0/gisaid.full.masked.filtered.fasta",
-    log:
-        config["output_path"] + "/logs/0_gisaid_filter_on_distance_to_WH04.log"
-    run:
-        from Bio import SeqIO
-        import pandas as pd
-
-        fasta_in = SeqIO.index(str(input.fasta), "fasta")
-        df = pd.read_csv(input.table, sep='\t')
-
-        with open(str(output.fasta), 'w') as fasta_out, open(str(log), 'w') as log_out:
-            for i,row in df.iterrows():
-                sequence_name = row['sequence_name']
-                distance = row['distance_stdevs']
-                if distance < 4.0:
-                    if sequence_name in fasta_in:
-                        record = fasta_in[sequence_name]
-                        fasta_out.write('>' + record.id + '\n')
-                        fasta_out.write(str(record.seq) + '\n')
-                else:
-                    log_out.write(sequence_name + ' was filtered for having too high a distance to WH04 (' + str(distance) + ') epi-week std devs\n')
 
 
 rule gisaid_output_lineage_table:
