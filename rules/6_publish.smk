@@ -64,7 +64,7 @@ rule publish_COG_master_metadata:
 
 rule gisaid_add_lineage_information_back_to_master_metadata:
     input:
-        metadata = config["output_path"] + "/0/gisaid.combined.csv",
+        metadata = config["output_path"] + "/0/gisaid.all.csv",
         global_lineage_data = config["global_lineages"]
     output:
         metadata = config["output_path"] + "/6/gisaid.master.csv"
