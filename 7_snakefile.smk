@@ -26,8 +26,8 @@ if not config.get("date"):
 
 rule all:
     input:
-        config["output_path"] + "/logs/6_summarize_publish.log",
+        config["output_path"] + "/logs/7_summarize_publish.log",
 
 
 ##### Modules #####
-include: "rules/6_publish.smk"
+include: "rules/7_publish.smk"
