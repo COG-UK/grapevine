@@ -343,14 +343,18 @@ rule uk_extract_lineageless:
         fasta_in = SeqIO.index(str(input.fasta), "fasta")
         df = pd.read_csv(input.metadata)
 
+        sequence_record = []
+
         with open(str(output.fasta), 'w') as fasta_out:
             for i,row in df.iterrows():
                 if pd.isnull(row['special_lineage']):
                     sequence_name = row['sequence_name']
                     if sequence_name in fasta_in:
-                        record = fasta_in[sequence_name]
-                        fasta_out.write('>' + record.id + '\n')
-                        fasta_out.write(str(record.seq) + '\n')
+                        if sequence_name not in sequence_record:
+                            record = fasta_in[sequence_name]
+                            fasta_out.write('>' + record.id + '\n')
+                            fasta_out.write(str(record.seq) + '\n')
+                            sequence_record.append(sequence_name)
 
 
 rule summarize_preprocess_uk:
