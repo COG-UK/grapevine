@@ -7,8 +7,8 @@ rule uk_add_lineage_information_back_to_master_metadata:
         uk_lineage_data = config["output_path"] + "/5/cog_gisaid.lineages.with_all_traits.with_phylotype_traits.csv",
         global_lineage_data = config["global_lineages"]
     output:
-        metadata_temp = temp(config["output_path"] + "/6/temp.uk.master.csv"),
-        metadata = config["output_path"] + "/6/uk.master.csv"
+        metadata_temp = temp(config["output_path"] + "/7/temp.uk.master.csv"),
+        metadata = config["output_path"] + "/7/uk.master.csv"
     log:
         config["output_path"] + "/logs/6_uk_add_lineage_information_back_to_master_metadata.log"
     shell:
@@ -67,7 +67,7 @@ rule gisaid_add_lineage_information_back_to_master_metadata:
         metadata = config["output_path"] + "/0/gisaid.all.csv",
         global_lineage_data = config["global_lineages"]
     output:
-        metadata = config["output_path"] + "/6/gisaid.master.csv"
+        metadata = config["output_path"] + "/7/gisaid.master.csv"
     log:
         config["output_path"] + "/logs/6_gisaid_add_lineage_information_back_to_master_metadata.log"
     shell:
@@ -177,13 +177,13 @@ rule combine_cog_gisaid:
         gisaid_fasta = config["output_path"] + "/0/gisaid.full.masked.filtered.fasta",
         gisaid_metadata = rules.gisaid_add_lineage_information_back_to_master_metadata.output.metadata
     params:
-        intermediate_cog_fasta = config["output_path"] + "/6/cog.combine_cog_gisaid.temp.cog.fasta",
-        intermediate_cog_metadata = config["output_path"] + "/6/cog.combine_cog_gisaid.temp.cog.csv",
-        intermediate_gisaid_fasta = config["output_path"] + "/6/gisaid.combine_cog_gisaid.temp.gisaid.fasta",
-        intermediate_gisaid_metadata = config["output_path"] + "/6/gisaid.combine_cog_gisaid.temp.gisaid.csv",
+        intermediate_cog_fasta = config["output_path"] + "/7/cog.combine_cog_gisaid.temp.cog.fasta",
+        intermediate_cog_metadata = config["output_path"] + "/7/cog.combine_cog_gisaid.temp.cog.csv",
+        intermediate_gisaid_fasta = config["output_path"] + "/7/gisaid.combine_cog_gisaid.temp.gisaid.fasta",
+        intermediate_gisaid_metadata = config["output_path"] + "/7/gisaid.combine_cog_gisaid.temp.gisaid.csv",
     output:
-        fasta = config["output_path"] + "/6/gisaid.combine_cog_gisaid.combined.fasta",
-        metadata = config["output_path"] + "/6/gisaid.combine_cog_gisaid.combined.csv",
+        fasta = config["output_path"] + "/7/gisaid.combine_cog_gisaid.combined.fasta",
+        metadata = config["output_path"] + "/7/gisaid.combine_cog_gisaid.combined.csv",
     log:
         config["output_path"] + "/logs/6_combine_cog_gisaid.log"
     shell:
@@ -241,7 +241,7 @@ rule publish_full_annotated_tree_and_metadata:
         newick_tree = config["export_path"] + "/trees/cog_global_" + config["date"] + '_tree.newick',
         annotated_tree = config["export_path"] + "/trees/cog_global_" + config["date"] + '_tree.nexus',
         metadata = config["export_path"] + "/trees/cog_global_" + config["date"] + '_metadata.csv',
-        fasta = config["output_path"] + "/6/cog_global.fasta",
+        fasta = config["output_path"] + "/7/cog_global.fasta",
     log:
         config["output_path"] + "/logs/6_publish_full_annotated_tree_and_metadata.log"
     shell:
@@ -273,7 +273,7 @@ rule publish_uk_lineage_specific_fasta_and_metadata_files:
         metadata = rules.publish_full_annotated_tree_and_metadata.output.metadata,
         fasta = rules.publish_full_annotated_tree_and_metadata.output.fasta
     params:
-        temp_fasta = temp(config["output_path"] + "/6/uk_lineage_UK{i}.fasta")
+        temp_fasta = temp(config["output_path"] + "/7/uk_lineage_UK{i}.fasta")
     output:
         fasta = config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.fasta",
         metadata = config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.csv"
@@ -363,9 +363,9 @@ rule publish_microreact_specific_output:
         private_tree = config["export_path"] + "/microreact/cog_global_" + config["date"] + '_tree_private.newick',
         public_metadata = config["export_path"] + "/microreact/cog_global_" + config["date"] + '_metadata_public.csv',
         private_metadata = config["export_path"] + "/microreact/cog_global_" + config["date"] + '_metadata_private.csv',
-        temp_public_metadata = temp(config["output_path"] + "/6/cog_global_microreact1.csv")
-        fasta1 = temp(config["output_path"] + "/6/cog_global_microreact1.fasta"),
-        fasta2 = temp(config["output_path"] + "/6/cog_global_microreact2.fasta")
+        temp_public_metadata = temp(config["output_path"] + "/7/cog_global_microreact1.csv")
+        fasta1 = temp(config["output_path"] + "/7/cog_global_microreact1.fasta"),
+        fasta2 = temp(config["output_path"] + "/7/cog_global_microreact2.fasta")
     log:
         config["output_path"] + "/logs/6_publish_microreact_specific_output.log"
     shell:
