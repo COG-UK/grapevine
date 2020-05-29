@@ -40,7 +40,6 @@ rule iq_tree:
         """
         echo "{params.outgroup} {input.lineage_fasta} {params.lineage}"
         iqtree -m HKY -czb \
-        -fast \
         -o \"{params.outgroup}\" \
         -cptime 300 \
         -nt AUTO \
