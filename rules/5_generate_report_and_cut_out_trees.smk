@@ -22,8 +22,10 @@ rule merge_and_create_new_uk_lineages:
 rule five_update_global_lineage_metadata:
     input:
         metadata = config["output_path"] + "/3/cog_gisaid.lineages.csv",
-        global_lineages = config["global_lineages"]
+        global_lineages = config["global_lineages"],
+        new_global_lineages = config["output_path"] + "/2/normal_pangolin/lineage_report.csv"
     output:
+        metadata_temp = temp(config["output_path"] + "/5/cog_gisaid.global.lineages.with_all_traits.temp.csv")
         metadata = config["output_path"] + "/5/cog_gisaid.global.lineages.with_all_traits.csv"
     log:
         config["output_path"] + "/logs/5_five_update_global_lineage_metadata.log"
@@ -36,7 +38,16 @@ rule five_update_global_lineage_metadata:
           --join-on taxon \
           --new-columns lineage lineage_support lineages_version \
           --where-column lineage_support=UFbootstrap \
-          --out-metadata {output.metadata} &> {log}
+          --out-metadata {output.metadata_temp} &> {log}
+
+        fastafunk add_columns \
+          --in-metadata {output.metadata_temp} \
+          --in-data {input.new_global_lineages} \
+          --index-column sequence_name \
+          --join-on taxon \
+          --new-columns lineage lineage_support lineages_version \
+          --where-column lineage_support=UFbootstrap \
+          --out-metadata {output.metadata} &>> {log}
         """
 
 
