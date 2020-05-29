@@ -378,7 +378,7 @@ rule publish_microreact_specific_output:
           --index-column sequence_name \
           --filter-column sequence_name sample_date epi_week \
                           country adm1 adm2 submission_org_code lineage \
-                          lineage_support uk_lineage primary_uk_lineage \
+                          lineage_support uk_lineage primary_uk_lineage d614g \
           --where-column primary_uk_lineage=microreact_lineage \
           --out-fasta {output.fasta1} \
           --out-metadata {output.temp_public_metadata} \
