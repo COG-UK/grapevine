@@ -45,7 +45,6 @@ rule run_4_subroutine_on_lineages:
         split_done = rules.split_based_on_lineages.output,
         metadata = config["output_path"] + "/3/cog_gisaid.lineages.csv",
         lineage = config["lineage_splits"],
-        globallineages = config["global_lineages"]
     params:
         path_to_script = workflow.current_basedir,
         output_path = config["output_path"],
@@ -74,8 +73,7 @@ rule run_4_subroutine_on_lineages:
           lineages="$lineages" \
           lineage_specific_outgroups="$outgroups" \
           guide_tree="{params.guide_tree}" \
-          metadata="{input.metadata}" \
-          globallineages="{input.globallineages}" &> {log}
+          metadata="{input.metadata}" &> {log}
         """
 
 rule summarize_make_trees:

@@ -56,43 +56,43 @@ rule iq_tree:
         """
         # iqtree -m HKY -bb 1000 -czb \
 
-
-rule subroutine_4_add_global_lineages_to_metadata:
-    input:
-        metadata = config["metadata"],
-        global_lineages = config["globallineages"],
-        new_global_lineages = config["output_path"] + "/2/normal_pangolin/lineage_report.csv"
-    output:
-        metadata_temp = temp(config["output_path"] + "/4/cog_gisaid.global.lineages.temp.csv"),
-        metadata = config["output_path"] + "/4/cog_gisaid.global.lineages.csv"
-    log:
-        config["output_path"] + "/logs/4_add_global_lineages_to_metadata.log"
-    shell:
-        """
-        fastafunk add_columns \
-          --in-metadata {input.metadata} \
-          --in-data {input.global_lineages} \
-          --index-column sequence_name \
-          --join-on taxon  \
-          --new-columns lineage lineage_support lineages_version \
-          --where-column lineage_support=UFbootstrap \
-          --out-metadata {output.metadata_temp} &>> {log}
-
-        fastafunk add_columns \
-          --in-metadata {output.metadata_temp} \
-          --in-data {input.new_global_lineages} \
-          --index-column sequence_name \
-          --join-on taxon \
-          --new-columns lineage lineage_support lineages_version \
-          --where-column lineage_support=UFbootstrap \
-          --out-metadata {output.metadata} &>> {log}
-        """
+#
+# rule subroutine_4_add_global_lineages_to_metadata:
+#     input:
+#         metadata = config["metadata"],
+#         global_lineages = config["globallineages"],
+#         new_global_lineages = config["output_path"] + "/2/normal_pangolin/lineage_report.csv"
+#     output:
+#         metadata_temp = temp(config["output_path"] + "/4/cog_gisaid.global.lineages.temp.csv"),
+#         metadata = config["output_path"] + "/4/cog_gisaid.global.lineages.csv"
+#     log:
+#         config["output_path"] + "/logs/4_add_global_lineages_to_metadata.log"
+#     shell:
+#         """
+#         fastafunk add_columns \
+#           --in-metadata {input.metadata} \
+#           --in-data {input.global_lineages} \
+#           --index-column sequence_name \
+#           --join-on taxon  \
+#           --new-columns lineage lineage_support lineages_version \
+#           --where-column lineage_support=UFbootstrap \
+#           --out-metadata {output.metadata_temp} &>> {log}
+#
+#         fastafunk add_columns \
+#           --in-metadata {output.metadata_temp} \
+#           --in-data {input.new_global_lineages} \
+#           --index-column sequence_name \
+#           --join-on taxon \
+#           --new-columns lineage lineage_support lineages_version \
+#           --where-column lineage_support=UFbootstrap \
+#           --out-metadata {output.metadata} &>> {log}
+#         """
 
 
 rule annotate_tree:
     input:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.tree",
-        metadata = rules.subroutine_4_add_global_lineages_to_metadata.output.metadata,
+        metadata = config["metadata"]
     params:
         lineage = "{lineage}",
         collapse=0.000005,
@@ -105,8 +105,7 @@ rule annotate_tree:
         """
         clusterfunk annotate_tips \
           --in-metadata {input.metadata} \
-          --trait-columns lineage \
-          country uk_lineage \
+          --trait-columns country \
           --index-column sequence_name \
           --boolean-for-trait country='UK' country='UK' country='UK' country='UK' \
           --boolean-trait-names country_uk country_uk_acctran country_uk_deltran\
@@ -316,7 +315,7 @@ rule output_annotations:
     shell:
         """
         clusterfunk extract_tip_annotations \
-          --traits country lineage uk_lineage acc_introduction acc_lineage del_introduction del_lineage \
+          --traits country acc_introduction acc_lineage del_introduction del_lineage \
           --input {input.tree} \
           --output {output.traits} &> {log}
         """
