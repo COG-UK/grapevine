@@ -60,8 +60,10 @@ rule iq_tree:
 rule subroutine_4_add_global_lineages_to_metadata:
     input:
         metadata = config["metadata"],
-        global_lineages = config["globallineages"]
+        global_lineages = config["globallineages"],
+        new_global_lineages = config["output_path"] + "/2/normal_pangolin/lineage_report.csv"
     output:
+        metadata_temp = temp(config["output_path"] + "/4/cog_gisaid.global.lineages.temp.csv"),
         metadata = config["output_path"] + "/4/cog_gisaid.global.lineages.csv"
     log:
         config["output_path"] + "/logs/4_add_global_lineages_to_metadata.log"
@@ -72,6 +74,15 @@ rule subroutine_4_add_global_lineages_to_metadata:
           --in-data {input.global_lineages} \
           --index-column sequence_name \
           --join-on taxon  \
+          --new-columns lineage lineage_support lineages_version \
+          --where-column lineage_support=UFbootstrap \
+          --out-metadata {output.metadata_temp} &>> {log}
+
+        fastafunk add_columns \
+          --in-metadata {output.metadata_temp} \
+          --in-data {input.new_global_lineages} \
+          --index-column sequence_name \
+          --join-on taxon \
           --new-columns lineage lineage_support lineages_version \
           --where-column lineage_support=UFbootstrap \
           --out-metadata {output.metadata} &>> {log}

@@ -335,7 +335,7 @@ rule uk_extract_speciallineageless:
     output:
         fasta = config["output_path"] + "/1/uk.new.fasta",
     log:
-        config["output_path"] + "/logs/1_extract_lineageless.log"
+        config["output_path"] + "/logs/1_extract_specieallineageless.log"
     run:
         from Bio import SeqIO
         import pandas as pd
@@ -357,6 +357,35 @@ rule uk_extract_speciallineageless:
                             sequence_record.append(sequence_name)
 
 
+rule uk_extract_lineageless:
+    input:
+        fasta = rules.uk_filter_low_coverage_sequences.output,
+        previous_metadata = config["previous_uk_metadata"]
+    output:
+        fasta = config["output_path"] + "/1/uk.new.lineages.fasta",
+    log:
+        config["output_path"] + "/logs/1_extract_lineageless.log"
+    run:
+        from Bio import SeqIO
+        import pandas as pd
+
+        fasta_in = SeqIO.index(str(input.fasta), "fasta")
+        df = pd.read_csv(input.previous_metadata)
+
+        sequence_record = []
+
+        with open(str(output.fasta), 'w') as fasta_out:
+            for i,row in df.iterrows():
+                if pd.isnull(row['lineage']):
+                    sequence_name = row['sequence_name']
+                    if sequence_name in fasta_in:
+                        if sequence_name not in sequence_record:
+                            record = fasta_in[sequence_name]
+                            fasta_out.write('>' + record.id + '\n')
+                            fasta_out.write(str(record.seq) + '\n')
+                            sequence_record.append(sequence_name)
+
+
 rule summarize_preprocess_uk:
     input:
         raw_fasta = config["latest_uk_fasta"],
@@ -366,7 +395,8 @@ rule summarize_preprocess_uk:
         removed_low_covg_fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
         full_alignment = rules.uk_full_untrimmed_alignment.output.fasta,
         full_metadata = rules.add_snp_finder_result_to_metadata.output.metadata,
-        speciallineageless_fasta = rules.uk_extract_speciallineageless.output.fasta
+        speciallineageless_fasta = rules.uk_extract_speciallineageless.output.fasta,
+        lineageless_fasta = rules.uk_extract_lineageless.output.fasta
     params:
         webhook = config["webhook"],
         outdir = config["publish_path"] + "/COG",
