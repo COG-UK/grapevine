@@ -3,7 +3,7 @@
 rule uk_pangolin:
     input:
         previous_stage = config["output_path"] + "/logs/1_summarize_preprocess_uk.log",
-        fasta = rules.uk_extract_lineageless.output.fasta,
+        fasta = rules.uk_extract_speciallineageless.output.fasta,
     params:
         outdir = config["output_path"] + "/2/pangolin",
         tmpdir = config["output_path"] + "/2/pangolin/tmp"
