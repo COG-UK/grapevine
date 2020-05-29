@@ -327,7 +327,7 @@ rule uk_add_previous_uk_lineages_to_metadata:
         """
 
 
-rule uk_extract_lineageless:
+rule uk_extract_speciallineageless:
     input:
         fasta = rules.uk_filter_low_coverage_sequences.output,
         metadata = rules.uk_add_previous_uk_lineages_to_metadata.output.metadata,
@@ -366,7 +366,7 @@ rule summarize_preprocess_uk:
         removed_low_covg_fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
         full_alignment = rules.uk_full_untrimmed_alignment.output.fasta,
         full_metadata = rules.add_snp_finder_result_to_metadata.output.metadata,
-        lineageless_fasta = rules.uk_extract_lineageless.output.fasta
+        speciallineageless_fasta = rules.uk_extract_speciallineageless.output.fasta
     params:
         webhook = config["webhook"],
         outdir = config["publish_path"] + "/COG",
@@ -382,7 +382,7 @@ rule summarize_preprocess_uk:
         echo "> Number of sequences after deduplication by bio_sample_id: $(cat {input.deduplicated_fasta_by_biosampleid} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after unifying headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after trimming and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)\\n" &>> {log}
-        echo "> Number of new sequences passed to Pangolin for typing: $(cat {input.lineageless_fasta} | grep ">" | wc -l)\\n" &>> {log}
+        echo "> Number of new sequences passed to Pangolin for typing: $(cat {input.speciallineageless_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo ">\\n" >> {log}
 
         echo '{{"text":"' > 1_data.json
