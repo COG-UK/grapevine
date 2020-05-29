@@ -5,9 +5,11 @@ rule uk_add_lineage_information_back_to_master_metadata:
     input:
         metadata = config["output_path"] + "/2/uk.with_new_lineages.csv",
         uk_lineage_data = config["output_path"] + "/5/cog_gisaid.lineages.with_all_traits.with_phylotype_traits.csv",
-        global_lineage_data = config["global_lineages"]
+        global_lineage_data = config["global_lineages"],
+        new_global_lineages = config["output_path"] + "/2/normal_pangolin/lineage_report.csv"
     output:
-        metadata_temp = temp(config["output_path"] + "/7/temp.uk.master.csv"),
+        metadata_temp1 = temp(config["output_path"] + "/7/temp1.uk.master.csv"),
+        metadata_temp2 = temp(config["output_path"] + "/7/temp2.uk.master.csv"),
         metadata = config["output_path"] + "/7/uk.master.csv"
     log:
         config["output_path"] + "/logs/6_uk_add_lineage_information_back_to_master_metadata.log"
@@ -19,11 +21,20 @@ rule uk_add_lineage_information_back_to_master_metadata:
           --index-column sequence_name \
           --join-on sequence_name \
           --new-columns uk_lineage microreact_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype \
-          --out-metadata {output.metadata_temp} &> {log}
+          --out-metadata {output.metadata_temp1} &> {log}
 
         fastafunk add_columns \
-          --in-metadata {output.metadata_temp} \
+          --in-metadata {output.metadata_temp1} \
           --in-data {input.global_lineage_data} \
+          --index-column sequence_name \
+          --join-on taxon  \
+          --new-columns lineage lineage_support lineages_version \
+          --where-column lineage_support=UFbootstrap \
+          --out-metadata {output.metadata_temp2} &>> {log}
+
+        fastafunk add_columns \
+          --in-metadata {output.metadata_temp2} \
+          --in-data {input.new_global_lineages} \
           --index-column sequence_name \
           --join-on taxon  \
           --new-columns lineage lineage_support lineages_version \
