@@ -12,7 +12,7 @@ rule uk_add_lineage_information_back_to_master_metadata:
         metadata_temp2 = temp(config["output_path"] + "/7/temp2.uk.master.csv"),
         metadata = config["output_path"] + "/7/uk.master.csv"
     log:
-        config["output_path"] + "/logs/6_uk_add_lineage_information_back_to_master_metadata.log"
+        config["output_path"] + "/logs/7_uk_add_lineage_information_back_to_master_metadata.log"
     shell:
         """
         fastafunk add_columns \
@@ -50,9 +50,9 @@ rule publish_COG_master_metadata:
     output:
         metadata_master = config["publish_path"] + "/COG/master.csv",
         metadata_report = config["publish_path"] + "/COG/report_metadata.csv",
-        fasta = temp(config["output_path"] + "/logs/6_publish_COG_master_metadata.fasta")
+        fasta = temp(config["output_path"] + "/logs/7_publish_COG_master_metadata.fasta")
     log:
-        config["output_path"] + "/logs/6_publish_COG_master_metadata.log"
+        config["output_path"] + "/logs/7_publish_COG_master_metadata.log"
     shell:
         """
         cp {input.metadata} {output.metadata_master} &> {log}
@@ -80,7 +80,7 @@ rule gisaid_add_lineage_information_back_to_master_metadata:
     output:
         metadata = config["output_path"] + "/7/gisaid.master.csv"
     log:
-        config["output_path"] + "/logs/6_gisaid_add_lineage_information_back_to_master_metadata.log"
+        config["output_path"] + "/logs/7_gisaid_add_lineage_information_back_to_master_metadata.log"
     shell:
         """
       fastafunk add_columns \
@@ -100,7 +100,7 @@ rule publish_gisaid_master_metadata:
     output:
         metadata = config["publish_path"] + "/GISAID/master.csv"
     log:
-        config["output_path"] + "/logs/6_publish_gisaid_master_metadata.log"
+        config["output_path"] + "/logs/7_publish_gisaid_master_metadata.log"
     shell:
         """
         cp {input.metadata} {output.metadata} &> {log}
@@ -113,7 +113,7 @@ rule publish_unaligned_cog_sequences:
     output:
         fasta = config["export_path"] + "/alignments/cog_" + config["date"] + '_all.fasta'
     log:
-        config["output_path"] + "/logs/6_publish_unaligned_cog_sequences.log"
+        config["output_path"] + "/logs/7_publish_unaligned_cog_sequences.log"
     shell:
         """
         cp {input.fasta} {output.fasta} 2> {log}
@@ -128,7 +128,7 @@ rule publish_full_aligned_cog_data:
         fasta = config["export_path"] + "/alignments/cog_" + config["date"] + '_all_alignment.fasta',
         metadata = config["export_path"] + "/alignments/cog_" + config["date"] + '_all_metadata.csv'
     log:
-        config["output_path"] + "/logs/6_publish_full_aligned_cog_data.log"
+        config["output_path"] + "/logs/7_publish_full_aligned_cog_data.log"
     shell:
         """
         fastafunk fetch \
@@ -161,7 +161,7 @@ rule publish_filtered_aligned_cog_data:
         fasta = config["export_path"] + "/alignments/cog_" + config["date"] + '_alignment.fasta',
         metadata = config["export_path"] + "/alignments/cog_" + config["date"] + '_metadata.csv'
     log:
-        config["output_path"] + "/logs/6_publish_filtered_aligned_cog_data.log"
+        config["output_path"] + "/logs/7_publish_filtered_aligned_cog_data.log"
     shell:
         """
         fastafunk fetch \
@@ -196,7 +196,7 @@ rule combine_cog_gisaid:
         fasta = config["output_path"] + "/7/gisaid.combine_cog_gisaid.combined.fasta",
         metadata = config["output_path"] + "/7/gisaid.combine_cog_gisaid.combined.csv",
     log:
-        config["output_path"] + "/logs/6_combine_cog_gisaid.log"
+        config["output_path"] + "/logs/7_combine_cog_gisaid.log"
     shell:
         """
         fastafunk fetch \
@@ -254,7 +254,7 @@ rule publish_full_annotated_tree_and_metadata:
         metadata = config["export_path"] + "/trees/cog_global_" + config["date"] + '_metadata.csv',
         fasta = config["output_path"] + "/7/cog_global.fasta",
     log:
-        config["output_path"] + "/logs/6_publish_full_annotated_tree_and_metadata.log"
+        config["output_path"] + "/logs/7_publish_full_annotated_tree_and_metadata.log"
     shell:
         """
         cp {input.annotated_tree} {output.annotated_tree} &> {log}
@@ -287,7 +287,7 @@ rule publish_uk_lineage_specific_fasta_and_metadata_files:
         fasta = config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.fasta",
         metadata = config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.csv"
     log:
-        config["output_path"] + "/logs/6_publish_uk_lineage_specific_fasta_and_metadata_files.log"
+        config["output_path"] + "/logs/7_publish_uk_lineage_specific_fasta_and_metadata_files.log"
     shell:
         """
         fastafunk extract \
@@ -318,7 +318,7 @@ rule publish_cog_gisaid_data_for_lineage_release_work:
         fasta = config["export_path"] + "/lineage_release/cog_gisaid.fasta",
         metadata = config["export_path"] + "/lineage_release/cog_gisaid.csv",
     log:
-        config["output_path"] + "/logs/6_publish_cog_gisaid_data_for_lineage_release_work.log"
+        config["output_path"] + "/logs/7_publish_cog_gisaid_data_for_lineage_release_work.log"
     shell:
         """
         fastafunk fetch \
@@ -342,7 +342,7 @@ rule publish_public_cog_data:
         fasta = config["export_path"] + "/public/cog_" + config["date"] + ".fasta",
         metadata = config["export_path"] + "/public/cog_" + config["date"] + "_metadata.csv"
     log:
-        config["output_path"] + "/logs/6_publish_public_cog_data.log"
+        config["output_path"] + "/logs/7_publish_public_cog_data.log"
     shell:
         """
         cp {input.public_tree} {output.public_tree} &> {log}
@@ -376,7 +376,7 @@ rule publish_microreact_specific_output:
         fasta1 = temp(config["output_path"] + "/7/cog_global_microreact1.fasta"),
         fasta2 = temp(config["output_path"] + "/7/cog_global_microreact2.fasta")
     log:
-        config["output_path"] + "/logs/6_publish_microreact_specific_output.log"
+        config["output_path"] + "/logs/7_publish_microreact_specific_output.log"
     shell:
         """
         cp {input.newick_tree} {output.private_tree} &>> {log}
@@ -414,8 +414,128 @@ rule publish_microreact_specific_output:
         """
 
 
+rule publish_full_report:
+    input:
+        metadata = rules.publish_cog_gisaid_data_for_lineage_release_work.output.metadata,
+    params:
+        date = config["date"],
+        template = config["latex_template"]
+    output:
+        outdir = directory(config["export_path"] + "/reports/"),
+    conda: "/cephfs/covid/bham/climb-covid19-jacksonb/git/report/environment.yml"
+    log:
+        config["output_path"] + "/logs/7_publish_report_full.log"
+    shell:
+        """
+        generate_report --m {input.metadata} \
+            --w {params.date} \
+            --s UK_report \
+            --od {output.outdir}
+
+        pandoc {output.outdir}UK_report.md \
+            -V linkcolor:blue \
+            -V geometry:a4paper \
+            -V geometry:margin=2cm \
+            -V mainfont="Helvetica Neue" \
+            -V monofont="Helvetica Neue" \
+            -V fontsize=12pt \
+            --template={params.template} \
+            --latex-engine=xelatex \
+            -o {output.outdir}UK_report.pdf
+        """
+
+
+ADM1 = ['England', 'Scotland', 'Wales', 'Northern_Ireland']
+
+rule publish_adm1_reports:
+    input:
+        metadata = rules.publish_cog_gisaid_data_for_lineage_release_work.output.metadata,
+    params:
+        date = config["date"],
+        template = config["latex_template"]
+    output:
+        outdir = directory(expand(config["export_path"] + "/reports/adm1_reports/{country}/", country = ADM1)),
+    conda: "/cephfs/covid/bham/climb-covid19-jacksonb/git/report/environment.yml"
+    log:
+        config["output_path"] + "/logs/7_publish_report_{country}.log"
+    shell:
+        """
+        generate_report --m {input.metadata} \
+            --w {params.date} \
+            --s {country} \
+            --adm {country} \
+            --od {output.outdir}
+
+        pandoc {output.outdir}{country}.md \
+            -V linkcolor:blue \
+            -V geometry:a4paper \
+            -V geometry:margin=2cm \
+            -V mainfont="Helvetica Neue" \
+            -V monofont="Helvetica Neue" \
+            -V fontsize=12pt \
+            --template={params.template} \
+            --latex-engine=xelatex \
+            -o {output.outdir}{country}.pdf
+        """
+
+        generate_report --m {input.metadata} \
+            --w {params.date} \
+            --s report_$centre \
+            --od UK_full_report/regional_reports/results/results_$centre/ --sc $centre
+
+
+SC = ['LIVE', 'PHWC', 'CAMB', 'NORW', 'GLAS', 'EDIN', 'SHEF', 'EXET', 'NOTT', 'PORT', 'OXON', 'NORT', 'NIRE', 'LOND']
+
+rule publish_seq_centre_reports:
+    input:
+        metadata = rules.publish_cog_gisaid_data_for_lineage_release_work.output.metadata,
+    params:
+        date = config["date"],
+        template = config["latex_template"]
+    output:
+        outdir = directory(expand(config["export_path"] + "/reports/regional_reports/{seq_cen}/", seq_cen = SC)),
+    conda: "/cephfs/covid/bham/climb-covid19-jacksonb/git/report/environment.yml"
+    log:
+        config["output_path"] + "/logs/7_publish_report_{seq_cen}.log"
+    shell:
+        """
+        generate_report --m {input.metadata} \
+            --w {params.date} \
+            --s report_{seq_cen} \
+            --sc {seq_cen} \
+            --od {output.outdir}
+
+        pandoc {output.outdir}report_{seq_cen}.md \
+            -V linkcolor:blue \
+            -V geometry:a4paper \
+            -V geometry:margin=2cm \
+            -V mainfont="Helvetica Neue" \
+            -V monofont="Helvetica Neue" \
+            -V fontsize=12pt \
+            --template={params.template} \
+            --latex-engine=xelatex \
+            -o {output.outdir}report_{seq_cen}.pdf
+        """
+
+
+
+REPORTS = ['full'] + ADM1 + SC
+
+rule summarize_publish_reports:
+    input:
+        logs = expand(config["output_path"] + "/logs/7_publish_report_{X}.log", X = REPORTS)
+    log:
+        config["output_path"] + "/logs/7_summarize_publish_reports.log"
+    shell:
+        """
+        echo "Done" > {log}
+        """
+
+
 rule summarize_publish:
     input:
+        reports_log = rules.summarize_publish_reports.log,
+
         GISAID_meta_master = rules.publish_gisaid_master_metadata.output.metadata,
         COG_meta_master = rules.publish_COG_master_metadata.output.metadata_master,
 
@@ -443,7 +563,7 @@ rule summarize_publish:
         webhook = config["webhook"],
         uk_trees_path = config["export_path"] + "/trees/uk_lineages/",
     log:
-        config["output_path"] + "/logs/6_summarize_publish.log"
+        config["output_path"] + "/logs/7_summarize_publish.log"
     shell:
         """
         echo "> Gisaid master metadata published to {input.GISAID_meta_master}\\n" >> {log}
@@ -470,12 +590,12 @@ rule summarize_publish:
         echo "> Private metadata for microreact published to {input.microreact_private_metadata}\\n" >> {log}
         echo "> \\n" >> {log}
 
-        echo '{{"text":"' > 6_data.json
-        echo "*Step 6: publish data complete*\\n" >> 6_data.json
-        cat {log} >> 6_data.json
-        echo '"}}' >> 6_data.json
+        echo '{{"text":"' > 7_data.json
+        echo "*Step 6: publish data complete*\\n" >> 7_data.json
+        cat {log} >> 7_data.json
+        echo '"}}' >> 7_data.json
         echo 'webhook {params.webhook}'
-        curl -X POST -H "Content-type: application/json" -d @6_data.json {params.webhook}
+        curl -X POST -H "Content-type: application/json" -d @7_data.json {params.webhook}
         """
 
 
