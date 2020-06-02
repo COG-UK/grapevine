@@ -257,14 +257,14 @@ rule gisaid_add_snp_finder_result_to_metadata:
         """
 
 
-rule gisaid_extract_lineageless:
+rule gisaid_extract_special_lineageless:
     input:
         fasta = rules.gisaid_filter_on_distance_to_WH04.output,
         metadata = rules.gisaid_add_snp_finder_result_to_metadata.output.metadata,
     output:
-        fasta = config["output_path"] + "/0/gisaid.new.fasta",
+        fasta = config["output_path"] + "/0/gisaid.new.spangolin_lineages.fasta",
     log:
-        config["output_path"] + "/logs/0_extract_lineageless.log"
+        config["output_path"] + "/logs/0_extract_special_lineageless.log"
     run:
         from Bio import SeqIO
         import pandas as pd
@@ -286,16 +286,16 @@ rule gisaid_extract_lineageless:
                             sequence_record.append(sequence_name)
 
 
-rule gisaid_pangolin:
+rule gisaid_special_pangolin:
     input:
-        fasta = rules.gisaid_extract_lineageless.output.fasta
+        fasta = rules.gisaid_extract_special_lineageless.output.fasta
     params:
-        outdir = config["output_path"] + "/0/pangolin",
-        tmpdir = config["output_path"] + "/0/pangolin/tmp"
+        outdir = config["output_path"] + "/0/special_pangolin",
+        tmpdir = config["output_path"] + "/0/special_pangolin/tmp"
     output:
-        lineages = protected(config["output_path"] + "/0/pangolin/lineage_report.csv")
+        lineages = protected(config["output_path"] + "/0/special_pangolin/lineage_report.csv")
     log:
-        config["output_path"] + "/logs/0_gisaid_pangolin.log"
+        config["output_path"] + "/logs/0_gisaid_special_pangolin.log"
     threads: 40
     shell:
         """
@@ -306,10 +306,62 @@ rule gisaid_pangolin:
         """
 
 
+rule gisaid_extract_lineageless:
+    input:
+        fasta = rules.gisaid_filter_on_distance_to_WH04.output,
+        metadata = rules.gisaid_add_snp_finder_result_to_metadata.output.metadata,
+    output:
+        fasta = config["output_path"] + "/0/gisaid.new.pangolin_lineages.fasta",
+    log:
+        config["output_path"] + "/logs/0_extract_lineageless.log"
+    run:
+        from Bio import SeqIO
+        import pandas as pd
+
+        fasta_in = SeqIO.index(str(input.fasta), "fasta")
+        df = pd.read_csv(input.metadata)
+
+        sequence_record = []
+
+        with open(str(output.fasta), 'w') as fasta_out:
+            for i,row in df.iterrows():
+                if pd.isnull(row['lineage']):
+                    sequence_name = row['sequence_name']
+                    if sequence_name in fasta_in:
+                        if sequence_name not in sequence_record:
+                            record = fasta_in[sequence_name]
+                            fasta_out.write('>' + record.id + '\n')
+                            fasta_out.write(str(record.seq) + '\n')
+                            sequence_record.append(sequence_name)
+
+
+rule gisaid_normal_pangolin:
+    input:
+        fasta = rules.gisaid_extract_lineageless.output.fasta
+    params:
+        outdir = config["output_path"] + "/0/normal_pangolin",
+        tmpdir = config["output_path"] + "/0/normal_pangolin/tmp"
+    output:
+        lineages = protected(config["output_path"] + "/0/normal_pangolin/lineage_report.csv")
+    log:
+        config["output_path"] + "/logs/0_gisaid_normal_pangolin.log"
+    threads: 40
+    conda: "/cephfs/covid/bham/climb-covid19-jacksonb/git/pangolin/environment.yml"
+    shell:
+        """
+        pangolin {input.fasta} \
+        -p \
+        --threads {threads} \
+        --tempdir {params.tmpdir} \
+        --outdir {params.outdir} > {log} 2>&1
+        """
+
+
 rule gisaid_add_pangolin_lineages_to_metadata:
     input:
         metadata = rules.gisaid_add_snp_finder_result_to_metadata.output.metadata,
-        lineages = rules.gisaid_pangolin.output.lineages
+        special_lineages = rules.gisaid_special_pangolin.output.lineages,
+        normal_lineages = rules.gisaid_normal_pangolin.output.lineages
     output:
         metadata = config["output_path"] + "/0/gisaid.all.csv"
     log:
@@ -318,11 +370,20 @@ rule gisaid_add_pangolin_lineages_to_metadata:
         """
         fastafunk add_columns \
           --in-metadata {input.metadata} \
-          --in-data {input.lineages} \
+          --in-data {input.special_lineages} \
           --index-column sequence_name \
           --join-on taxon \
           --new-columns special_lineage \
           --where-column special_lineage=lineage \
+          --out-metadata {output.metadata} &> {log}
+
+        fastafunk add_columns \
+          --in-metadata {input.metadata} \
+          --in-data {input.normal_lineages} \
+          --index-column sequence_name \
+          --join-on taxon \
+          --new-columns lineage lineage_support lineages_version \
+          --where-column lineage_support=UFbootstrap \
           --out-metadata {output.metadata} &> {log}
         """
 
