@@ -415,7 +415,7 @@ rule summarize_preprocess_gisaid:
         full_metadata = rules.gisaid_add_pangolin_lineages_to_metadata.output.metadata,
         matched_fasta = rules.gisaid_output_lineage_table.output.fasta,
         matched_lineage_table = rules.gisaid_output_lineage_table.output.metadata,
-        counts = rules.gisaid_counts_by_country.output.counts
+        counts = rules.gisaid_counts_by_country.output.counts,
         published_fasta = rules.gisaid_output_matched_fasta_and_metadata_table.output.published_fasta,
         published_metadata = rules.gisaid_output_matched_fasta_and_metadata_table.output.published_metadata,
     params:
