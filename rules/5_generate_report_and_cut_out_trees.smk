@@ -25,7 +25,7 @@ rule five_update_global_lineage_metadata:
         global_lineages = config["global_lineages"],
         new_global_lineages = config["output_path"] + "/2/normal_pangolin/lineage_report.csv"
     output:
-        metadata_temp = temp(config["output_path"] + "/5/cog_gisaid.global.lineages.with_all_traits.temp.csv")
+        metadata_temp = temp(config["output_path"] + "/5/cog_gisaid.global.lineages.with_all_traits.temp.csv"),
         metadata = config["output_path"] + "/5/cog_gisaid.global.lineages.with_all_traits.csv"
     log:
         config["output_path"] + "/logs/5_five_update_global_lineage_metadata.log"
