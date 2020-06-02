@@ -17,7 +17,7 @@ print("lineages", LINEAGES)
 rule all:
     input:
         config["output_path"] + "/5/cog_gisaid.lineages.with_all_traits.with_phylotype_traits.csv",
-        config["output_path"] + "/5/cog_gisaid_full.tree.nexus"
+        config["output_path"] + "/5/cog_gisaid_full.tree.nexus",
 
 rule annotate_tree:
     input:
