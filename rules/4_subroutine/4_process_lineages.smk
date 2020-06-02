@@ -105,7 +105,7 @@ rule annotate_tree:
         """
         clusterfunk annotate_tips \
           --in-metadata {input.metadata} \
-          --trait-columns country \
+          --trait-columns country uk_lineage \
           --index-column sequence_name \
           --boolean-for-trait country='UK' country='UK' country='UK' country='UK' \
           --boolean-trait-names country_uk country_uk_acctran country_uk_deltran\
@@ -315,7 +315,7 @@ rule output_annotations:
     shell:
         """
         clusterfunk extract_tip_annotations \
-          --traits country acc_introduction acc_lineage del_introduction del_lineage \
+          --traits country uk_lineage acc_introduction acc_lineage del_introduction del_lineage \
           --input {input.tree} \
           --output {output.traits} &> {log}
         """

@@ -16,6 +16,7 @@ rule uk_normal_pangolin:
     shell:
         """
         pangolin {input.fasta} \
+        -p \
         --threads {threads} \
         --outdir {params.outdir} \
         --tempdir {params.tmpdir}  >> {log} 2>&1
@@ -45,7 +46,7 @@ rule uk_special_pangolin:
 
 rule uk_add_special_pangolin_lineages_to_metadata:
     input:
-        metadata = rules.uk_add_previous_uk_lineages_to_metadata.output.metadata,
+        metadata = rules.uk_add_previous_lineages_to_metadata.output.metadata,
         lineages = rules.uk_special_pangolin.output.lineages
     output:
         metadata = config["output_path"] + "/2/uk.with_new_lineages.csv",

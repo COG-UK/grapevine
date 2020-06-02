@@ -42,7 +42,7 @@ rule split_based_on_lineages:
 
 rule run_4_subroutine_on_lineages:
     input:
-        split_done = rules.split_based_on_lineages.output,
+        split_done = rules.split_based_on_lineages.log,
         metadata = config["output_path"] + "/3/cog_gisaid.lineages.csv",
         lineage = config["lineage_splits"],
     params:

@@ -208,7 +208,7 @@ rule combine_cog_gisaid:
                           country adm1 adm2 submission_org_code \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
-                          lineage_support uk_lineage microreact_lineage acc_lineage del_lineage phylotype d614g \
+                          lineage_support uk_lineage microreact_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype d614g \
           --where-column epi_week=edin_epi_week country=adm0 \
                          sample_date=received_date sample_date=collection_date \
           --out-fasta {params.intermediate_cog_fasta} \
@@ -225,7 +225,7 @@ rule combine_cog_gisaid:
                           country adm1 adm2 submission_org_code \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
-                          lineage_support uk_lineage microreact_lineage acc_lineage del_lineage phylotype d614g \
+                          lineage_support uk_lineage microreact_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype d614g \
           --where-column uk_omit=is_uk sample_date=covv_collection_date epi_week=edin_epi_week \
                          country=edin_admin_0 travel_history=edin_travel \
           --out-fasta {params.intermediate_gisaid_fasta} \
@@ -269,7 +269,7 @@ rule publish_full_annotated_tree_and_metadata:
                           country adm1 adm2 outer_postcode \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
-                          lineage_support uk_lineage acc_lineage del_lineage phylotype \
+                          lineage_support uk_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --restrict &>> {log}
@@ -287,7 +287,7 @@ rule publish_uk_lineage_specific_fasta_and_metadata_files:
         fasta = config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.fasta",
         metadata = config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.csv"
     log:
-        config["output_path"] + "/logs/7_publish_uk_lineage_specific_fasta_and_metadata_files.log"
+        config["output_path"] + "/logs/7_publish_uk_lineage_specific_fasta_and_metadata_files_uk{i}.log"
     shell:
         """
         fastafunk extract \
@@ -303,10 +303,23 @@ rule publish_uk_lineage_specific_fasta_and_metadata_files:
                           country adm1 adm2 outer_postcode \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
-                          lineage_support uk_lineage acc_lineage del_lineage phylotype \
+                          lineage_support uk_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype \
           --out-fasta {params.temp_fasta} \
           --out-metadata {output.metadata} \
           --restrict &>> {log}
+        """
+
+
+LIN,X = glob_wildcards(config["output_path"] + "/5/{lin}/trees/uk_lineage_UK{i}.tree")
+
+rule summarize_publish_uk_lineage_specific_fasta_and_metadata_files:
+    input:
+        expand(config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.csv", i = X)
+    log:
+        config["output_path"] + "/logs/7_summarize_publish_uk_lineage_specific_fasta_and_metadata_files"
+    shell:
+        """
+        echo "done" > {log}
         """
 
 
@@ -372,7 +385,7 @@ rule publish_microreact_specific_output:
         private_tree = config["export_path"] + "/microreact/cog_global_" + config["date"] + '_tree_private.newick',
         public_metadata = config["export_path"] + "/microreact/cog_global_" + config["date"] + '_metadata_public.csv',
         private_metadata = config["export_path"] + "/microreact/cog_global_" + config["date"] + '_metadata_private.csv',
-        temp_public_metadata = temp(config["output_path"] + "/7/cog_global_microreact1.csv")
+        temp_public_metadata = temp(config["output_path"] + "/7/cog_global_microreact1.csv"),
         fasta1 = temp(config["output_path"] + "/7/cog_global_microreact1.fasta"),
         fasta2 = temp(config["output_path"] + "/7/cog_global_microreact2.fasta")
     log:
@@ -416,21 +429,22 @@ rule publish_microreact_specific_output:
 
 rule publish_full_report:
     input:
-        metadata = rules.publish_cog_gisaid_data_for_lineage_release_work.output.metadata,
+        metadata = rules.publish_COG_master_metadata.output.metadata_report,
     params:
         date = config["date"],
-        template = config["latex_template"]
+        template = config["latex_template"],
+        publish_dir = config["export_path"] + "/reports/"
     output:
-        outdir = directory(config["export_path"] + "/reports/"),
-    conda: "/cephfs/covid/bham/climb-covid19-jacksonb/git/report/environment.yml"
+        outdir = directory(config["output_path"] + "/7/full_report/"),
     log:
         config["output_path"] + "/logs/7_publish_report_full.log"
+    conda: "/cephfs/covid/bham/climb-covid19-jacksonb/git/report/environment.yml"
     shell:
         """
         generate_report --m {input.metadata} \
             --w {params.date} \
             --s UK_report \
-            --od {output.outdir}
+            --od {output.outdir} &>>{log}
 
         pandoc {output.outdir}UK_report.md \
             -V linkcolor:blue \
@@ -438,87 +452,100 @@ rule publish_full_report:
             -V geometry:margin=2cm \
             -V mainfont="Helvetica Neue" \
             -V monofont="Helvetica Neue" \
-            -V fontsize=12pt \
+            -V fontsize=10pt \
             --template={params.template} \
-            --latex-engine=xelatex \
-            -o {output.outdir}UK_report.pdf
+            --latex-engine=pdflatex \
+            -o {output.outdir}UK_report.pdf &>> {log}
+
+        mkdir -p {params.publish_dir} &>> {log}
+        cp {output.outdir}UK_report.pdf {output.outdir}UK_report.md {params.publish_dir} &>> {log}
+        cp -r {output.outdir}figures/ {params.publish_dir} &>> {log}
+        cp -r {output.outdir}summary_files/ {params.publish_dir} &>> {log}
+        """
+
+
+rule publish_adm1_reports:
+    input:
+        metadata = rules.publish_COG_master_metadata.output.metadata_report,
+    params:
+        date = config["date"],
+        template = config["latex_template"],
+        publish_dir = config["export_path"] + "/reports/adm1_reports/"
+    wildcard_constraints:
+        adm1 = "[A-Z][a-z].*"
+    output:
+        outdir = directory(config["output_path"] + "/7/adm1_reports/{adm1}/"),
+    log:
+        config["output_path"] + "/logs/7_publish_report_{adm1}.log",
+    conda: "/cephfs/covid/bham/climb-covid19-jacksonb/git/report/environment.yml"
+    shell:
+        """
+        generate_report --m {input.metadata} \
+            --w {params.date} \
+            --s {wildcards.adm1} \
+            --adm {wildcards.adm1} \
+            --od {output.outdir} &>> {log}
+
+        pandoc {output.outdir}{wildcards.adm1}.md \
+            -V linkcolor:blue \
+            -V geometry:a4paper \
+            -V geometry:margin=2cm \
+            -V mainfont="Helvetica Neue" \
+            -V monofont="Helvetica Neue" \
+            -V fontsize=10pt \
+            --template={params.template} \
+            --latex-engine=pdflatex \
+            -o {output.outdir}{wildcards.adm1}.pdf &>> {log}
+
+        mkdir -p {params.publish_dir}{wildcards.adm1} &>> {log}
+        cp {output.outdir}{wildcards.adm1}.pdf {output.outdir}{wildcards.adm1}.md {params.publish_dir}{wildcards.adm1}/ &>> {log}
+        cp -r {output.outdir}figures/ {params.publish_dir}{wildcards.adm1}/ &>> {log}
+        cp -r {output.outdir}summary_files/ {params.publish_dir}{wildcards.adm1}/ &>> {log}
+        """
+
+
+rule publish_sc_reports:
+    input:
+        metadata = rules.publish_COG_master_metadata.output.metadata_report,
+    params:
+        date = config["date"],
+        template = config["latex_template"],
+        publish_dir = config["export_path"] + "/reports/regional_reports/"
+    wildcard_constraints:
+        sc = "[A-Z]{4}"
+    output:
+        outdir = directory(config["output_path"] + "/7/regional_reports/{sc}/"),
+    log:
+        config["output_path"] + "/logs/7_publish_report_{sc}.log",
+    conda: "/cephfs/covid/bham/climb-covid19-jacksonb/git/report/environment.yml"
+    shell:
+        """
+        generate_report --m {input.metadata} \
+            --w {params.date} \
+            --s report_{wildcards.sc} \
+            --sc {wildcards.sc} \
+            --od {output.outdir} &>> {log}
+
+        pandoc {output.outdir}report_{wildcards.sc}.md \
+            -V linkcolor:blue \
+            -V geometry:a4paper \
+            -V geometry:margin=2cm \
+            -V mainfont="Helvetica Neue" \
+            -V monofont="Helvetica Neue" \
+            -V fontsize=10pt \
+            --template={params.template} \
+            --latex-engine=pdflatex \
+            -o {output.outdir}report_{wildcards.sc}.pdf &>> {log}
+
+        mkdir -p {params.publish_dir}results/results_{wildcards.sc} &>> {log}
+        cp {output.outdir}report_{wildcards.sc}.pdf {output.outdir}report_{wildcards.sc}.md {params.publish_dir} &>> {log}
+        cp -r {output.outdir}/figures/ {params.publish_dir}results/results_{wildcards.sc}/ &>> {log}
+        cp -r {output.outdir}summary_files/ {params.publish_dir}results/results_{wildcards.sc}/ &>> {log}
         """
 
 
 ADM1 = ['England', 'Scotland', 'Wales', 'Northern_Ireland']
-
-rule publish_adm1_reports:
-    input:
-        metadata = rules.publish_cog_gisaid_data_for_lineage_release_work.output.metadata,
-    params:
-        date = config["date"],
-        template = config["latex_template"]
-    output:
-        outdir = directory(expand(config["export_path"] + "/reports/adm1_reports/{country}/", country = ADM1)),
-    conda: "/cephfs/covid/bham/climb-covid19-jacksonb/git/report/environment.yml"
-    log:
-        config["output_path"] + "/logs/7_publish_report_{country}.log"
-    shell:
-        """
-        generate_report --m {input.metadata} \
-            --w {params.date} \
-            --s {country} \
-            --adm {country} \
-            --od {output.outdir}
-
-        pandoc {output.outdir}{country}.md \
-            -V linkcolor:blue \
-            -V geometry:a4paper \
-            -V geometry:margin=2cm \
-            -V mainfont="Helvetica Neue" \
-            -V monofont="Helvetica Neue" \
-            -V fontsize=12pt \
-            --template={params.template} \
-            --latex-engine=xelatex \
-            -o {output.outdir}{country}.pdf
-        """
-
-        generate_report --m {input.metadata} \
-            --w {params.date} \
-            --s report_$centre \
-            --od UK_full_report/regional_reports/results/results_$centre/ --sc $centre
-
-
 SC = ['LIVE', 'PHWC', 'CAMB', 'NORW', 'GLAS', 'EDIN', 'SHEF', 'EXET', 'NOTT', 'PORT', 'OXON', 'NORT', 'NIRE', 'LOND']
-
-rule publish_seq_centre_reports:
-    input:
-        metadata = rules.publish_cog_gisaid_data_for_lineage_release_work.output.metadata,
-    params:
-        date = config["date"],
-        template = config["latex_template"]
-    output:
-        outdir = directory(expand(config["export_path"] + "/reports/regional_reports/{seq_cen}/", seq_cen = SC)),
-    conda: "/cephfs/covid/bham/climb-covid19-jacksonb/git/report/environment.yml"
-    log:
-        config["output_path"] + "/logs/7_publish_report_{seq_cen}.log"
-    shell:
-        """
-        generate_report --m {input.metadata} \
-            --w {params.date} \
-            --s report_{seq_cen} \
-            --sc {seq_cen} \
-            --od {output.outdir}
-
-        pandoc {output.outdir}report_{seq_cen}.md \
-            -V linkcolor:blue \
-            -V geometry:a4paper \
-            -V geometry:margin=2cm \
-            -V mainfont="Helvetica Neue" \
-            -V monofont="Helvetica Neue" \
-            -V fontsize=12pt \
-            --template={params.template} \
-            --latex-engine=xelatex \
-            -o {output.outdir}report_{seq_cen}.pdf
-        """
-
-
-
 REPORTS = ['full'] + ADM1 + SC
 
 rule summarize_publish_reports:
@@ -553,12 +580,15 @@ rule summarize_publish:
         public_COG_GISAID_seq_all = rules.publish_unaligned_cog_sequences.output.fasta,
         public_COG_meta = rules.publish_public_cog_data.output.metadata,
 
-        microreact_tree = rules.publish_microreact_specific_output.output.newick_tree,
+        microreact_public_tree = rules.publish_microreact_specific_output.output.public_tree,
+        microreact_private_tree = rules.publish_microreact_specific_output.output.private_tree,
         microreact_public_metadata = rules.publish_microreact_specific_output.output.public_metadata,
         microreact_private_metadata = rules.publish_microreact_specific_output.output.private_metadata,
 
         lineage_report_fasta = rules.publish_cog_gisaid_data_for_lineage_release_work.output.fasta,
         lineage_report_metadata = rules.publish_cog_gisaid_data_for_lineage_release_work.output.metadata,
+
+        uk_lineage_fasta_csv_summary = rules.summarize_publish_uk_lineage_specific_fasta_and_metadata_files.log,
     params:
         webhook = config["webhook"],
         uk_trees_path = config["export_path"] + "/trees/uk_lineages/",
@@ -585,7 +615,7 @@ rule summarize_publish:
         echo "> Associated unaligned sequences published to {input.public_COG_GISAID_seq_all}\\n" >> {log}
         echo "> Matching metadata with public fields only published to {input.public_COG_meta}\\n" >> {log}
         echo "> \\n" >> {log}
-        echo "> Newick tree for microreact published to {input.microreact_tree}\\n" >> {log}
+        echo "> Public tree for microreact published to {input.microreact_public_tree}\\n" >> {log}
         echo "> Public metadata for microreact published to {input.microreact_public_metadata}\\n" >> {log}
         echo "> Private metadata for microreact published to {input.microreact_private_metadata}\\n" >> {log}
         echo "> \\n" >> {log}
