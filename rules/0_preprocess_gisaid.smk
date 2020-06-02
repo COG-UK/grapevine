@@ -354,6 +354,56 @@ rule gisaid_output_lineage_table:
         """
 
 
+rule gisaid_output_matched_fasta_and_metadata_table:
+    input:
+        fasta = rules.gisaid_filter_on_distance_to_WH04.output.fasta,
+        metadata = rules.gisaid_add_pangolin_lineages_to_metadata.output.metadata
+    output:
+        published_fasta = config["publish_path"] + "/GISAID/gisaid.trimmed_alignment.fasta",
+        published_metadata = config["publish_path"] + "/GISAID/gisaid.metadata.csv",
+    log:
+        config["output_path"] + "/logs/0_gisaid_output_matched_fasta_and_metadata_table.log"
+    shell:
+        """
+        fastafunk fetch \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata} \
+          --index-column sequence_name \
+          --filter-column \
+                         sequence_name \
+                         country \
+                         edin_admin_1 \
+                         edin_admin_2 \
+                         edin_travel \
+                         edin_date_stamp \
+                         sample_date \
+                         epi_week \
+                         special_lineage \
+                         lineage \
+                         lineages_version \
+                         lineage_support \
+                         d614g \
+                         covv_accession_id \
+                         covv_virus_name \
+                         covv_location \
+                         covv_add_host_info \
+                         covv_assembly_method \
+                         covv_gender \
+                         covv_host \
+                         covv_passage \
+                         covv_patient_age \
+                         covv_seq_technology \
+                         covv_specimen \
+                         covv_subm_date \
+          --where-column sample_date=covv_collection_date \
+                         epi_week=edin_epi_week country=edin_admin_0 \
+          --out-fasta {output.published_fasta} \
+          --out-metadata {output.published_metadata} \
+          --log-file {log} \
+          --restrict
+        """
+
+
 rule summarize_preprocess_gisaid:
     input:
         latest_fasta = rules.gisaid_process_json.output.fasta,
@@ -366,11 +416,11 @@ rule summarize_preprocess_gisaid:
         matched_fasta = rules.gisaid_output_lineage_table.output.fasta,
         matched_lineage_table = rules.gisaid_output_lineage_table.output.metadata,
         counts = rules.gisaid_counts_by_country.output.counts
+        published_fasta = rules.gisaid_output_matched_fasta_and_metadata_table.output.published_fasta,
+        published_metadata = rules.gisaid_output_matched_fasta_and_metadata_table.output.published_metadata,
     params:
         publish_path = config["publish_path"] + "/GISAID/",
         published_counts = config["publish_path"] + "/GISAID/gisaid_counts_by_country.csv",
-        published_fasta = config["publish_path"] + "/GISAID/gisaid.trimmed_alignment.fasta",
-        published_metadata = config["publish_path"] + "/GISAID/gisaid.metadata.csv",
         webhook = config["webhook"]
     log:
         config["output_path"] + "/logs/0_summarize_preprocess_gisaid.log"
@@ -379,8 +429,6 @@ rule summarize_preprocess_gisaid:
         mkdir -p {params.publish_path}
 
         cp {input.counts} {params.published_counts}
-        cp {input.removed_distance_to_root_fasta} {params.published_fasta}
-        cp {input.full_metadata} {params.published_metadata}
 
         echo "Number of sequences in latest GISAID download: $(cat {input.latest_fasta} | grep '>' | wc -l)\\n" >> {log}
         echo "Number of sequence after deduplicating: $(cat {input.deduplicated_fasta} | grep '>' | wc -l)\\n" >> {log}
@@ -390,8 +438,8 @@ rule summarize_preprocess_gisaid:
         echo "Number of sequences after removing those >4 epi-week stddevs to WH04: $(cat {input.removed_distance_to_root_fasta} | grep '>' | wc -l)\\n" >> {log}
         echo "> \\n" >> {log}
         echo "> Counts by country published to {params.published_counts}\\n" >> {log}
-        echo "> Trimmed alignment published to {params.published_fasta}\\n" >> {log}
-        echo "> Metadata published to {params.published_metadata}\\n" >> {log}
+        echo "> Trimmed alignment published to {input.published_fasta}\\n" >> {log}
+        echo "> Matched metadata published to {input.published_metadata}\\n" >> {log}
         echo '{{"text":"' > 0_data.json
         echo "*Step 0: GISAID preprocessing complete*\\n" >> 0_data.json
         cat {log} >> 0_data.json
