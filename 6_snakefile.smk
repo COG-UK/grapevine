@@ -23,24 +23,9 @@ if not config.get("date"):
 
 ##### Target rules #####
 
-LINEAGES = []
-df = pd.read_csv(config["lineage_splits"])
-for i,row in df.iterrows():
-    LINEAGES.append(row['lineage'])
-
-UK = []
-for l in LINEAGES:
-    UK.append(glob_wildcards(config["output_path"] + "/5/" + l + "/trees/uk_lineage_UK{i}.tree").i)
-
-LINEAGES_REP = []
-for i,x in enumerate(UK):
-    LINEAGES_REP = LINEAGES_REP + [LINEAGES[i]] * len(x)
-
-UK = [item for sublist in UK for item in sublist]
-
 rule all:
     input:
-        expand(config["output_path"] + "/logs/6_timetree_run_lineage{lineage}_uk{i}.log", zip, lineage = LINEAGES_REP, i = UK)
+        config["output_path"] + "/logs/6_summarize_treetime.log",
 
 
 ##### Modules #####
