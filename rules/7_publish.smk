@@ -310,13 +310,13 @@ rule publish_uk_lineage_specific_fasta_and_metadata_files:
         """
 
 
-LIN,X = glob_wildcards(config["output_path"] + "/5/{lin}/trees/uk_lineage_UK{i}.tree")
+LIN,X = glob_wildcards(config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}.tree")
 
 rule summarize_publish_uk_lineage_specific_fasta_and_metadata_files:
     input:
         expand(config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.csv", i = X)
     log:
-        config["output_path"] + "/logs/7_summarize_publish_uk_lineage_specific_fasta_and_metadata_files"
+        config["output_path"] + "/logs/7_summarize_publish_uk_lineage_specific_fasta_and_metadata_files.log"
     shell:
         """
         echo "done" > {log}
@@ -424,6 +424,27 @@ rule publish_microreact_specific_output:
           --out-fasta {output.fasta2} \
           --out-metadata {output.private_metadata} \
           --restrict &>> {log}
+        """
+
+
+rule publish_time_trees:
+    input:
+        config["output_path"] + "/logs/6_summarize_treetime.log"
+    params:
+        treedir = config["output_path"] + "/6/",
+        outdir = config["export_path"] + "/trees/uk_lineages/"
+    log:
+        config["output_path"] + "/logs/7_publish_time_trees.log"
+    shell:
+        """
+        for DIR in {params.treedir}*/trees/*timetree/
+        do
+            FILECOUNT=$(ls $DIR | wc -l)
+            if [ $FILECOUNT -gt 0 ]
+            then
+                cp -r $DIR {params.outdir}
+            fi
+        done &>> {log}
         """
 
 
@@ -589,6 +610,8 @@ rule summarize_publish:
         lineage_report_metadata = rules.publish_cog_gisaid_data_for_lineage_release_work.output.metadata,
 
         uk_lineage_fasta_csv_summary = rules.summarize_publish_uk_lineage_specific_fasta_and_metadata_files.log,
+
+        log_uk_lineage_timetrees = rules.publish_time_trees.log
     params:
         webhook = config["webhook"],
         uk_trees_path = config["export_path"] + "/trees/uk_lineages/",
@@ -613,6 +636,7 @@ rule summarize_publish:
         echo "> Full, annotated tree published to {input.COG_GISAID_nexus_tree}\\n" >> {log}
         echo "> Matching metadata published to {input.COG_GISAID_meta}\\n" >> {log}
         echo "> UK lineage subtrees published in {params.uk_trees_path}\\n" >> {log}
+        echo "> UK lineage timetrees published in {params.uk_trees_path}\\n" >> {log}
         echo "> \\n" >> {log}
         echo "> Public tree published to {input.public_COG_GISAID_newick_tree}\\n" >> {log}
         echo "> Associated unaligned sequences published to {input.public_COG_GISAID_seq_all}\\n" >> {log}
@@ -624,7 +648,7 @@ rule summarize_publish:
         echo "> \\n" >> {log}
 
         echo '{{"text":"' > 7_data.json
-        echo "*Step 6: publish data complete*\\n" >> 7_data.json
+        echo "*Step 7: publish data complete*\\n" >> 7_data.json
         cat {log} >> 7_data.json
         echo '"}}' >> 7_data.json
         echo 'webhook {params.webhook}'
