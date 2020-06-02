@@ -592,10 +592,13 @@ rule summarize_publish:
     params:
         webhook = config["webhook"],
         uk_trees_path = config["export_path"] + "/trees/uk_lineages/",
+        reports_path = config["export_path"] + "/reports/",
     log:
         config["output_path"] + "/logs/7_summarize_publish.log"
     shell:
         """
+        echo "> Reports published to {params.reports_path}\\n" >> {log}
+        echo "> \\n" >> {log}
         echo "> Gisaid master metadata published to {input.GISAID_meta_master}\\n" >> {log}
         echo "> COG master metadata published to {input.COG_meta_master}\\n" >> {log}
         echo "> \\n" >> {log}
