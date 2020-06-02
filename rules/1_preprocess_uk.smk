@@ -307,14 +307,16 @@ Instead of new sequences (as determined by a date stamp), it might be more robus
 to extract sequences for lineage typing that don't currently have an associated
 lineage designation in the metadata file.
 """
-rule uk_add_previous_uk_lineages_to_metadata:
+rule uk_add_previous_lineages_to_metadata:
     input:
         metadata = rules.add_snp_finder_result_to_metadata.output.metadata,
-        previous_metadata = config["previous_uk_metadata"]
+        previous_metadata = config["previous_uk_metadata"],
+        global_lineages = config["global_lineages"]
     output:
+        metadata_temp = temp(config["output_path"] + "/1/uk.with_previous_lineages.temp.csv"),
         metadata = config["output_path"] + "/1/uk.with_previous_lineages.csv",
     log:
-        config["output_path"] + "/logs/1_uk_add_previous_uk_lineages_to_metadata.log"
+        config["output_path"] + "/logs/1_uk_add_previous_lineages_to_metadata.log"
     shell:
         """
         fastafunk add_columns \
@@ -322,18 +324,55 @@ rule uk_add_previous_uk_lineages_to_metadata:
           --in-data {input.previous_metadata} \
           --index-column sequence_name \
           --join-on sequence_name \
-          --new-columns uk_lineage special_lineage edin_date_stamp \
+          --new-columns uk_lineage special_lineage lineage lineage_support edin_date_stamp \
+          --out-metadata {output.metadata_temp} &>> {log}
+
+        fastafunk add_columns \
+          --in-metadata {output.metadata_temp} \
+          --in-data {input.global_lineages} \
+          --index-column sequence_name \
+          --join-on taxon \
+          --new-columns lineage lineage_support \
+          --where-column lineage_support=UFbootstrap \
           --out-metadata {output.metadata} &>> {log}
         """
+
+
+rule uk_extract_speciallineageless:
+    input:
+        fasta = rules.uk_filter_low_coverage_sequences.output,
+        metadata = rules.uk_add_previous_lineages_to_metadata.output.metadata,
+    output:
+        fasta = config["output_path"] + "/1/uk.new.spangolin_lineages.fasta",
+    log:
+        config["output_path"] + "/logs/1_extract_specieallineageless.log"
+    run:
+        from Bio import SeqIO
+        import pandas as pd
+
+        fasta_in = SeqIO.index(str(input.fasta), "fasta")
+        df = pd.read_csv(input.metadata)
+
+        sequence_record = []
+
+        with open(str(output.fasta), 'w') as fasta_out:
+            for i,row in df.iterrows():
+                if pd.isnull(row['special_lineage']):
+                    sequence_name = row['sequence_name']
+                    if sequence_name in fasta_in:
+                        if sequence_name not in sequence_record:
+                            record = fasta_in[sequence_name]
+                            fasta_out.write('>' + record.id + '\n')
+                            fasta_out.write(str(record.seq) + '\n')
+                            sequence_record.append(sequence_name)
 
 
 rule uk_extract_lineageless:
     input:
         fasta = rules.uk_filter_low_coverage_sequences.output,
-        metadata = rules.uk_add_previous_uk_lineages_to_metadata.output.metadata,
-        previous_metadata = config["previous_uk_metadata"]
+        metadata = rules.uk_add_previous_lineages_to_metadata.output.metadata,
     output:
-        fasta = config["output_path"] + "/1/uk.new.fasta",
+        fasta = config["output_path"] + "/1/uk.new.pangolin_lineages.fasta",
     log:
         config["output_path"] + "/logs/1_extract_lineageless.log"
     run:
@@ -343,14 +382,18 @@ rule uk_extract_lineageless:
         fasta_in = SeqIO.index(str(input.fasta), "fasta")
         df = pd.read_csv(input.metadata)
 
+        sequence_record = []
+
         with open(str(output.fasta), 'w') as fasta_out:
             for i,row in df.iterrows():
-                if pd.isnull(row['special_lineage']):
+                if pd.isnull(row['lineage']):
                     sequence_name = row['sequence_name']
                     if sequence_name in fasta_in:
-                        record = fasta_in[sequence_name]
-                        fasta_out.write('>' + record.id + '\n')
-                        fasta_out.write(str(record.seq) + '\n')
+                        if sequence_name not in sequence_record:
+                            record = fasta_in[sequence_name]
+                            fasta_out.write('>' + record.id + '\n')
+                            fasta_out.write(str(record.seq) + '\n')
+                            sequence_record.append(sequence_name)
 
 
 rule summarize_preprocess_uk:
@@ -362,6 +405,7 @@ rule summarize_preprocess_uk:
         removed_low_covg_fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
         full_alignment = rules.uk_full_untrimmed_alignment.output.fasta,
         full_metadata = rules.add_snp_finder_result_to_metadata.output.metadata,
+        speciallineageless_fasta = rules.uk_extract_speciallineageless.output.fasta,
         lineageless_fasta = rules.uk_extract_lineageless.output.fasta
     params:
         webhook = config["webhook"],
@@ -378,7 +422,7 @@ rule summarize_preprocess_uk:
         echo "> Number of sequences after deduplication by bio_sample_id: $(cat {input.deduplicated_fasta_by_biosampleid} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after unifying headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after trimming and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)\\n" &>> {log}
-        echo "> Number of new sequences passed to Pangolin for typing: $(cat {input.lineageless_fasta} | grep ">" | wc -l)\\n" &>> {log}
+        echo "> Number of new sequences passed to Pangolin for typing: $(cat {input.speciallineageless_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo ">\\n" >> {log}
 
         echo '{{"text":"' > 1_data.json

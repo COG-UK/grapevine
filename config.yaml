@@ -16,7 +16,7 @@ publish_path: publish
 export_path: publish/phylogenetics
 
 ##### global lineage definitions #####
-global_lineages: 
+global_lineages:
 
 ##### Filter thresholds #####
 min_covg: 93
@@ -46,3 +46,6 @@ cwd:
 
 ##### Webhook to push to #####
 webhook:
+
+##### report latex template #####
+latex_template:

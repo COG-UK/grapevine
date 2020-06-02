@@ -1,16 +1,39 @@
 
 
-rule uk_pangolin:
+rule uk_normal_pangolin:
     input:
         previous_stage = config["output_path"] + "/logs/1_summarize_preprocess_uk.log",
         fasta = rules.uk_extract_lineageless.output.fasta,
     params:
-        outdir = config["output_path"] + "/2/pangolin",
-        tmpdir = config["output_path"] + "/2/pangolin/tmp"
+        outdir = config["output_path"] + "/2/normal_pangolin",
+        tmpdir = config["output_path"] + "/2/normal_pangolin/tmp"
     output:
-        lineages = protected(config["output_path"] + "/2/pangolin/lineage_report.csv")
+        lineages = protected(config["output_path"] + "/2/normal_pangolin/lineage_report.csv")
     log:
-        config["output_path"] + "/logs/2_uk_pangolin.log"
+        config["output_path"] + "/logs/2_uk_normal_pangolin.log"
+    threads: 40
+    conda: "/cephfs/covid/bham/climb-covid19-jacksonb/git/pangolin/environment.yml"
+    shell:
+        """
+        pangolin {input.fasta} \
+        -p \
+        --threads {threads} \
+        --outdir {params.outdir} \
+        --tempdir {params.tmpdir}  >> {log} 2>&1
+        """
+
+
+rule uk_special_pangolin:
+    input:
+        previous_stage = config["output_path"] + "/logs/1_summarize_preprocess_uk.log",
+        fasta = rules.uk_extract_speciallineageless.output.fasta,
+    params:
+        outdir = config["output_path"] + "/2/special_pangolin",
+        tmpdir = config["output_path"] + "/2/special_pangolin/tmp"
+    output:
+        lineages = protected(config["output_path"] + "/2/special_pangolin/lineage_report.csv")
+    log:
+        config["output_path"] + "/logs/2_uk_special_pangolin.log"
     threads: 40
     shell:
         """
@@ -21,14 +44,14 @@ rule uk_pangolin:
         """
 
 
-rule uk_add_pangolin_lineages_to_metadata:
+rule uk_add_special_pangolin_lineages_to_metadata:
     input:
-        metadata = rules.uk_add_previous_uk_lineages_to_metadata.output.metadata,
-        lineages = rules.uk_pangolin.output.lineages
+        metadata = rules.uk_add_previous_lineages_to_metadata.output.metadata,
+        lineages = rules.uk_special_pangolin.output.lineages
     output:
         metadata = config["output_path"] + "/2/uk.with_new_lineages.csv",
     log:
-        config["output_path"] + "/logs/2_uk_add_pangolin_lineages_to_metadata.log"
+        config["output_path"] + "/logs/2_uk_add_special_pangolin_lineages_to_metadata.log"
     shell:
         """
         fastafunk add_columns \
@@ -37,7 +60,7 @@ rule uk_add_pangolin_lineages_to_metadata:
           --index-column sequence_name \
           --join-on taxon \
           --new-columns special_lineage \
-          --where-column special_lineage=lineage\
+          --where-column special_lineage=lineage \
           --out-metadata {output.metadata} &>> {log}
         """
 
@@ -45,7 +68,7 @@ rule uk_add_pangolin_lineages_to_metadata:
 rule uk_output_lineage_table:
     input:
         fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
-        metadata = rules.uk_add_pangolin_lineages_to_metadata.output.metadata
+        metadata = rules.uk_add_special_pangolin_lineages_to_metadata.output.metadata
     output:
         fasta = config["output_path"] + "/2/uk.matched.fasta",
         metadata = config["output_path"] + "/2/uk.matched.lineages.csv"
@@ -73,6 +96,7 @@ rule summarize_pangolin_lineage_typing:
     input:
         fasta = rules.uk_output_lineage_table.output.fasta,
         metadata = rules.uk_output_lineage_table.output.metadata,
+        normal_pangolin = rules.uk_normal_pangolin.output.lineages
     params:
         webhook = config["webhook"],
     log:
