@@ -25,7 +25,7 @@ if not config.get("date"):
 
 rule all:
     input:
-        config["output_path"] + "/logs/5_summarize_generate_report_and_cut_out_trees.log",
+        config["output_path"] + "/logs/5_define_uk_lineages_and_cut_out_trees.log",
         config["output_path"] + "/logs/4_summarize_make_trees.log",
         # config["output_path"] + "/snakejunk/45"
 #
@@ -49,4 +49,4 @@ rule all:
 
 ##### Modules #####
 include: "rules/4_make_trees.smk"
-include: "rules/5_generate_report_and_cut_out_trees.smk"
+include: "rules/5_define_uk_lineages_and_cut_out_trees.smk"
