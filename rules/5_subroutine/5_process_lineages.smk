@@ -50,7 +50,7 @@ checkpoint cut_out_trees:
     params:
         lineage="{lineage}",
         outdir=config["output_path"] + "/5/{lineage}/trees",
-        pubdir=config["publish_path"] + "/COG_GISAID/trees",
+        pubdir=config["export_path"] + "/trees/uk_lineages",
     output:
         directory(config["output_path"] + "/5/{lineage}/trees")
     log:
