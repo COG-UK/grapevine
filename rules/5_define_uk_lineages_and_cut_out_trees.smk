@@ -114,27 +114,15 @@ rule run_5_subroutine_on_lineages:
 
 rule summarize_generate_report_and_cut_out_trees:
     input:
-        #report = rules.generate_report.output
         metadata = rules.run_5_subroutine_on_lineages.output.metadata
     params:
         webhook = config["webhook"],
-        outdir = config["publish_path"] + "/COG_GISAID",
-        export_dir1 = config["export_path"] + "/trees/uk_lineages",
-        export_dir2 = config["export_path"] + "/reports",
     log:
         config["output_path"] + "/logs/5_define_uk_lineages_and_cut_out_trees.log"
     shell:
         """
-        mkdir -p {params.export_dir1}
-        mkdir -p {params.export_dir2}
-
-        if [ ! -z "$(ls -A {params.outdir}/trees)" ]
-        then
-          cp {params.outdir}/trees/* {params.export_dir1}/
-        fi
-        echo "> UK lineage trees have been published in _{params.outdir}/trees_ and _{params.export_dir1}_\\n" >> {log}
-        echo ">\\n" >> {log}
-
+        echo "5_subroutine complete" &>> {log}
+        
         echo '{{"text":"' > 5b_data.json
         echo "*Step 5: Generate UK lineage trees is complete*\\n" >> 5b_data.json
         echo '"}}' >> 5b_data.json
