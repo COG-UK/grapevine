@@ -50,7 +50,7 @@ rule publish_COG_master_metadata:
     output:
         metadata_master = config["publish_path"] + "/COG/master.csv",
         metadata_report = config["publish_path"] + "/COG/report_metadata.csv",
-        fasta = temp(config["output_path"] + "/logs/7_publish_COG_master_metadata.fasta")
+        fasta = temp(config["output_path"] + "/7/7_publish_COG_master_metadata.temp.fasta")
     log:
         config["output_path"] + "/logs/7_publish_COG_master_metadata.log"
     shell:
@@ -63,7 +63,7 @@ rule publish_COG_master_metadata:
           --index-column sequence_name \
           --filter-column sequence_name sample_date epi_week \
                           country adm1 adm2 \
-                          lineage lineages_version uk_lineage acc_lineage del_lineage phylotype acc_introduction del_introduction \
+                          lineage lineage_support lineages_version uk_lineage acc_lineage del_lineage phylotype acc_introduction del_introduction \
                           sequencing_org_code \
           --where-column epi_week=edin_epi_week country=adm0 \
                          sample_date=received_date sample_date=collection_date \
