@@ -566,7 +566,7 @@ rule publish_sc_reports:
 
 
 ADM1 = ['England', 'Scotland', 'Wales', 'Northern_Ireland']
-SC = ['LIVE', 'PHWC', 'CAMB', 'NORW', 'GLAS', 'EDIN', 'SHEF', 'EXET', 'NOTT', 'PORT', 'OXON', 'NORT', 'NIRE', 'LOND']
+SC = ['LIVE', 'PHWC', 'CAMB', 'NORW', 'GLAS', 'EDIN', 'SHEF', 'EXET', 'NOTT', 'PORT', 'OXON', 'NORT', 'NIRE', 'LOND', 'SANG', 'BIRM', 'PHEC']
 REPORTS = ['full'] + ADM1 + SC
 
 rule summarize_publish_reports:
