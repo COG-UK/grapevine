@@ -88,6 +88,7 @@ rule run_5_subroutine_on_lineages:
         path_to_script = workflow.current_basedir,
         output_path = config["output_path"],
         publish_path = config["publish_path"],
+        export_path = config["export_path"],
         prefix = config["output_path"] + "/5/lineage_",
         guide_tree = config["guide_tree"],
     output:
@@ -106,6 +107,7 @@ rule run_5_subroutine_on_lineages:
           --config \
           output_path={params.output_path} \
           publish_path={params.publish_path} \
+          export_path={params.export_path} \
           guide_tree="{params.guide_tree}" \
           lineages="$lineages" \
           metadata={input.metadata} &> {log}
@@ -122,7 +124,7 @@ rule summarize_generate_report_and_cut_out_trees:
     shell:
         """
         echo "5_subroutine complete" &>> {log}
-        
+
         echo '{{"text":"' > 5b_data.json
         echo "*Step 5: Generate UK lineage trees is complete*\\n" >> 5b_data.json
         echo '"}}' >> 5b_data.json

@@ -363,6 +363,7 @@ rule gisaid_add_pangolin_lineages_to_metadata:
         special_lineages = rules.gisaid_special_pangolin.output.lineages,
         normal_lineages = rules.gisaid_normal_pangolin.output.lineages
     output:
+        metadata_temp = temp(config["output_path"] + "/0/gisaid.all.temp.csv"),
         metadata = config["output_path"] + "/0/gisaid.all.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_add_pangolin_lineages_to_metadata.log"
@@ -375,10 +376,10 @@ rule gisaid_add_pangolin_lineages_to_metadata:
           --join-on taxon \
           --new-columns special_lineage \
           --where-column special_lineage=lineage \
-          --out-metadata {output.metadata} &> {log}
+          --out-metadata {output.metadata_temp} &> {log}
 
         fastafunk add_columns \
-          --in-metadata {input.metadata} \
+          --in-metadata {output.metadata_temp} \
           --in-data {input.normal_lineages} \
           --index-column sequence_name \
           --join-on taxon \
