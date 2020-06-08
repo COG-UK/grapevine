@@ -50,7 +50,7 @@ rule publish_COG_master_metadata:
     output:
         metadata_master = config["publish_path"] + "/COG/master.csv",
         metadata_report = config["publish_path"] + "/COG/report_metadata.csv",
-        fasta = temp(config["output_path"] + "/logs/7_publish_COG_master_metadata.fasta")
+        fasta = temp(config["output_path"] + "/7/7_publish_COG_master_metadata.temp.fasta")
     log:
         config["output_path"] + "/logs/7_publish_COG_master_metadata.log"
     shell:
@@ -63,7 +63,7 @@ rule publish_COG_master_metadata:
           --index-column sequence_name \
           --filter-column sequence_name sample_date epi_week \
                           country adm1 adm2 \
-                          lineage lineages_version uk_lineage acc_lineage del_lineage phylotype acc_introduction del_introduction \
+                          lineage lineage_support lineages_version uk_lineage acc_lineage del_lineage phylotype acc_introduction del_introduction \
                           sequencing_org_code \
           --where-column epi_week=edin_epi_week country=adm0 \
                          sample_date=received_date sample_date=collection_date \
@@ -185,7 +185,7 @@ rule combine_cog_gisaid:
     input:
         cog_fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.fasta",
         cog_metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata,
-        gisaid_fasta = config["output_path"] + "/0/gisaid.full.masked.filtered.fasta",
+        gisaid_fasta = config["output_path"] + "/0/gisaid.RD.UH.filt.mapped.filt2.masked.filt3.fasta",
         gisaid_metadata = rules.gisaid_add_lineage_information_back_to_master_metadata.output.metadata
     params:
         intermediate_cog_fasta = config["output_path"] + "/7/cog.combine_cog_gisaid.temp.cog.fasta",
@@ -310,13 +310,13 @@ rule publish_uk_lineage_specific_fasta_and_metadata_files:
         """
 
 
-LIN,X = glob_wildcards(config["output_path"] + "/5/{lin}/trees/uk_lineage_UK{i}.tree")
+LIN,X = glob_wildcards(config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}.tree")
 
 rule summarize_publish_uk_lineage_specific_fasta_and_metadata_files:
     input:
         expand(config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.csv", i = X)
     log:
-        config["output_path"] + "/logs/7_summarize_publish_uk_lineage_specific_fasta_and_metadata_files"
+        config["output_path"] + "/logs/7_summarize_publish_uk_lineage_specific_fasta_and_metadata_files.log"
     shell:
         """
         echo "done" > {log}
@@ -424,6 +424,27 @@ rule publish_microreact_specific_output:
           --out-fasta {output.fasta2} \
           --out-metadata {output.private_metadata} \
           --restrict &>> {log}
+        """
+
+
+rule publish_time_trees:
+    input:
+        config["output_path"] + "/logs/6_summarize_treetime.log"
+    params:
+        treedir = config["output_path"] + "/6/",
+        outdir = config["export_path"] + "/trees/uk_lineages/"
+    log:
+        config["output_path"] + "/logs/7_publish_time_trees.log"
+    shell:
+        """
+        for DIR in {params.treedir}*/trees/*timetree/
+        do
+            FILECOUNT=$(ls $DIR | wc -l)
+            if [ $FILECOUNT -gt 0 ]
+            then
+                cp -r $DIR {params.outdir}
+            fi
+        done &>> {log}
         """
 
 
@@ -545,7 +566,7 @@ rule publish_sc_reports:
 
 
 ADM1 = ['England', 'Scotland', 'Wales', 'Northern_Ireland']
-SC = ['LIVE', 'PHWC', 'CAMB', 'NORW', 'GLAS', 'EDIN', 'SHEF', 'EXET', 'NOTT', 'PORT', 'OXON', 'NORT', 'NIRE', 'LOND']
+SC = ['LIVE', 'PHWC', 'CAMB', 'NORW', 'GLAS', 'EDIN', 'SHEF', 'EXET', 'NOTT', 'PORT', 'OXON', 'NORT', 'NIRE', 'LOND', 'SANG', 'BIRM', 'PHEC']
 REPORTS = ['full'] + ADM1 + SC
 
 rule summarize_publish_reports:
@@ -589,13 +610,18 @@ rule summarize_publish:
         lineage_report_metadata = rules.publish_cog_gisaid_data_for_lineage_release_work.output.metadata,
 
         uk_lineage_fasta_csv_summary = rules.summarize_publish_uk_lineage_specific_fasta_and_metadata_files.log,
+
+        log_uk_lineage_timetrees = rules.publish_time_trees.log
     params:
         webhook = config["webhook"],
         uk_trees_path = config["export_path"] + "/trees/uk_lineages/",
+        reports_path = config["export_path"] + "/reports/",
     log:
         config["output_path"] + "/logs/7_summarize_publish.log"
     shell:
         """
+        echo "> Reports published to {params.reports_path}\\n" >> {log}
+        echo "> \\n" >> {log}
         echo "> Gisaid master metadata published to {input.GISAID_meta_master}\\n" >> {log}
         echo "> COG master metadata published to {input.COG_meta_master}\\n" >> {log}
         echo "> \\n" >> {log}
@@ -610,6 +636,7 @@ rule summarize_publish:
         echo "> Full, annotated tree published to {input.COG_GISAID_nexus_tree}\\n" >> {log}
         echo "> Matching metadata published to {input.COG_GISAID_meta}\\n" >> {log}
         echo "> UK lineage subtrees published in {params.uk_trees_path}\\n" >> {log}
+        echo "> UK lineage timetrees published in {params.uk_trees_path}\\n" >> {log}
         echo "> \\n" >> {log}
         echo "> Public tree published to {input.public_COG_GISAID_newick_tree}\\n" >> {log}
         echo "> Associated unaligned sequences published to {input.public_COG_GISAID_seq_all}\\n" >> {log}
@@ -621,7 +648,7 @@ rule summarize_publish:
         echo "> \\n" >> {log}
 
         echo '{{"text":"' > 7_data.json
-        echo "*Step 6: publish data complete*\\n" >> 7_data.json
+        echo "*Step 7: publish data complete*\\n" >> 7_data.json
         cat {log} >> 7_data.json
         echo '"}}' >> 7_data.json
         echo 'webhook {params.webhook}'
