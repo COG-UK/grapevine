@@ -33,6 +33,9 @@ rule treetime:
           --out-metadata {output.metadata} \
           --restrict &>> {log}
 
+
+        set +e
+
         treetime \
           --aln {output.fasta} \
           --tree {output.tree} \
@@ -40,4 +43,56 @@ rule treetime:
           --name-column sequence_name \
           --date-column sample_date \
           --outdir {output.directory} &>> {log}
+
+        exitcode=$?
+        if [ $exitcode -eq 0 ]
+        then
+            exit 0
+        else
+            echo "timetree failed for this sample" &>> {log}
+            exit 0
+        fi
         """
+
+
+LINEAGES = []
+df = pd.read_csv(config["lineage_splits"])
+for i,row in df.iterrows():
+    LINEAGES.append(row['lineage'])
+
+UK = []
+for l in LINEAGES:
+    UK.append(glob_wildcards(config["output_path"] + "/5/" + l + "/trees/uk_lineage_UK{i}.tree").i)
+
+LINEAGES_REP = []
+for i,x in enumerate(UK):
+    LINEAGES_REP = LINEAGES_REP + [LINEAGES[i]] * len(x)
+
+UK = [item for sublist in UK for item in sublist]
+
+rule summarize_treetime:
+    input:
+        expand(config["output_path"] + "/logs/6_timetree_run_lineage{lineage}_uk{i}.log", zip, lineage = LINEAGES_REP, i = UK)
+    params:
+        webhook = config["webhook"],
+    log:
+        config["output_path"] + "/logs/6_summarize_treetime.log"
+    shell:
+        """
+        echo '{{"text":"' > 6_data.json
+        echo "*Step 6: treetime for UK lineages complete*\\n" >> 6_data.json
+        echo '"}}' >> 6_data.json
+        echo 'webhook {params.webhook}'
+        curl -X POST -H "Content-type: application/json" -d @6_data.json {params.webhook}
+        """
+
+
+
+
+
+
+
+
+
+
+#
