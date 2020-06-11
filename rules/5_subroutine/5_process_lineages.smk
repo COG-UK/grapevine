@@ -176,8 +176,8 @@ rule graft_lineages:
         """
         clusterfunk graft \
         --scions {input.scions} \
-        --scion_annotation_name scion_lineage \
-        --annotate_scions {params.lineages} \
+        --scion-annotation-name scion_lineage \
+        --annotate-scions {params.lineages} \
         --input {input.guide_tree} \
         --output {output.tree} &> {log}
         """
@@ -222,15 +222,22 @@ rule annotate_phylotypes:
         tree=rules.graft_lineages.output.tree,
         metadata = rules.merge_with_metadata.output.metadata
     output:
-        tree = config["output_path"] + "/5/cog_gisaid_full.tree.nexus",
+        annotated_tree = config["output_path"] + "/5/cog_gisaid_full.unordered.tree.nexus",
+        ordered_tree = config["output_path"] + "/5/cog_gisaid_full.tree.nexus",
     log:
         config["output_path"] + "/logs/5_annotate_phylotypes.log"
     shell:
         """
         clusterfunk annotate_tips \
-          --in-metadata {input.metadata} \
+          --in-metadata {input.metadat a} \
           --trait-columns phylotype \
           --index-column sequence_name \
           --input {input.tree} \
-          --output {output.tree} &> {log}
+          --output {output.annotated_tree} &> {log}
+
+        clusterfunk sort \
+          --in-format nexus \
+          -i {output.annotated_tree} \
+          --out-format nexus \
+          -o {output.ordered_tree} &>> {log}
         """
