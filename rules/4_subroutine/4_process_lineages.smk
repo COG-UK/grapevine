@@ -271,36 +271,26 @@ rule graft:
     params:
         lineages = sorted(LINEAGES),
     output:
-        tree = config["output_path"] + '/4/cog_gisaid_full.tree.public.newick',
+        grafted_tree = config["output_path"] + '/4/cog_gisaid_full.tree.unordered.public.newick',
+        ordered_tree = config["output_path"] + '/4/cog_gisaid_full.tree.public.newick',
     log:
         config["output_path"] + "/logs/4_graft.log"
     shell:
         """
         clusterfunk graft \
-        --scions {input.scions} \
-        --scion-annotation-name scion_lineage \
-        --annotate-scions {params.lineages} \
-        --input {input.guide_tree} \
-        --out-format newick \
-        --output {output.tree} &> {log}
-        """
-# not needed since graft outputs a newick tree now.
-# rule get_public_newick_tree:
-#     input:
-#         tree = rules.graft.output.tree
-#     output:
-#         tree = '/4/cog_gisaid_full.tree.public.newick'
-#     log:
-#         config["output_path"] + "/logs/4_publish_public_newick_tree.log"
-#     shell:
-#         """
-#         clusterfunk reformat \
-#           --input {input.tree} \
-#           --output {output.tree} \
-#           --out-format newick \
-#           --in-format nexus &> {log}
-#         """
+          --scions {input.scions} \
+          --scion-annotation-name scion_lineage \
+          --annotate-scions {params.lineages} \
+          --input {input.guide_tree} \
+          --out-format newick \
+          --output {output.grafted_tree} &> {log}
 
+        clusterfunk sort \
+          --in-format newick \
+          -i {output.grafted_tree} \
+          --out-format newick \
+          -o {output.ordered_tree} &>> {log}
+        """
 
 
 rule output_annotations:
