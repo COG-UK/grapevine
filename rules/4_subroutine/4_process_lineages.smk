@@ -278,7 +278,7 @@ rule graft:
         """
         clusterfunk graft \
         --scions {input.scions} \
-        --scion-annotation_name scion_lineage \
+        --scion-annotation-name scion_lineage \
         --annotate-scions {params.lineages} \
         --input {input.guide_tree} \
         --out-format newick \
