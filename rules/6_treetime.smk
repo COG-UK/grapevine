@@ -38,6 +38,8 @@ rule treetime:
 
         treetime \
           --aln {output.fasta} \
+          --clock-rate 0.00100 \
+          --clock-filter 0 \
           --tree {output.tree} \
           --dates {output.metadata} \
           --name-column sequence_name \
