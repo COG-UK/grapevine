@@ -229,7 +229,7 @@ rule annotate_phylotypes:
     shell:
         """
         clusterfunk annotate_tips \
-          --in-metadata {input.metadat a} \
+          --in-metadata {input.metadata} \
           --trait-columns phylotype \
           --index-column sequence_name \
           --input {input.tree} \
