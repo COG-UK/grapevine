@@ -324,7 +324,7 @@ rule uk_add_previous_lineages_to_metadata:
           --in-data {input.previous_metadata} \
           --index-column sequence_name \
           --join-on sequence_name \
-          --new-columns uk_lineage special_lineage lineage lineage_support edin_date_stamp \
+          --new-columns uk_lineage lineage lineage_support lineages_version edin_date_stamp \
           --out-metadata {output.metadata_temp} &>> {log}
 
         fastafunk add_columns \
@@ -332,39 +332,10 @@ rule uk_add_previous_lineages_to_metadata:
           --in-data {input.global_lineages} \
           --index-column sequence_name \
           --join-on taxon \
-          --new-columns lineage lineage_support \
+          --new-columns lineage lineage_support lineages_version \
           --where-column lineage_support=UFbootstrap \
           --out-metadata {output.metadata} &>> {log}
         """
-
-
-rule uk_extract_speciallineageless:
-    input:
-        fasta = rules.uk_filter_low_coverage_sequences.output,
-        metadata = rules.uk_add_previous_lineages_to_metadata.output.metadata,
-    output:
-        fasta = config["output_path"] + "/1/uk.new.spangolin_lineages.fasta",
-    log:
-        config["output_path"] + "/logs/1_extract_specieallineageless.log"
-    run:
-        from Bio import SeqIO
-        import pandas as pd
-
-        fasta_in = SeqIO.index(str(input.fasta), "fasta")
-        df = pd.read_csv(input.metadata)
-
-        sequence_record = []
-
-        with open(str(output.fasta), 'w') as fasta_out:
-            for i,row in df.iterrows():
-                if pd.isnull(row['special_lineage']):
-                    sequence_name = row['sequence_name']
-                    if sequence_name in fasta_in:
-                        if sequence_name not in sequence_record:
-                            record = fasta_in[sequence_name]
-                            fasta_out.write('>' + record.id + '\n')
-                            fasta_out.write(str(record.seq) + '\n')
-                            sequence_record.append(sequence_name)
 
 
 rule uk_extract_lineageless:
@@ -405,7 +376,6 @@ rule summarize_preprocess_uk:
         removed_low_covg_fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
         full_alignment = rules.uk_full_untrimmed_alignment.output.fasta,
         full_metadata = rules.add_snp_finder_result_to_metadata.output.metadata,
-        speciallineageless_fasta = rules.uk_extract_speciallineageless.output.fasta,
         lineageless_fasta = rules.uk_extract_lineageless.output.fasta
     params:
         webhook = config["webhook"],
@@ -422,7 +392,7 @@ rule summarize_preprocess_uk:
         echo "> Number of sequences after deduplication by bio_sample_id: $(cat {input.deduplicated_fasta_by_biosampleid} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after unifying headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after trimming and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)\\n" &>> {log}
-        echo "> Number of new sequences passed to Pangolin for typing: $(cat {input.speciallineageless_fasta} | grep ">" | wc -l)\\n" &>> {log}
+        echo "> Number of new sequences passed to Pangolin for typing: $(cat {input.lineageless_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo ">\\n" >> {log}
 
         echo '{{"text":"' > 1_data.json
@@ -432,20 +402,3 @@ rule summarize_preprocess_uk:
         echo "webhook {params.webhook}"
         curl -X POST -H "Content-type: application/json" -d @1_data.json {params.webhook}
         """
-
-
-
-        # mkdir -p {params.outdir}
-        # mkdir -p {params.export_dir}
-        # cp {input.full_alignment} {params.prefix}_alignment.full.fasta
-        # cp {input.full_alignment} {params.export_prefix}_alignment.full.fasta
-        # echo "> Full untrimmed COG alignment published to _{params.prefix}_alignment.full.fasta_\\n" >> {log}
-        # echo "> and to _{params.export_prefix}_alignment.full.fasta_\\n" >> {log}
-        # echo ">\\n" >> {log}
-        # cp {input.full_metadata} {params.prefix}_metadata.full.csv
-        # cp {input.full_metadata} {params.export_prefix}_metadata.full.csv
-        # echo "> Full COG only metadata published to _{params.prefix}_metadata.full.csv_\\n" >> {log}
-        # echo "> and to _{params.export_prefix}_metadata.full.csv_\\n" >> {log}
-        # echo ">\\n" >> {log}
-        # cp {input.removed_low_covg_fasta} {params.prefix}_alignment.trimmed.fasta
-        # echo "> Trimmed COG alignment published to _{params.prefix}_alignment.trimmed.fasta_\\n" >> {log}

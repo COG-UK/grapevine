@@ -12,7 +12,7 @@ OUTGROUPS = config["lineage_specific_outgroups"].split()[1:]
 
 lineage_to_outgroup_map = {}
 for i,lin in enumerate(LINEAGES):
-    lineage_to_outgroup_map[lin] = OUTGROUPS[i].replace("/","_")
+    lineage_to_outgroup_map[lin] = OUTGROUPS[i]
 
 print("lineages", LINEAGES)
 print("outgroups", OUTGROUPS)
@@ -25,68 +25,48 @@ rule all:
         tree=config["output_path"] + "/4/cog_gisaid_full.tree.public.newick"
 
 
-rule iq_tree:
+rule fasttree:
     input:
         lineage_fasta = config["output_path"] + "/4/lineage_{lineage}.fasta"
     params:
         lineage = "{lineage}",
-        outgroup = lambda wildcards: lineage_to_outgroup_map[wildcards.lineage]
     output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.tree"
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.unrooted.tree",
     log:
-        config["output_path"] + "/logs/4_iq_tree_{lineage}.log"
+        config["output_path"] + "/logs/4_fasttree_{lineage}.log"
     resources: mem_per_cpu=10000
+    threads: 3
     shell:
         """
-        echo "{params.outgroup} {input.lineage_fasta} {params.lineage}"
-        iqtree -m HKY -czb \
-        -o \"{params.outgroup}\" \
-        -cptime 300 \
-        -nt AUTO \
-        -s {input.lineage_fasta} &> {log}
+        echo "{input.lineage_fasta} {params.lineage}"
 
-        RESULT=$?
-        if [ $RESULT -eq 0 ]
-        then
-          datafunk repair_names \
-            --fasta {input.lineage_fasta} \
-            --tree {input.lineage_fasta}.treefile \
-            --out {output.tree} &>> {log}
-        fi
+        export OMP_NUM_THREADS={threads}
+
+        FastTreeMP -nosupport -nt {input.lineage_fasta} > {output.tree} 2> {log}
         """
-        # iqtree -m HKY -bb 1000 -czb \
 
-#
-# rule subroutine_4_add_global_lineages_to_metadata:
-#     input:
-#         metadata = config["metadata"],
-#         global_lineages = config["globallineages"],
-#         new_global_lineages = config["output_path"] + "/2/normal_pangolin/lineage_report.csv"
-#     output:
-#         metadata_temp = temp(config["output_path"] + "/4/cog_gisaid.global.lineages.temp.csv"),
-#         metadata = config["output_path"] + "/4/cog_gisaid.global.lineages.csv"
-#     log:
-#         config["output_path"] + "/logs/4_add_global_lineages_to_metadata.log"
-#     shell:
-#         """
-#         fastafunk add_columns \
-#           --in-metadata {input.metadata} \
-#           --in-data {input.global_lineages} \
-#           --index-column sequence_name \
-#           --join-on taxon  \
-#           --new-columns lineage lineage_support lineages_version \
-#           --where-column lineage_support=UFbootstrap \
-#           --out-metadata {output.metadata_temp} &>> {log}
-#
-#         fastafunk add_columns \
-#           --in-metadata {output.metadata_temp} \
-#           --in-data {input.new_global_lineages} \
-#           --index-column sequence_name \
-#           --join-on taxon \
-#           --new-columns lineage lineage_support lineages_version \
-#           --where-column lineage_support=UFbootstrap \
-#           --out-metadata {output.metadata} &>> {log}
-#         """
+
+rule root_tree:
+    input:
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.unrooted.tree",
+    params:
+        lineage = "{lineage}",
+        outgroup = lambda wildcards: lineage_to_outgroup_map[wildcards.lineage]
+    output:
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.tree",
+    log:
+        config["output_path"] + "/logs/4_root_tree_{lineage}.log",
+    shell:
+        """
+        echo "{params.lineage} {params.outgroup}"
+
+        clusterfunk root \
+          --in-format newick \
+          -i {input.tree} \
+          --out-format newick \
+          -o {output.tree} \
+          --outgroup {params.outgroup} &>> {log}
+        """
 
 
 rule annotate_tree:
@@ -96,7 +76,6 @@ rule annotate_tree:
     params:
         lineage = "{lineage}",
         collapse=0.000005,
-
     output:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.tree"
     log:
@@ -108,7 +87,7 @@ rule annotate_tree:
           --trait-columns country uk_lineage \
           --index-column sequence_name \
           --boolean-for-trait country='UK' country='UK' country='UK' country='UK' \
-          --boolean-trait-names country_uk country_uk_acctran country_uk_deltran\
+          --boolean-trait-names country_uk country_uk_acctran country_uk_deltran \
           --in-format newick \
           --out-format nexus \
           --collapse_to_polytomies {params.collapse} \
@@ -153,24 +132,6 @@ rule deltran_ancestral_reconstruction:
         --input {input.tree} \
         --output {output.tree} &> {log}
         """
-
-# rule push_lineage_to_tips:
-#     input:
-#         tree = rules.deltran_ancestral_reconstruction.output.tree
-#     params:
-#         lineage = "{lineage}",
-#     output:
-#         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.del.uk_lineages.tree"
-#     log:
-#         config["output_path"] + "/logs/4_push_lineage_to_tips_{lineage}.log"
-#     shell:
-#         """
-#         clusterfunk push_annotations_to_tips \
-#           --traits uk_lineage \
-#           --stop-where-trait country_uk_acctran=False \
-#           --input {input.tree} \
-#           --output {output.tree} &> {log}
-#         """
 
 rule label_acctran_introductions:
     input:
