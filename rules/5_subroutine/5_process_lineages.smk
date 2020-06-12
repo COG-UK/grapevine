@@ -172,31 +172,30 @@ rule graft_lineages:
         tree = config["output_path"] + "/5/cog_gisaid_full.no_phylotypes.tree.nexus",
     log:
         config["output_path"] + "/logs/5_graft_lineages.log"
-    shell:
-        """
-        clusterfunk graft \
-        --scions {input.scions} \
-        --scion-annotation-name scion_lineage \
-        --annotate-scions {params.lineages} \
-        --input {input.guide_tree} \
-        --output {output.tree} &> {log}
-        """
+    run:
+        if len(input.scions) > 1:
+            shell("""
+                clusterfunk graft \
+                --scions {input.scions} \
+                --scion-annotation-name scion_lineage \
+                --annotate-scions {params.lineages} \
+                --input {input.guide_tree} \
+                --output {output.tree} &> {log}
+                """)
 
+        else:
+            shell("""cp {input.scions} {output.tree} &> {log}""")
 
-# rule get_private_nexus_tree:
-#     input:
-#         tree = rules.graft_lineages.output.tree
-#     output:
-#         tree = '/5/cog_gisaid_full.tree.private.nexus'
-#     log:
-#         config["output_path"] + "/logs/5_publish_private_nexus_tree.log"
-#     shell:
-#         """
-#         clusterfunk annotate_lineages \
-#           --input {input.tree} \
-#           --output {output.tree} \
-#           --trait lineage
-#         """
+    # shell:
+    #     """
+    #     clusterfunk graft \
+    #     --scions {input.scions} \
+    #     --scion-annotation-name scion_lineage \
+    #     --annotate-scions {params.lineages} \
+    #     --input {input.guide_tree} \
+    #     --output {output.tree} &> {log}
+    #     """
+
 
 rule merge_with_metadata:
     input:
