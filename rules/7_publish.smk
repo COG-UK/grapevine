@@ -135,18 +135,24 @@ rule publish_full_aligned_cog_data:
           --in-fasta {input.fasta} \
           --in-metadata {input.metadata} \
           --index-column sequence_name \
-          --filter-column adm0 adm1 adm2 biosample_source_id central_sample_id \
-                          collection_date flowcell_id flowcell_type instrument_make instrument_model \
-                          layout_insert_length layout_read_length library_layout_config library_name \
-                          library_primers library_protocol library_selection library_seq_kit \
-                          library_seq_protocol library_source library_strategy meta.artic.primers \
-                          meta.artic.protocol metadata published_as received_date root_sample_id \
-                          run_group run_name sample_type_collected sample_type_received sampling_strategy \
-                          secondary_accession secondary_identifier sequencing_org sequencing_org_code \
-                          sequencing_submission_date sequencing_uuid source_age source_sex start_time \
-                          submission_org submission_org_code submission_user swab_site header sequence_name \
-                          length missing gaps cov_id subsample_omit edin_epi_week d614g \
-          --where-column country=adm0 \
+          --filter-column \
+              adm0 adm1 adm2 adm2_private biosample_source_id \
+              central_sample_id collected_by collection_date end_time \
+              flowcell_id flowcell_type instrument_make instrument_model \
+              layout_insert_length layout_read_length \
+              library_adaptor_barcode library_layout_config library_name library_primers library_protocol \
+              library_selection library_seq_kit library_seq_protocol library_source library_strategy \
+              meta.artic.primers meta.artic.protocol meta.epi.cluster meta.investigation.cluster \
+              meta.investigation.name meta.investigation.site metric.ct.1.ct_value metric.ct.1.test_kit \
+              metric.ct.1.test_platform metric.ct.1.test_target metric.ct.2.ct_value metric.ct.2.test_kit         \
+              metric.ct.2.test_platform metric.ct.2.test_target metric.ct.max_ct \
+              metric.ct.min_ct metric.ct.num_tests \
+              published_as received_date root_sample_id run_group run_name \
+              sample_type_collected sample_type_received secondary_accession secondary_identifier \
+              sequencing_org sequencing_org_code sequencing_submission_date sequencing_uuid \
+              source_age source_sex start_time \
+              submission_org submission_org_code submission_user swab_site \
+              header sequence_name length missing gaps cov_id subsample_omit edin_epi_week d614g \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --restrict &> {log}
@@ -276,6 +282,41 @@ rule publish_full_annotated_tree_and_metadata:
         """
 
 
+rule publish_civet_data:
+    input:
+        all_fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.full.masked.fasta",
+        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.fasta",
+        metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata
+        tree = config["output_path"] + "/5/cog_gisaid_full.tree.nexus",,
+    output:
+        all_fasta = config["export_path"] + "/civet/cog_" + config["date"] + '_alignment_all.fasta',
+        fasta = config["export_path"] + "/civet/cog_" + config["date"] + '_alignment.fasta',
+        metadata = config["export_path"] + "/civet/cog_" + config["date"] + '_metadata.csv',
+        tree = config["export_path"] + "/civet/cog_global_"  + config["date"] +  "_tree.nexus",
+    log:
+        config["output_path"] + "/logs/7_publish_civet_data.log"
+    shell:
+        """
+        cp {input.all_fasta} {output.all_fasta} &>> {log}
+        cp {input.tree} {output.tree} &>> {log}
+
+        fastafunk fetch \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata} \
+          --index-column sequence_name \
+          --filter-column sequence_name sample_date epi_week \
+                          country adm1 adm2 outer_postcode \
+                          is_surveillance is_community is_hcw \
+                          is_travel_history travel_history lineage \
+                          lineage_support uk_lineage acc_lineage del_lineage phylotype \
+          --where-column epi_week=edin_epi_week country=adm0 \
+                         sample_date=received_date sample_date=collection_date \
+          --out-fasta {output.fasta} \
+          --out-metadata {output.metadata} \
+          --restrict &>> {log}
+        """
+
+
 rule publish_uk_lineage_specific_fasta_and_metadata_files:
     input:
         tree = config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.tree",
@@ -328,8 +369,8 @@ rule publish_cog_gisaid_data_for_lineage_release_work:
         combined_fasta = rules.combine_cog_gisaid.output.fasta,
         combined_metadata = rules.combine_cog_gisaid.output.metadata,
     output:
-        fasta = config["export_path"] + "/lineage_release/cog_gisaid.fasta",
-        metadata = config["export_path"] + "/lineage_release/cog_gisaid.csv",
+        fasta = config["publish_path"] + "/lineage_release/cog_gisaid.fasta",
+        metadata = config["publish_path"] + "/lineage_release/cog_gisaid.csv",
     log:
         config["output_path"] + "/logs/7_publish_cog_gisaid_data_for_lineage_release_work.log"
     shell:
@@ -349,16 +390,19 @@ rule publish_public_cog_data:
     input:
         public_tree = config["output_path"] + "/4/cog_gisaid_full.tree.public.newick",
         fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.unify_headers.fasta",
-        metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata
+        metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata,
+        alignment = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.fasta",
     output:
         public_tree = config["export_path"] + "/public/cog_global_" + config["date"] + "_tree.newick",
         fasta = config["export_path"] + "/public/cog_" + config["date"] + ".fasta",
-        metadata = config["export_path"] + "/public/cog_" + config["date"] + "_metadata.csv"
+        metadata = config["export_path"] + "/public/cog_" + config["date"] + "_metadata.csv",
+        alignment = config["export_path"] + "/public/cog_" + config["date"] + "_alignment.fasta",
     log:
         config["output_path"] + "/logs/7_publish_public_cog_data.log"
     shell:
         """
         cp {input.public_tree} {output.public_tree} &> {log}
+        cp {input.alignment} {output.alignment} &>> {log}
 
         fastafunk fetch \
           --in-fasta {input.fasta} \
@@ -611,10 +655,13 @@ rule summarize_publish:
 
         uk_lineage_fasta_csv_summary = rules.summarize_publish_uk_lineage_specific_fasta_and_metadata_files.log,
 
-        log_uk_lineage_timetrees = rules.publish_time_trees.log
+        log_uk_lineage_timetrees = rules.publish_time_trees.log,
+
+        log_civet = rules.publish_civet_data.log,
     params:
         webhook = config["webhook"],
         uk_trees_path = config["export_path"] + "/trees/uk_lineages/",
+        civet_path = config["export_path"] + "/civet/",
         reports_path = config["export_path"] + "/reports/",
     log:
         config["output_path"] + "/logs/7_summarize_publish.log"
@@ -646,6 +693,7 @@ rule summarize_publish:
         echo "> Public metadata for microreact published to {input.microreact_public_metadata}\\n" >> {log}
         echo "> Private metadata for microreact published to {input.microreact_private_metadata}\\n" >> {log}
         echo "> \\n" >> {log}
+        echo "> Data for Civet published to {params.civet_path}\\n" >> {log}
 
         echo '{{"text":"' > 7_data.json
         echo "*Step 7: publish data complete*\\n" >> 7_data.json
