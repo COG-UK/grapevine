@@ -235,23 +235,53 @@ rule graft:
         grafted_tree = config["output_path"] + '/4/cog_gisaid_full.tree.unordered.public.newick',
         ordered_tree = config["output_path"] + '/4/cog_gisaid_full.tree.public.newick',
     log:
-        config["output_path"] + "/logs/4_graft.log"
-    shell:
-        """
-        clusterfunk graft \
-          --scions {input.scions} \
-          --scion-annotation-name scion_lineage \
-          --annotate-scions {params.lineages} \
-          --input {input.guide_tree} \
-          --out-format newick \
-          --output {output.grafted_tree} &> {log}
+        graft = config["output_path"] + "/logs/4_graft.log",
+        sort = config["output_path"] + "/logs/4_graft.log",
+    run:
+        if len(input.scions) > 1:
+            shell("""
+                clusterfunk graft \
+                  --scions {input.scions} \
+                  --scion-annotation-name scion_lineage \
+                  --annotate-scions {params.lineages} \
+                  --input {input.guide_tree} \
+                  --out-format newick \
+                  --output {output.grafted_tree} &> {log.graft}
 
-        clusterfunk sort \
-          --in-format newick \
-          -i {output.grafted_tree} \
-          --out-format newick \
-          -o {output.ordered_tree} &>> {log}
-        """
+                clusterfunk sort \
+                  --in-format newick \
+                  -i {output.grafted_tree} \
+                  --out-format newick \
+                  -o {output.ordered_tree} &> {log.sort}
+                """)
+
+        else:
+            shell("""
+                cp {input.scions} {output.grafted_tree} &> {log.graft}
+
+                clusterfunk sort \
+                  --in-format newick \
+                  -i {output.grafted_tree} \
+                  --out-format newick \
+                  -o {output.ordered_tree} &> {log.sort}
+            """)
+
+    # shell:
+    #     """
+    #     clusterfunk graft \
+    #       --scions {input.scions} \
+    #       --scion-annotation-name scion_lineage \
+    #       --annotate-scions {params.lineages} \
+    #       --input {input.guide_tree} \
+    #       --out-format newick \
+    #       --output {output.grafted_tree} &> {log}
+    #
+    #     clusterfunk sort \
+    #       --in-format newick \
+    #       -i {output.grafted_tree} \
+    #       --out-format newick \
+    #       -o {output.ordered_tree} &>> {log}
+    #     """
 
 
 rule output_annotations:
