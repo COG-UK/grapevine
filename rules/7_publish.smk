@@ -209,7 +209,7 @@ rule combine_cog_gisaid:
           --in-fasta {input.cog_fasta} \
           --in-metadata {input.cog_metadata} \
           --index-column sequence_name \
-          --filter-column covv_accession_id \
+          --filter-column covv_accession_id central_sample_id biosample_source_id \
                           sequence_name sample_date epi_week \
                           country adm1 adm2 submission_org_code \
                           is_surveillance is_community is_hcw \
@@ -226,7 +226,7 @@ rule combine_cog_gisaid:
           --in-fasta {input.gisaid_fasta} \
           --in-metadata {input.gisaid_metadata} \
           --index-column sequence_name \
-          --filter-column covv_accession_id \
+          --filter-column covv_accession_id central_sample_id biosample_source_id \
                           sequence_name sample_date epi_week \
                           country adm1 adm2 submission_org_code \
                           is_surveillance is_community is_hcw \
@@ -284,36 +284,106 @@ rule publish_full_annotated_tree_and_metadata:
 
 rule publish_civet_data:
     input:
-        all_fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.full.masked.fasta",
-        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.fasta",
-        metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata
-        tree = config["output_path"] + "/5/cog_gisaid_full.tree.nexus",,
+        cog_all_fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.full.masked.fasta",
+        cog_fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.fasta",
+        cog_metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata,
+        combined_metadata = rules.combine_cog_gisaid.output.metadata,
+        combined_fasta = rules.combine_cog_gisaid.output.fasta,
+        tree = config["output_path"] + "/5/cog_gisaid_full.tree.nexus",
     output:
-        all_fasta = config["export_path"] + "/civet/cog_" + config["date"] + '_alignment_all.fasta',
-        fasta = config["export_path"] + "/civet/cog_" + config["date"] + '_alignment.fasta',
-        metadata = config["export_path"] + "/civet/cog_" + config["date"] + '_metadata.csv',
+        cog_all_fasta = config["export_path"] + "/civet/cog_" + config["date"] + '_alignment_all.fasta',
+        cog_all_metadata = config["export_path"] + "/civet/cog_" + config["date"] + '_metadata_all.csv',
+        cog_fasta = config["export_path"] + "/civet/cog_" + config["date"] + '_alignment.fasta',
+        cog_metadata = config["export_path"] + "/civet/cog_" + config["date"] + '_metadata.csv',
+        combined_metadata = config["export_path"] + "/civet/cog_global_" + config["date"] + '_metadata.csv',
+        combined_fasta = config["export_path"] + "/civet/cog_global_" + config["date"] + '_alignment.fasta',
         tree = config["export_path"] + "/civet/cog_global_"  + config["date"] +  "_tree.nexus",
     log:
         config["output_path"] + "/logs/7_publish_civet_data.log"
     shell:
         """
-        cp {input.all_fasta} {output.all_fasta} &>> {log}
         cp {input.tree} {output.tree} &>> {log}
 
         fastafunk fetch \
-          --in-fasta {input.fasta} \
-          --in-metadata {input.metadata} \
+          --in-fasta {input.cog_all_fasta} \
+          --in-metadata {input.cog_metadata} \
           --index-column sequence_name \
-          --filter-column sequence_name sample_date epi_week \
+          --filter-column central_sample_id biosample_source_id sequence_name \
+                          sample_date epi_week \
                           country adm1 adm2 outer_postcode \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
                           lineage_support uk_lineage acc_lineage del_lineage phylotype \
           --where-column epi_week=edin_epi_week country=adm0 \
                          sample_date=received_date sample_date=collection_date \
-          --out-fasta {output.fasta} \
-          --out-metadata {output.metadata} \
+          --out-fasta {output.cog_all_fasta} \
+          --out-metadata {output.cog_all_metadata} \
           --restrict &>> {log}
+
+        fastafunk fetch \
+          --in-fasta {input.cog_fasta} \
+          --in-metadata {input.cog_metadata} \
+          --index-column sequence_name \
+          --filter-column central_sample_id biosample_source_id sequence_name \
+                          sample_date epi_week \
+                          country adm1 adm2 outer_postcode \
+                          is_surveillance is_community is_hcw \
+                          is_travel_history travel_history lineage \
+                          lineage_support uk_lineage acc_lineage del_lineage phylotype \
+          --where-column epi_week=edin_epi_week country=adm0 \
+                         sample_date=received_date sample_date=collection_date \
+          --out-fasta {output.cog_fasta} \
+          --out-metadata {output.cog_metadata} \
+          --restrict &>> {log}
+
+        fastafunk fetch \
+          --in-fasta {input.combined_fasta} \
+          --in-metadata {input.combined_metadata} \
+          --index-column sequence_name \
+          --filter-column central_sample_id biosample_source_id sequence_name \
+                          sample_date epi_week \
+                          country adm1 adm2 outer_postcode \
+                          is_surveillance is_community is_hcw \
+                          is_travel_history travel_history lineage \
+                          lineage_support uk_lineage acc_lineage del_lineage phylotype \
+          --where-column epi_week=edin_epi_week country=adm0 \
+                         sample_date=received_date sample_date=collection_date \
+          --out-fasta {output.combined_fasta} \
+          --out-metadata {output.combined_metadata} \
+          --restrict &>> {log}
+        """
+
+
+rule cp_civet_data:
+    input:
+        cog_all_fasta = rules.publish_civet_data.output.cog_all_fasta,
+        cog_all_metadata = rules.publish_civet_data.output.cog_all_metadata,
+        cog_fasta = rules.publish_civet_data.output.cog_fasta,
+        cog_metadata = rules.publish_civet_data.output.cog_metadata,
+        combined_metadata = rules.publish_civet_data.output.combined_metadata,
+        combined_fasta = rules.publish_civet_data.output.combined_fasta,
+        tree = rules.publish_civet_data.output.tree,
+    output:
+        cog_all_fasta = "/cephfs/covid/bham/civet-cat/cog_alignment_all.fasta",
+        cog_all_metadata = "/cephfs/covid/bham/civet-cat/cog_metadata_all.csv",
+        cog_fasta = "/cephfs/covid/bham/civet-cat/cog_alignment.fasta",
+        cog_metadata = "/cephfs/covid/bham/civet-cat/cog_metadata.csv",
+        combined_metadata = "/cephfs/covid/bham/civet-cat/cog_global_metadata.csv",
+        combined_fasta = "/cephfs/covid/bham/civet-cat/cog_global_alignment.fasta",
+        tree = "/cephfs/covid/bham/civet-cat/cog_global_tree.nexus",
+    log:
+        config["output_path"] + "/logs/7_cp_civet_data.log"
+    shell:
+        """
+        cp {input.cog_all_fasta} {output.cog_all_fasta} &> {log}
+        cp {input.cog_all_metadata} {output.cog_all_metadata} &>> {log}
+        cp {input.cog_fasta} {output.cog_fasta} &>> {log}
+        cp {input.cog_metadata} {output.cog_metadata} &>> {log}
+        cp {input.combined_metadata} {output.combined_metadata} &>> {log}
+        cp {input.combined_fasta} {output.combined_fasta} &>> {log}
+        cp {input.tree} {output.tree} &>> {log}
+
+        chmod a+r /cephfs/covid/bham/civet-cat/*
         """
 
 
@@ -657,50 +727,54 @@ rule summarize_publish:
 
         log_uk_lineage_timetrees = rules.publish_time_trees.log,
 
-        log_civet = rules.publish_civet_data.log,
+        log_civet = rules.cp_civet_data.log,
     params:
+        date = config["date"],
+        parsed_date = config["date"].replace('-', ''),
+        export_path = config["export_path"],
         webhook = config["webhook"],
         uk_trees_path = config["export_path"] + "/trees/uk_lineages/",
-        civet_path = config["export_path"] + "/civet/",
+        local_civet_path = config["export_path"] + "/civet/",
         reports_path = config["export_path"] + "/reports/",
     log:
         config["output_path"] + "/logs/7_summarize_publish.log"
     shell:
         """
-        echo "> Reports published to {params.reports_path}\\n" >> {log}
-        echo "> \\n" >> {log}
-        echo "> Gisaid master metadata published to {input.GISAID_meta_master}\\n" >> {log}
-        echo "> COG master metadata published to {input.COG_meta_master}\\n" >> {log}
-        echo "> \\n" >> {log}
-        echo "> Unaligned (deduplicated, clean headers) COG sequences published to {input.COG_seq_all}\\n" >> {log}
-        echo "> \\n" >> {log}
-        echo "> Aligned (deduplicated, clean headers) COG sequences published to {input.COG_seq_all_aligned}\\n" >> {log}
-        echo "> Matching metadata published to {input.COG_meta_all_aligned}\\n" >> {log}
-        echo "> \\n" >> {log}
-        echo "> Filtered, aligned COG sequences published to {input.COG_seq_all_aligned_filtered}\\n" >> {log}
-        echo "> Matching metadata with lineage information published to {input.COG_meta_all_aligned_filtered}\\n" >> {log}
-        echo "> \\n" >> {log}
-        echo "> Full, annotated tree published to {input.COG_GISAID_nexus_tree}\\n" >> {log}
-        echo "> Matching metadata published to {input.COG_GISAID_meta}\\n" >> {log}
-        echo "> UK lineage subtrees published in {params.uk_trees_path}\\n" >> {log}
-        echo "> UK lineage timetrees published in {params.uk_trees_path}\\n" >> {log}
-        echo "> \\n" >> {log}
-        echo "> Public tree published to {input.public_COG_GISAID_newick_tree}\\n" >> {log}
-        echo "> Associated unaligned sequences published to {input.public_COG_GISAID_seq_all}\\n" >> {log}
-        echo "> Matching metadata with public fields only published to {input.public_COG_meta}\\n" >> {log}
-        echo "> \\n" >> {log}
-        echo "> Public tree for microreact published to {input.microreact_public_tree}\\n" >> {log}
-        echo "> Public metadata for microreact published to {input.microreact_public_metadata}\\n" >> {log}
-        echo "> Private metadata for microreact published to {input.microreact_private_metadata}\\n" >> {log}
-        echo "> \\n" >> {log}
-        echo "> Data for Civet published to {params.civet_path}\\n" >> {log}
+        rsync -r --chmod=660 {params.export_path}/ /cephfs/covid/bham/artifacts/published/{params.parsed_date}/phylogenetics
 
-        echo '{{"text":"' > 7_data.json
-        echo "*Step 7: publish data complete*\\n" >> 7_data.json
-        cat {log} >> 7_data.json
-        echo '"}}' >> 7_data.json
+        echo "> Phylogenetics pipeline output published to `/cephfs/covid/bham/artifacts/published/latest/phylogenetics/`\\n" >> {log}
+        echo "> \\n" >> {log}
+        echo "> Reports published to `reports/`\\n" >> {log}
+        echo "> \\n" >> {log}
+        echo "> Unaligned (deduplicated, clean headers) COG sequences published to `alignments/cog_{params.date}_all.fasta`\\n" >> {log}
+        echo "> \\n" >> {log}
+        echo "> Aligned (deduplicated, clean headers) COG sequences published to `alignments/cog_{params.date}_all_alignment.fasta`\\n" >> {log}
+        echo "> Matching metadata published to `alignments/cog_{params.date}_all_metadata.csv`\\n" >> {log}
+        echo "> \\n" >> {log}
+        echo "> Filtered, aligned COG sequences published to `alignments/cog_{params.date}_alignment.fasta`\\n" >> {log}
+        echo "> Matching metadata with lineage information published to `alignments/cog_{params.date}_metadata.csv`\\n" >> {log}
+        echo "> \\n" >> {log}
+        echo "> Full, annotated tree published to `trees/cog_{params.date}_tree.nexus`\\n" >> {log}
+        echo "> Matching metadata published to `trees/cog_global_{params.date}_metadata.csv`\\n" >> {log}
+        echo "> UK lineage subtrees published in `trees/uk_lineages/`\\n" >> {log}
+        echo "> UK lineage timetrees published in `trees/uk_lineages/`\\n" >> {log}
+        echo "> \\n" >> {log}
+        echo "> Public tree published to `public/cog_global_{params.date}_tree.newick`\\n" >> {log}
+        echo "> Associated unaligned sequences published to `alignments/cog_{params.date}_all.fasta`\\n" >> {log}
+        echo "> Matching metadata with public fields only published to `public/cog_{params.date}_metadata.csv`\\n" >> {log}
+        echo "> \\n" >> {log}
+        echo "> Public tree for microreact published to `microreact/cog_global_{params.date}_tree_public.newick`\\n" >> {log}
+        echo "> Public metadata for microreact published to `microreact/cog_global_{params.date}_metadata_public.csv`\\n" >> {log}
+        echo "> Private metadata for microreact published to `microreact/cog_global_{params.date}_metadata_private.csv`\\n" >> {log}
+        echo "> \\n" >> {log}
+        echo "> Data for Civet published to `/cephfs/covid/bham/civet-cat/`\\n" >> {log}
+
+        echo '{{"text":"' > publish_data.json
+        echo "*Phylogenetic pipeline complete*\\n" >> publish_data.json
+        cat {log} >> publish_data.json
+        echo '"}}' >> publish_data.json
         echo 'webhook {params.webhook}'
-        curl -X POST -H "Content-type: application/json" -d @7_data.json {params.webhook}
+        curl -X POST -H "Content-type: application/json" -d @publish_data.json {params.webhook}
         """
 
 

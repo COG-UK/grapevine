@@ -135,7 +135,7 @@ rule gisaid_remove_insertions_and_pad:
           -o {output} \
           -t [{params.trim_start}:{params.trim_end}] \
           --pad \
-          --log-all-inserts &> {log}
+          --log-inserts &> {log}
 
         mv insertions.txt {params.insertions}
         """
