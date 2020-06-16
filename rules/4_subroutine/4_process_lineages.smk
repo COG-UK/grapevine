@@ -174,7 +174,6 @@ rule label_deltran_introductions:
           --stubborn \
           --input {input.tree} \
           --output {output.tree} &> {log}
-
         """
 
 rule merge_sibling_acc_introduction:
@@ -226,17 +225,15 @@ rule merge_sibling_del_introduction:
 # now outputs a newick tree for publication. The private nexus tree will be made in stage 5.
 rule graft:
     input:
-         # not sure how to pass this as a space separated list below. Also assuming the order here matches lineages
+        # not sure how to pass this as a space separated list below. Also assuming the order here matches lineages
         scions = expand(config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.del.acc_labelled.del_labelled.acc_merged.del_merged.tree", lineage=sorted(LINEAGES)),
         guide_tree = config["guide_tree"]
     params:
         lineages = sorted(LINEAGES),
     output:
         grafted_tree = config["output_path"] + '/4/cog_gisaid_full.tree.unordered.public.newick',
-        ordered_tree = config["output_path"] + '/4/cog_gisaid_full.tree.public.newick',
     log:
-        graft = config["output_path"] + "/logs/4_graft.log",
-        sort = config["output_path"] + "/logs/4_graft.log",
+        config["output_path"] + "/logs/4_graft.log",
     run:
         if len(input.scions) > 1:
             shell("""
@@ -246,25 +243,30 @@ rule graft:
                   --annotate-scions {params.lineages} \
                   --input {input.guide_tree} \
                   --out-format newick \
-                  --output {output.grafted_tree} &> {log.graft}
-
-                clusterfunk sort \
-                  --in-format newick \
-                  -i {output.grafted_tree} \
-                  --out-format newick \
-                  -o {output.ordered_tree} &> {log.sort}
+                  --output {output.grafted_tree} &> {log}
                 """)
 
         else:
             shell("""
-                cp {input.scions} {output.grafted_tree} &> {log.graft}
-
-                clusterfunk sort \
-                  --in-format newick \
-                  -i {output.grafted_tree} \
+                clusterfunk reformat \
+                  -i {input.scions} \
+                  --in-format nexus \
                   --out-format newick \
-                  -o {output.ordered_tree} &> {log.sort}
+                  -o {output.grafted_tree} &> {log}
             """)
+
+
+rule sort:
+    input:
+        grafted_tree = rules.graft.output.grafted_tree,
+    output:
+        sorted_tree = config["output_path"] + '/4/cog_gisaid_full.tree.public.newick',
+    log:
+        config["output_path"] + "/logs/4_sort.log",
+    shell:
+        """
+        gotree rotate sort -i {input.grafted_tree} -o {output.sorted_tree} &> {log}
+        """
 
     # shell:
     #     """
