@@ -234,9 +234,5 @@ rule annotate_phylotypes:
           --input {input.tree} \
           --output {output.annotated_tree} &> {log}
 
-        clusterfunk sort \
-          --in-format nexus \
-          -i {output.annotated_tree} \
-          --out-format nexus \
-          -o {output.ordered_tree} &>> {log}
+        gotree rotate sort --format nexus -i {output.annotated_tree} | gotree reformat nexus -o {output.ordered_tree} &>> {log}
         """
