@@ -109,7 +109,7 @@ rule acctran_ancestral_reconstruction:
         clusterfunk ancestral_reconstruction \
         --traits country_uk_acctran \
         --acctran \
-        --ancestral_state False \
+        --ancestral-state False \
         --input {input.tree} \
         --output {output.tree} &> {log}
         """
@@ -128,7 +128,7 @@ rule deltran_ancestral_reconstruction:
         clusterfunk ancestral_reconstruction \
         --traits country_uk_deltran \
         --deltran \
-        --ancestral_state False \
+        --ancestral-state False \
         --input {input.tree} \
         --output {output.tree} &> {log}
         """
@@ -191,8 +191,7 @@ rule merge_sibling_acc_introduction:
         clusterfunk merge_transitions \
           --trait-to-merge acc_introduction \
           --merged-trait-name acc_lineage \
-          --max-merge 1 \
-          --prefix {params.lineage}_ \
+          --merge-siblings
           --input {input.tree} \
           --output {output.tree} &> {log}
         """
@@ -213,8 +212,7 @@ rule merge_sibling_del_introduction:
         clusterfunk merge_transitions \
           --trait-to-merge del_introduction \
           --merged-trait-name del_lineage \
-          --max-merge 1 \
-          --prefix {params.lineage}_ \
+          --merge-siblings \
           --input {input.tree} \
           --output {output.tree} &> {log}
 
