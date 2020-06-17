@@ -1,5 +1,5 @@
 # grapevine
-phylogenetic pipeline for the COG-UK project
+Phylogenetic pipeline for the COG-UK project
 
 ## Install
 ```
@@ -8,7 +8,7 @@ conda install -f environment.yml
 conda activate grapevine
 ```
 
-## The pipeline
+## The pipeline - in brief
 
 0) Process latest GISAID data 
 
@@ -164,3 +164,21 @@ ge_support,uk_lineage,acc_lineage,del_lineage,phylotype`
 > 
 > Columns:
 > `central_sample_id,biosample_source_id,sequence_name,sample_date,epi_week,country,adm1,adm2,outer_postcode,is_surveillance,is_community,is_hcw,is_travel_history,travel_history,lineage,lineage_support,uk_lineage,acc_lineage,del_lineage,phylotype`
+
+## Acknowledgements
+
+Grapevine uses the following tools:
+
+```
+bioconda
+conda
+biopython
+minimap2
+python
+snakemake
+pandoc
+fasttree
+gotree
+TreeTime (https://github.com/neherlab/treetime)
+Pangolin (https://github.com/hCoV-2019/pangolin)
+```
