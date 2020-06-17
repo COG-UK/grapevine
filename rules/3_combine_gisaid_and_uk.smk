@@ -28,8 +28,6 @@ rule summarize_combine_gisaid_and_cog:
         metadata = rules.combine_gisaid_and_cog.output.metadata,
     params:
         webhook = config["webhook"],
-        # outdir = config["publish_path"] + "/COG_GISAID",
-        # prefix = config["publish_path"] + "/COG_GISAID/cog_gisaid",
     log:
         config["output_path"] + "/logs/3_summarize_combine_gisaid_and_cog.log"
     shell:
@@ -45,10 +43,3 @@ rule summarize_combine_gisaid_and_cog:
         echo "webhook {params.webhook}"
         curl -X POST -H "Content-type: application/json" -d @3_data.json {params.webhook}
         """
-
-
-        # mkdir -p {params.outdir}
-        # cp {input.fasta} {params.prefix}_alignment.trimmed.fasta
-        # cp {input.metadata} {params.prefix}_metadata.csv
-        # echo "> Combined COG and GISAID trimmed alignments published to _{params.prefix}_alignment.trimmed.fasta_\\n" >> {log}
-        # echo "> Combined COG and GISAID restricted metadata published to _{params.prefix}_metadata.csv_\\n" >> {log}
