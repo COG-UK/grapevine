@@ -382,8 +382,6 @@ rule cp_civet_data:
         cp {input.combined_metadata} {output.combined_metadata} &>> {log}
         cp {input.combined_fasta} {output.combined_fasta} &>> {log}
         cp {input.tree} {output.tree} &>> {log}
-
-        chmod a+r /cephfs/covid/bham/civet-cat/*
         """
 
 
@@ -587,7 +585,7 @@ rule publish_full_report:
             -V geometry:margin=2cm \
             -V mainfont="Helvetica Neue" \
             -V monofont="Helvetica Neue" \
-            -V fontsize=10pt \
+            -V fontsize=9pt \
             --template={params.template} \
             --latex-engine=pdflatex \
             -o {output.outdir}UK_report.pdf &>> {log}
@@ -627,7 +625,7 @@ rule publish_adm1_reports:
             -V geometry:margin=2cm \
             -V mainfont="Helvetica Neue" \
             -V monofont="Helvetica Neue" \
-            -V fontsize=10pt \
+            -V fontsize=9pt \
             --template={params.template} \
             --latex-engine=pdflatex \
             -o {output.outdir}{wildcards.adm1}.pdf &>> {log}
@@ -667,7 +665,7 @@ rule publish_sc_reports:
             -V geometry:margin=2cm \
             -V mainfont="Helvetica Neue" \
             -V monofont="Helvetica Neue" \
-            -V fontsize=10pt \
+            -V fontsize=9pt \
             --template={params.template} \
             --latex-engine=pdflatex \
             -o {output.outdir}report_{wildcards.sc}.pdf &>> {log}
@@ -740,34 +738,34 @@ rule summarize_publish:
         config["output_path"] + "/logs/7_summarize_publish.log"
     shell:
         """
-        rsync -r --chmod=660 {params.export_path}/ /cephfs/covid/bham/artifacts/published/{params.parsed_date}/phylogenetics
+        rsync -r {params.export_path}/ /cephfs/covid/bham/artifacts/published/{params.parsed_date}/phylogenetics
 
-        echo "> Phylogenetics pipeline output published to `/cephfs/covid/bham/artifacts/published/latest/phylogenetics/`\\n" >> {log}
+        echo "> Phylogenetics pipeline output published to \`/cephfs/covid/bham/artifacts/published/latest/phylogenetics/\`\\n" >> {log}
         echo "> \\n" >> {log}
-        echo "> Reports published to `reports/`\\n" >> {log}
+        echo "> Reports published to \`reports/\`\\n" >> {log}
         echo "> \\n" >> {log}
-        echo "> Unaligned (deduplicated, clean headers) COG sequences published to `alignments/cog_{params.date}_all.fasta`\\n" >> {log}
+        echo "> Unaligned (deduplicated, clean headers) COG sequences published to \`alignments/cog_{params.date}_all.fasta\`\\n" >> {log}
         echo "> \\n" >> {log}
-        echo "> Aligned (deduplicated, clean headers) COG sequences published to `alignments/cog_{params.date}_all_alignment.fasta`\\n" >> {log}
-        echo "> Matching metadata published to `alignments/cog_{params.date}_all_metadata.csv`\\n" >> {log}
+        echo "> Aligned (deduplicated, clean headers) COG sequences published to \`alignments/cog_{params.date}_all_alignment.fasta\`\\n" >> {log}
+        echo "> Matching metadata published to \`alignments/cog_{params.date}_all_metadata.csv\`\\n" >> {log}
         echo "> \\n" >> {log}
-        echo "> Filtered, aligned COG sequences published to `alignments/cog_{params.date}_alignment.fasta`\\n" >> {log}
-        echo "> Matching metadata with lineage information published to `alignments/cog_{params.date}_metadata.csv`\\n" >> {log}
+        echo "> Filtered, aligned COG sequences published to \`alignments/cog_{params.date}_alignment.fasta\`\\n" >> {log}
+        echo "> Matching metadata with lineage information published to \`alignments/cog_{params.date}_metadata.csv\`\\n" >> {log}
         echo "> \\n" >> {log}
-        echo "> Full, annotated tree published to `trees/cog_{params.date}_tree.nexus`\\n" >> {log}
-        echo "> Matching metadata published to `trees/cog_global_{params.date}_metadata.csv`\\n" >> {log}
-        echo "> UK lineage subtrees published in `trees/uk_lineages/`\\n" >> {log}
-        echo "> UK lineage timetrees published in `trees/uk_lineages/`\\n" >> {log}
+        echo "> Full, annotated tree published to \`trees/cog_{params.date}_tree.nexus\`\\n" >> {log}
+        echo "> Matching metadata published to \`trees/cog_global_{params.date}_metadata.csv\`\\n" >> {log}
+        echo "> UK lineage subtrees published in \`trees/uk_lineages/\`\\n" >> {log}
+        echo "> UK lineage timetrees published in \`trees/uk_lineages/\`\\n" >> {log}
         echo "> \\n" >> {log}
-        echo "> Public tree published to `public/cog_global_{params.date}_tree.newick`\\n" >> {log}
-        echo "> Associated unaligned sequences published to `alignments/cog_{params.date}_all.fasta`\\n" >> {log}
-        echo "> Matching metadata with public fields only published to `public/cog_{params.date}_metadata.csv`\\n" >> {log}
+        echo "> Public tree published to \`public/cog_global_{params.date}_tree.newick\`\\n" >> {log}
+        echo "> Associated unaligned sequences published to \`alignments/cog_{params.date}_all.fasta\`\\n" >> {log}
+        echo "> Matching metadata with public fields only published to \`public/cog_{params.date}_metadata.csv\`\\n" >> {log}
         echo "> \\n" >> {log}
-        echo "> Public tree for microreact published to `microreact/cog_global_{params.date}_tree_public.newick`\\n" >> {log}
-        echo "> Public metadata for microreact published to `microreact/cog_global_{params.date}_metadata_public.csv`\\n" >> {log}
-        echo "> Private metadata for microreact published to `microreact/cog_global_{params.date}_metadata_private.csv`\\n" >> {log}
+        echo "> Public tree for microreact published to \`microreact/cog_global_{params.date}_tree_public.newick\`\\n" >> {log}
+        echo "> Public metadata for microreact published to \`microreact/cog_global_{params.date}_metadata_public.csv\`\\n" >> {log}
+        echo "> Private metadata for microreact published to \`microreact/cog_global_{params.date}_metadata_private.csv\`\\n" >> {log}
         echo "> \\n" >> {log}
-        echo "> Data for Civet published to `/cephfs/covid/bham/civet-cat/`\\n" >> {log}
+        echo "> Data for Civet published to \`/cephfs/covid/bham/civet-cat/\`\\n" >> {log}
 
         echo '{{"text":"' > publish_data.json
         echo "*Phylogenetic pipeline complete*\\n" >> publish_data.json
@@ -776,6 +774,7 @@ rule summarize_publish:
         echo 'webhook {params.webhook}'
         curl -X POST -H "Content-type: application/json" -d @publish_data.json {params.webhook}
         """
+
 
 
 
