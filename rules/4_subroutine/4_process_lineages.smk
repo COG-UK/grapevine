@@ -181,7 +181,6 @@ rule merge_sibling_acc_introduction:
         tree = rules.label_deltran_introductions.output.tree
     params:
         lineage = "{lineage}",
-
     output:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.del.acc_labelled.del_labelled.acc_merged.tree"
     log:
@@ -191,7 +190,7 @@ rule merge_sibling_acc_introduction:
         clusterfunk merge_transitions \
           --trait-to-merge acc_introduction \
           --merged-trait-name acc_lineage \
-          --merge-siblings
+          --merge-siblings \
           --input {input.tree} \
           --output {output.tree} &> {log}
         """
