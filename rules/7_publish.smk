@@ -419,7 +419,7 @@ rule publish_uk_lineage_specific_fasta_and_metadata_files:
         """
 
 
-LIN,X = glob_wildcards(config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}.tree")
+X = glob_wildcards(config["output_path"] + "/5/trees/uk_lineage_UK{i}.tree").i
 
 rule summarize_publish_uk_lineage_specific_fasta_and_metadata_files:
     input:
