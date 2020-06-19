@@ -302,6 +302,45 @@ rule add_snp_finder_result_to_metadata:
         """
 
 
+rule uk_del_finder:
+    input:
+        fasta = rules.uk_mask_2.output.fasta,
+        dels = config["dels"]
+    output:
+        metadata = config["output_path"] + "/1/cog.del_finder.csv",
+    log:
+        config["output_path"] + "/logs/1_uk_del_finder.log"
+    shell:
+        """
+        datafunk del_finder \
+            -i {input.fasta} \
+            --deletions-file {input.dels} \
+            --genotypes-table {output.metadata} &> {log}
+        """
+
+
+rule uk_add_del_finder_result_to_metadata:
+    input:
+        dels = config["dels"],
+        metadata = rules.add_snp_finder_result_to_metadata.output.metadata,
+        new_data = rules.uk_del_finder.output.metadata
+    output:
+        metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.with_snp_finder.with_del_finder.csv"
+    log:
+        config["output_path"] + "/logs/1_add_del_finder_result_to_metadata.log"
+    shell:
+        """
+        columns=$(head -n1 {input.new_data} | cut -d',' -f2-)
+        fastafunk add_columns \
+          --in-metadata {input.metadata} \
+          --in-data {input.new_data} \
+          --index-column sequence_name \
+          --join-on sequence_name \
+          --new-columns "$columns" \
+          --out-metadata {output.metadata} &>> {log}
+        """
+
+
 """
 Instead of new sequences (as determined by a date stamp), it might be more robust
 to extract sequences for lineage typing that don't currently have an associated
@@ -309,7 +348,7 @@ lineage designation in the metadata file.
 """
 rule uk_add_previous_lineages_to_metadata:
     input:
-        metadata = rules.add_snp_finder_result_to_metadata.output.metadata,
+        metadata = rules.uk_add_del_finder_result_to_metadata.output.metadata,
         previous_metadata = config["previous_uk_metadata"],
         global_lineages = config["global_lineages"]
     output:
