@@ -152,7 +152,7 @@ rule publish_full_aligned_cog_data:
               sequencing_org sequencing_org_code sequencing_submission_date sequencing_uuid \
               source_age source_sex start_time \
               submission_org submission_org_code submission_user swab_site \
-              header sequence_name length missing gaps cov_id subsample_omit edin_epi_week d614g \
+              header sequence_name length missing gaps cov_id subsample_omit edin_epi_week d614g del_1605_3 \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --restrict &> {log}
@@ -214,7 +214,7 @@ rule combine_cog_gisaid:
                           country adm1 adm2 submission_org_code \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
-                          lineage_support uk_lineage microreact_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype d614g \
+                          lineage_support uk_lineage microreact_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype d614g del_1605_3 \
           --where-column epi_week=edin_epi_week country=adm0 \
                          sample_date=received_date sample_date=collection_date \
           --out-fasta {params.intermediate_cog_fasta} \
@@ -231,7 +231,7 @@ rule combine_cog_gisaid:
                           country adm1 adm2 submission_org_code \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
-                          lineage_support uk_lineage microreact_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype d614g \
+                          lineage_support uk_lineage microreact_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype d614g del_1605_3 \
           --where-column uk_omit=is_uk sample_date=covv_collection_date epi_week=edin_epi_week \
                          country=edin_admin_0 travel_history=edin_travel \
           --out-fasta {params.intermediate_gisaid_fasta} \
