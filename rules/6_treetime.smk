@@ -15,6 +15,7 @@ rule treetime:
         directory = directory(config["output_path"] + "/6/{lineage}/trees/uk_lineage_UK{i}_timetree/")
     log:
         config["output_path"] + "/logs/6_timetree_run_lineage{lineage}_uk{i}.log"
+    resources: mem_per_cpu=10000
     shell:
         """
         sed "s/'//g" {input.tree} > {output.tree}
