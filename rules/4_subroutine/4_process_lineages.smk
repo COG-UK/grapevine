@@ -69,157 +69,6 @@ rule root_tree:
         """
 
 
-rule annotate_tree:
-    input:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.tree",
-        metadata = config["metadata"]
-    params:
-        lineage = "{lineage}",
-        collapse=0.000005,
-    output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.tree"
-    log:
-        config["output_path"] + "/logs/4_annotate_{lineage}.log"
-    shell:
-        """
-        clusterfunk annotate_tips \
-          --in-metadata {input.metadata} \
-          --trait-columns country uk_lineage \
-          --index-column sequence_name \
-          --boolean-for-trait country='UK' country='UK' country='UK' country='UK' \
-          --boolean-trait-names country_uk country_uk_acctran country_uk_deltran \
-          --in-format newick \
-          --out-format nexus \
-          --collapse_to_polytomies {params.collapse} \
-          --input {input.tree} \
-          --output {output.tree} &> {log}
-        """
-
-rule acctran_ancestral_reconstruction:
-    input:
-        tree = rules.annotate_tree.output.tree
-    params:
-        lineage = "{lineage}",
-    output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.tree"
-    log:
-        config["output_path"] + "/logs/4_acctran_ancestral_reconstruction_{lineage}.log"
-    shell:
-        """
-        clusterfunk ancestral_reconstruction \
-        --traits country_uk_acctran \
-        --acctran \
-        --ancestral-state False \
-        --input {input.tree} \
-        --output {output.tree} &> {log}
-        """
-
-rule deltran_ancestral_reconstruction:
-    input:
-        tree = rules.acctran_ancestral_reconstruction.output.tree
-    params:
-        lineage = "{lineage}",
-    output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.del.tree"
-    log:
-        config["output_path"] + "/logs/4_deltran_ancestral_reconstruction_{lineage}.log"
-    shell:
-        """
-        clusterfunk ancestral_reconstruction \
-        --traits country_uk_deltran \
-        --deltran \
-        --ancestral-state False \
-        --input {input.tree} \
-        --output {output.tree} &> {log}
-        """
-
-rule label_acctran_introductions:
-    input:
-        tree = rules.deltran_ancestral_reconstruction.output.tree
-    params:
-        lineage = "{lineage}",
-    output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.del.acc_labelled.tree"
-    log:
-        config["output_path"] + "/logs/4_label_acctran_introductions_{lineage}.log"
-    shell:
-        """
-        clusterfunk label_transitions \
-          --trait country_uk_acctran \
-          --to True \
-          --transition-name acc_introduction \
-          --transition-prefix {params.lineage}_ \
-          --include_root \
-          --stubborn \
-          --input {input.tree} \
-          --output {output.tree} &> {log}
-        """
-
-rule label_deltran_introductions:
-    input:
-        tree = rules.label_acctran_introductions.output.tree
-    params:
-        lineage = "{lineage}",
-    output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.del.acc_labelled.del_labelled.tree"
-    log:
-        config["output_path"] + "/logs/4_label_deltran_introductions_{lineage}.log"
-    shell:
-        """
-        clusterfunk label_transitions \
-          --trait country_uk_deltran \
-          --to True \
-          --transition-name del_introduction \
-          --transition-prefix {params.lineage}_ \
-          --stubborn \
-          --input {input.tree} \
-          --output {output.tree} &> {log}
-        """
-
-rule merge_sibling_acc_introduction:
-    input:
-        tree = rules.label_deltran_introductions.output.tree
-    params:
-        lineage = "{lineage}",
-    output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.del.acc_labelled.del_labelled.acc_merged.tree"
-    log:
-        config["output_path"] + "/logs/4_merge_acctran_introductions_{lineage}.log"
-    shell:
-        """
-        clusterfunk merge_transitions \
-          --trait-to-merge acc_introduction \
-          --merged-trait-name acc_lineage \
-          --merge-siblings \
-          --input {input.tree} \
-          --output {output.tree} &> {log}
-        """
-
-rule merge_sibling_del_introduction:
-    input:
-        tree = rules.merge_sibling_acc_introduction.output.tree
-    params:
-        lineage = "{lineage}",
-        outdir = config["publish_path"] + "/COG_GISAID",
-        prefix = config["publish_path"] + "/COG_GISAID/cog_gisaid"
-    output:
-        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.del.acc_labelled.del_labelled.acc_merged.del_merged.tree"
-    log:
-        config["output_path"] + "/logs/4_merge_deltran_introductions_{lineage}.log"
-    shell:
-        """
-        clusterfunk merge_transitions \
-          --trait-to-merge del_introduction \
-          --merged-trait-name del_lineage \
-          --merge-siblings \
-          --input {input.tree} \
-          --output {output.tree} &> {log}
-
-        mkdir -p {params.outdir}
-        cp {output.tree} {params.prefix}_lineage_{params.lineage}.tree
-        """
-
-# now outputs a newick tree for publication. The private nexus tree will be made in stage 5.
 rule graft:
     input:
         # not sure how to pass this as a space separated list below. Also assuming the order here matches lineages
@@ -228,7 +77,7 @@ rule graft:
     params:
         lineages = sorted(LINEAGES),
     output:
-        grafted_tree = config["output_path"] + '/4/cog_gisaid_full.tree.unordered.public.newick',
+        grafted_tree = config["output_path"] + '/4/cog_gisaid_grafted.tree',
     log:
         config["output_path"] + "/logs/4_graft.log",
     run:
@@ -247,11 +96,10 @@ rule graft:
             shell("""
                 clusterfunk reformat \
                   -i {input.scions} \
-                  --in-format nexus \
+                  --in-format newick \
                   --out-format newick \
                   -o {output.grafted_tree} &> {log}
             """)
-
 
 rule sort:
     input:
@@ -264,6 +112,145 @@ rule sort:
         """
         gotree rotate sort -i {input.grafted_tree} -o {output.sorted_tree} &> {log}
         """
+
+rule annotate_tree:
+    input:
+        tree = rules.graft.output.grafted_tree,
+        metadata = config["metadata"]
+    params:
+        collapse=0.000005,
+    output:
+        tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.tree"
+    log:
+        config["output_path"] + "/logs/4_annotate_tree.log"
+    shell:
+        """
+        clusterfunk annotate_tips \
+          --in-metadata {input.metadata} \
+          --trait-columns country uk_lineage \
+          --index-column sequence_name \
+          --boolean-for-trait country='UK' country='UK' country='UK' country='UK' \
+          --boolean-trait-names country_uk country_uk_acctran country_uk_deltran \
+          --in-format newick \
+          --out-format nexus \
+          --collapse_to_polytomies {params.collapse} \
+          --input {input.tree} \
+          --output {output.tree} &> {log}
+        """
+
+rule acctran_ancestral_reconstruction:
+    input:
+        tree = rules.annotate_tree.output.tree
+    output:
+        tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.acc.tree"
+    log:
+        config["output_path"] + "/logs/4_acctran_ancestral_reconstruction.log"
+    shell:
+        """
+        clusterfunk ancestral_reconstruction \
+        --traits country_uk_acctran \
+        --acctran \
+        --ancestral-state False \
+        --input {input.tree} \
+        --output {output.tree} &> {log}
+        """
+
+rule deltran_ancestral_reconstruction:
+    input:
+        tree = rules.acctran_ancestral_reconstruction.output.tree
+    output:
+        tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.acc.del.tree"
+    log:
+        config["output_path"] + "/logs/4_deltran_ancestral_reconstruction.log"
+    shell:
+        """
+        clusterfunk ancestral_reconstruction \
+        --traits country_uk_deltran \
+        --deltran \
+        --ancestral-state False \
+        --input {input.tree} \
+        --output {output.tree} &> {log}
+        """
+
+rule label_acctran_introductions:
+    input:
+        tree = rules.deltran_ancestral_reconstruction.output.tree
+    output:
+        tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.acc.del.acc_labelled.tree"
+    log:
+        config["output_path"] + "/logs/4_label_acctran_introductions.log"
+    shell:
+        """
+        clusterfunk label_transitions \
+          --trait country_uk_acctran \
+          --to True \
+          --transition-name acc_introduction \
+          --transition-prefix acc_trans_ \
+          --include_root \
+          --stubborn \
+          --input {input.tree} \
+          --output {output.tree} &> {log}
+        """
+
+rule label_deltran_introductions:
+    input:
+        tree = rules.label_acctran_introductions.output.tree
+    output:
+        tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.acc.del.acc_labelled.del_labelled.tree"
+    log:
+        config["output_path"] + "/logs/4_label_deltran_introductions.log"
+    shell:
+        """
+        clusterfunk label_transitions \
+          --trait country_uk_deltran \
+          --to True \
+          --transition-name del_introduction \
+          --transition-prefix del_trans_ \
+          --stubborn \
+          --input {input.tree} \
+          --output {output.tree} &> {log}
+        """
+
+rule merge_sibling_acc_introduction:
+    input:
+        tree = rules.label_deltran_introductions.output.tree
+    output:
+        tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.acc.del.acc_labelled.del_labelled.acc_merged.tree"
+    log:
+        config["output_path"] + "/logs/4_merge_acctran_introductions.log"
+    shell:
+        """
+        clusterfunk merge_transitions \
+          --trait-to-merge acc_introduction \
+          --merged-trait-name acc_lineage \
+          --merge-siblings \
+          --input {input.tree} \
+          --output {output.tree} &> {log}
+        """
+
+rule merge_sibling_del_introduction:
+    input:
+        tree = rules.merge_sibling_acc_introduction.output.tree
+    params:
+        outdir = config["publish_path"] + "/COG_GISAID",
+        prefix = config["publish_path"] + "/COG_GISAID/cog_gisaid"
+    output:
+        tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.acc.del.acc_labelled.del_labelled.acc_merged.del_merged.tree"
+    log:
+        config["output_path"] + "/logs/4_merge_deltran_introductions.log"
+    shell:
+        """
+        clusterfunk merge_transitions \
+          --trait-to-merge del_introduction \
+          --merged-trait-name del_lineage \
+          --merge-siblings \
+          --input {input.tree} \
+          --output {output.tree} &> {log}
+
+        mkdir -p {params.outdir}
+        cp {output.tree} {params.prefix}_lineage_{params.lineage}.tree
+        """
+
 
     # shell:
     #     """
@@ -286,12 +273,10 @@ rule sort:
 rule output_annotations:
     input:
         tree = rules.merge_sibling_del_introduction.output.tree,
-    params:
-        lineage = "{lineage}",
     output:
-        traits = config["output_path"] + "/4/{lineage}/traits.csv"
+        traits = config["output_path"] + "/4/all_traits.csv"
     log:
-        config["output_path"] + "/logs/4_output_annotations_{lineage}.log"
+        config["output_path"] + "/logs/4_output_annotations.log"
     shell:
         """
         clusterfunk extract_tip_annotations \
@@ -299,15 +284,3 @@ rule output_annotations:
           --input {input.tree} \
           --output {output.traits} &> {log}
         """
-
-rule combine_traits_files:
-    input:
-        list_df = expand(config["output_path"] + "/4/{lineage}/traits.csv", lineage=LINEAGES)
-    output:
-        traits = config["output_path"] + "/4/all_traits.csv"
-    log:
-        config["output_path"] + "/logs/4_combine_traits_files.log"
-    run:
-        dfs = [pd.read_csv(x) for x in input.list_df]
-        result = pd.concat(dfs)
-        result.to_csv(output[0], index=False)
