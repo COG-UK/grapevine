@@ -67,6 +67,7 @@ checkpoint cut_out_trees:
           fi
         """
 
+
 rule phylotype_cut_trees:
     input:
         tree=config["output_path"] + "/5/trees/uk_lineage_UK{i}.tree"
@@ -103,13 +104,12 @@ rule get_uk_phylotypes_csv:
         """
 
 
-# def aggregate_input_csv(wildcards):
-#     checkpoint_output_directory = checkpoints.cut_out_trees.get(**wildcards).output[0]
-#     print(checkpoints.cut_out_trees.get(**wildcards).output[0])
-#     lineage = wildcards.lineage
-#     required_files = expand( "%s/5/%s/phylotyped_trees/uk_lineage_UK{i}.csv" %(config["output_path"],lineage),
-#                             i=glob_wildcards(os.path.join(checkpoint_output_directory, "uk_lineage_UK{i}.tree")).i)
-#     return (required_files)
+def aggregate_input_csv(wildcards):
+    checkpoint_output_directory = checkpoints.cut_out_trees.get(**wildcards).output[0]
+    print(checkpoints.cut_out_trees.get(**wildcards).output[0])
+    required_files = expand( "%s/5/phylotyped_trees/uk_lineage_UK{i}.csv" %(config["output_path"]),
+                            i=glob_wildcards(os.path.join(checkpoint_output_directory, "uk_lineage_UK{i}.tree")).i)
+    return (required_files)
 #
 # def aggregate_input_trees(wildcards):
 #     checkpoint_output_directory = checkpoints.cut_out_trees.get(**wildcards).output[0]
@@ -125,9 +125,11 @@ rule get_uk_phylotypes_csv:
 #     labels = expand( "UK{i}",i=glob_wildcards(os.path.join(checkpoint_output_directory, "uk_lineage_UK{i}.tree")).i)
 #     return (sorted(labels))
 
+
+
 rule combine_phylotypes_csv:
     input:
-        files = config["output_path"] + "/5/phylotyped_trees/uk_lineage_UK{i}.csv"
+        files=aggregate_input_csv
     output:
         phylotype_csv=config["output_path"] + "/5/UK_phylotypes.csv"
     log:

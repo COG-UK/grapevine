@@ -72,7 +72,7 @@ rule root_tree:
 rule graft:
     input:
         # not sure how to pass this as a space separated list below. Also assuming the order here matches lineages
-        scions = expand(config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.del.acc_labelled.del_labelled.acc_merged.del_merged.tree", lineage=sorted(LINEAGES)),
+        scions = expand(config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.tree", lineage=sorted(LINEAGES)),
         guide_tree = config["guide_tree"]
     params:
         lineages = sorted(LINEAGES),
@@ -88,6 +88,7 @@ rule graft:
                   --scion-annotation-name scion_lineage \
                   --annotate-scions {params.lineages} \
                   --input {input.guide_tree} \
+                  --in-format newick \
                   --out-format newick \
                   --output {output.grafted_tree} &> {log}
                 """)
@@ -233,7 +234,6 @@ rule merge_sibling_del_introduction:
         tree = rules.merge_sibling_acc_introduction.output.tree
     params:
         outdir = config["publish_path"] + "/COG_GISAID",
-        prefix = config["publish_path"] + "/COG_GISAID/cog_gisaid"
     output:
         tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.acc.del.acc_labelled.del_labelled.acc_merged.del_merged.tree"
     log:
@@ -248,7 +248,6 @@ rule merge_sibling_del_introduction:
           --output {output.tree} &> {log}
 
         mkdir -p {params.outdir}
-        cp {output.tree} {params.prefix}_lineage_{params.lineage}.tree
         """
 
 
