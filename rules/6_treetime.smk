@@ -61,7 +61,7 @@ UK = glob_wildcards(config["output_path"] + "/5/trees/uk_lineage_UK{i}.tree").i
 
 rule summarize_treetime:
     input:
-        expand(config["output_path"] + "/logs/6_timetree_run_lineage_uk{i}.log", i = UK)
+        expand(config["output_path"] + "/logs/6_timetree_run_uk{i}.log", i = UK)
     params:
         webhook = config["webhook"],
     log:

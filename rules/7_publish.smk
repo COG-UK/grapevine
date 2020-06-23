@@ -549,7 +549,7 @@ rule publish_time_trees:
         config["output_path"] + "/logs/7_publish_time_trees.log"
     shell:
         """
-        for DIR in {params.treedir}*/trees/*timetree/
+        for DIR in {params.treedir}trees/*timetree/
         do
             FILECOUNT=$(ls $DIR | wc -l)
             if [ $FILECOUNT -gt 0 ]

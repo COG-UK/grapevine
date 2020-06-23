@@ -96,7 +96,6 @@ rule run_5_subroutine_on_lineages:
     threads: 40
     shell:
         """
-        lineages=$(cat {input.lineage} | cut -f1 -d"," | tr '\\n' '  ')
         snakemake --nolock \
           --snakefile {params.path_to_script}/5_subroutine/5_process_lineages.smk \
           --cores {threads} \
