@@ -8,10 +8,6 @@ import pandas as pd
 
 config["publish_path"] = os.path.abspath(config["publish_path"])
 
-LINEAGES = config["lineages"].split()[1:]
-
-print("lineages", LINEAGES)
-
 ##### Target rules #####
 
 rule all:
@@ -21,14 +17,12 @@ rule all:
 
 rule annotate_tree:
     input:
-        tree=config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.annotated.acc.del.acc_labelled.del_labelled.acc_merged.del_merged.tree",
+        tree=config["output_path"] + "/4/cog_gisaid_grafted.annotated.acc.del.acc_labelled.del_labelled.acc_merged.del_merged.tree",
         metadata=config["metadata"]
-    params:
-        lineage="{lineage}",
     output:
-        tree=config["output_path"] + "/5/{lineage}/cog_gisaid_{lineage}.annotated.tree"
+        tree=config["output_path"] + "/5/cog_gisaid_grafted.annotated.tree"
     log:
-        config["output_path"] + "/logs/5_annotate_{lineage}.log"
+        config["output_path"] + "/logs/5_annotate.log"
     shell:
         """
         clusterfunk annotate_tips \
@@ -48,13 +42,12 @@ checkpoint cut_out_trees:
     input:
         tree=rules.annotate_tree.output.tree
     params:
-        lineage="{lineage}",
-        outdir=config["output_path"] + "/5/{lineage}/trees",
+        outdir=config["output_path"] + "/5/trees",
         pubdir=config["export_path"] + "/trees/uk_lineages",
     output:
-        directory(config["output_path"] + "/5/{lineage}/trees")
+        directory(config["output_path"] + "/5/trees")
     log:
-        config["output_path"] + "/logs/5_cut_out_trees_{lineage}.log"
+        config["output_path"] + "/logs/5_cut_out_trees.log"
     threads: 40
     shell:
         """
@@ -74,18 +67,18 @@ checkpoint cut_out_trees:
           fi
         """
 
+
 rule phylotype_cut_trees:
     input:
-        tree=config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}.tree"
+        tree=config["output_path"] + "/5/trees/uk_lineage_UK{i}.tree"
     output:
-        tree=config["output_path"] + "/5/{lineage}/phylotyped_trees/uk_lineage_UK{i}.tree"
+        tree=config["output_path"] + "/5/phylotyped_trees/uk_lineage_UK{i}.tree"
     params:
-        lineage="{lineage}",
         collapse=5E-6,
         threshold=2E-5,
         i="{i}"
     log:
-        config["output_path"] + "/logs/5_phylotype_{lineage}_UK{i}.log"
+        config["output_path"] + "/logs/5_phylotype_UK{i}.log"
     shell:
         """
         clusterfunk phylotype \
@@ -97,13 +90,11 @@ rule phylotype_cut_trees:
 
 rule get_uk_phylotypes_csv:
     input:
-        tree=config["output_path"] + "/5/{lineage}/phylotyped_trees/uk_lineage_UK{i}.tree"
-    params:
-        lineage="{lineage}",
+        tree=config["output_path"] + "/5/phylotyped_trees/uk_lineage_UK{i}.tree"
     output:
-        traits=config["output_path"] + "/5/{lineage}/phylotyped_trees/uk_lineage_UK{i}.csv"
+        traits=config["output_path"] + "/5/phylotyped_trees/uk_lineage_UK{i}.csv"
     log:
-        config["output_path"] + "/logs/5_traits_{lineage}_UK{i}.log"
+        config["output_path"] + "/logs/5_traits_UK{i}.log"
     shell:
         """
         clusterfunk extract_tip_annotations \
@@ -116,75 +107,76 @@ rule get_uk_phylotypes_csv:
 def aggregate_input_csv(wildcards):
     checkpoint_output_directory = checkpoints.cut_out_trees.get(**wildcards).output[0]
     print(checkpoints.cut_out_trees.get(**wildcards).output[0])
-    lineage = wildcards.lineage
-    required_files = expand( "%s/5/%s/phylotyped_trees/uk_lineage_UK{i}.csv" %(config["output_path"],lineage),
+    required_files = expand( "%s/5/phylotyped_trees/uk_lineage_UK{i}.csv" %(config["output_path"]),
                             i=glob_wildcards(os.path.join(checkpoint_output_directory, "uk_lineage_UK{i}.tree")).i)
     return (required_files)
+#
+# def aggregate_input_trees(wildcards):
+#     checkpoint_output_directory = checkpoints.cut_out_trees.get(**wildcards).output[0]
+#     print(checkpoints.cut_out_trees.get(**wildcards).output[0])
+#     lineage = wildcards.lineage
+#     required_files = expand( "%s/5/%s/phylotyped_trees/uk_lineage_UK{i}.tree" %(config["output_path"],lineage),
+#                             i=glob_wildcards(os.path.join(checkpoint_output_directory, "uk_lineage_UK{i}.tree")).i)
+#     return (sorted(required_files))
+#
+# def aggregate_input_labels(wildcards):
+#     checkpoint_output_directory = checkpoints.cut_out_trees.get(**wildcards).output[0]
+#     print(checkpoints.cut_out_trees.get(**wildcards).output[0])
+#     labels = expand( "UK{i}",i=glob_wildcards(os.path.join(checkpoint_output_directory, "uk_lineage_UK{i}.tree")).i)
+#     return (sorted(labels))
 
-def aggregate_input_trees(wildcards):
-    checkpoint_output_directory = checkpoints.cut_out_trees.get(**wildcards).output[0]
-    print(checkpoints.cut_out_trees.get(**wildcards).output[0])
-    lineage = wildcards.lineage
-    required_files = expand( "%s/5/%s/phylotyped_trees/uk_lineage_UK{i}.tree" %(config["output_path"],lineage),
-                            i=glob_wildcards(os.path.join(checkpoint_output_directory, "uk_lineage_UK{i}.tree")).i)
-    return (sorted(required_files))
 
-def aggregate_input_labels(wildcards):
-    checkpoint_output_directory = checkpoints.cut_out_trees.get(**wildcards).output[0]
-    print(checkpoints.cut_out_trees.get(**wildcards).output[0])
-    labels = expand( "UK{i}",i=glob_wildcards(os.path.join(checkpoint_output_directory, "uk_lineage_UK{i}.tree")).i)
-    return (sorted(labels))
 
 rule combine_phylotypes_csv:
     input:
         files=aggregate_input_csv
     output:
-        phylotype_csv=config["output_path"] + "/5/{lineage}/UK_phylotypes.csv"
+        phylotype_csv=config["output_path"] + "/5/UK_phylotypes.csv"
     log:
-        config["output_path"] + "/logs/5_traits_{lineage}_combine_phylotype_csv.log"
+        config["output_path"] + "/logs/5_traits_combine_phylotype_csv.log"
     run:
         dfs = [pd.read_csv(x) for x in input.files]
         result = pd.concat(dfs)
         result.to_csv(output[0], index=False)
 
-rule combine_lineage_csv:
-    input:
-        expand(config["output_path"] + "/5/{lineage}/UK_phylotypes.csv",lineage=LINEAGES)
-    output:
-        phylotype_csv=config["output_path"] + "/5/UK_phylotypes.csv"
-    log:
-        config["output_path"] + "/logs/5_combine_lineage_csv.log"
-    run:
-        dfs = [pd.read_csv(x) for x in input]
-        result = pd.concat(dfs)
-        result.to_csv(output[0], index=False)
+# rule combine_lineage_csv:
+#     input:
+#         expand(config["output_path"] + "/5/{lineage}/UK_phylotypes.csv",lineage=LINEAGES)
+#     output:
+#         phylotype_csv=config["output_path"] + "/5/UK_phylotypes.csv"
+#     log:
+#         config["output_path"] + "/logs/5_combine_lineage_csv.log"
+#     run:
+#         dfs = [pd.read_csv(x) for x in input]
+#         result = pd.concat(dfs)
+#         result.to_csv(output[0], index=False)
 
 
 
-# This should create the full tree.
-rule graft_lineages:
-    input:
-        scions = expand(config["output_path"] + "/5/{lineage}/cog_gisaid_{lineage}.annotated.tree", lineage=sorted(LINEAGES)),
-        guide_tree = config["guide_tree"]
-    params:
-        lineages = sorted(LINEAGES),
-    output:
-        tree = config["output_path"] + "/5/cog_gisaid_full.no_phylotypes.tree.nexus",
-    log:
-        config["output_path"] + "/logs/5_graft_lineages.log"
-    run:
-        if len(input.scions) > 1:
-            shell("""
-                clusterfunk graft \
-                --scions {input.scions} \
-                --scion-annotation-name scion_lineage \
-                --annotate-scions {params.lineages} \
-                --input {input.guide_tree} \
-                --output {output.tree} &> {log}
-                """)
-
-        else:
-            shell("""cp {input.scions} {output.tree} &> {log}""")
+# # This should create the full tree.
+# rule graft_lineages:
+#     input:
+#         scions = expand(config["output_path"] + "/5/{lineage}/cog_gisaid_{lineage}.annotated.tree", lineage=sorted(LINEAGES)),
+#         guide_tree = config["guide_tree"]
+#     params:
+#         lineages = sorted(LINEAGES),
+#     output:
+#         tree = config["output_path"] + "/5/cog_gisaid_full.no_phylotypes.tree.nexus",
+#     log:
+#         config["output_path"] + "/logs/5_graft_lineages.log"
+#     run:
+#         if len(input.scions) > 1:
+#             shell("""
+#                 clusterfunk graft \
+#                 --scions {input.scions} \
+#                 --scion-annotation-name scion_lineage \
+#                 --annotate-scions {params.lineages} \
+#                 --input {input.guide_tree} \
+#                 --output {output.tree} &> {log}
+#                 """)
+#
+#         else:
+#             shell("""cp {input.scions} {output.tree} &> {log}""")
 
     # shell:
     #     """
@@ -200,7 +192,7 @@ rule graft_lineages:
 rule merge_with_metadata:
     input:
         metadata = config["metadata"],
-        traits = rules.combine_lineage_csv.output.phylotype_csv
+        traits = rules.combine_phylotypes_csv.output.phylotype_csv
     output:
         metadata = config["output_path"] + "/5/cog_gisaid.lineages.with_all_traits.with_phylotype_traits.csv"
     log:
@@ -218,7 +210,7 @@ rule merge_with_metadata:
 
 rule annotate_phylotypes:
     input:
-        tree=rules.graft_lineages.output.tree,
+        tree=rules.annotate_tree.output.tree,
         metadata = rules.merge_with_metadata.output.metadata
     output:
         annotated_tree = config["output_path"] + "/5/cog_gisaid_full.unordered.tree.nexus",

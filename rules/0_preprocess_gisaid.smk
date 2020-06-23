@@ -313,7 +313,7 @@ rule gisaid_add_pangolin_lineages_to_metadata:
         metadata = rules.gisaid_add_snp_finder_result_to_metadata.output.metadata,
         normal_lineages = rules.gisaid_normal_pangolin.output.lineages
     output:
-        metadata = config["output_path"] + "/0/gisaid.all.csv"
+        metadata = config["output_path"] + "/0/gisaid.RD.UH.SNPfinder.lineages.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_add_pangolin_lineages_to_metadata.log"
     shell:
@@ -329,10 +329,49 @@ rule gisaid_add_pangolin_lineages_to_metadata:
         """
 
 
+rule gisaid_del_finder:
+    input:
+        fasta = rules.gisaid_filter_on_distance_to_WH04.output.fasta,
+        dels = config["dels"]
+    output:
+        metadata = config["output_path"] + "/0/gisaid.del_finder.csv",
+    log:
+        config["output_path"] + "/logs/0_gisaid_del_finder.log"
+    shell:
+        """
+        datafunk del_finder \
+            -i {input.fasta} \
+            --deletions-file {input.dels} \
+            --genotypes-table {output.metadata} &> {log}
+        """
+
+
+rule gisaid_add_del_finder_result_to_metadata:
+    input:
+        dels = config["dels"],
+        metadata = rules.gisaid_add_pangolin_lineages_to_metadata.output.metadata,
+        new_data = rules.gisaid_del_finder.output.metadata
+    output:
+        metadata = config["output_path"] + "/0/gisaid.all.csv"
+    log:
+        config["output_path"] + "/logs/0_gisaid_add_del_finder_result_to_metadata.log"
+    shell:
+        """
+        columns=$(head -n1 {input.new_data} | cut -d',' -f2-)
+        fastafunk add_columns \
+          --in-metadata {input.metadata} \
+          --in-data {input.new_data} \
+          --index-column sequence_name \
+          --join-on sequence_name \
+          --new-columns "$columns" \
+          --out-metadata {output.metadata} &>> {log}
+        """
+
+
 rule gisaid_output_lineage_table:
     input:
         fasta = rules.gisaid_filter_on_distance_to_WH04.output.fasta,
-        metadata = rules.gisaid_add_pangolin_lineages_to_metadata.output.metadata
+        metadata = rules.gisaid_add_del_finder_result_to_metadata.output.metadata
     output:
         fasta = config["output_path"] + "/0/gisaid.matched.fasta",
         metadata = config["output_path"] + "/0/gisaid.matched.lineages.csv"
@@ -359,7 +398,7 @@ rule gisaid_output_lineage_table:
 rule gisaid_output_matched_fasta_and_metadata_table:
     input:
         fasta = rules.gisaid_filter_on_distance_to_WH04.output.fasta,
-        metadata = rules.gisaid_add_pangolin_lineages_to_metadata.output.metadata
+        metadata = rules.gisaid_add_del_finder_result_to_metadata.output.metadata
     output:
         published_fasta = config["publish_path"] + "/GISAID/gisaid.trimmed_alignment.fasta",
         published_metadata = config["publish_path"] + "/GISAID/gisaid.metadata.csv",
@@ -385,6 +424,7 @@ rule gisaid_output_matched_fasta_and_metadata_table:
                          lineages_version \
                          lineage_support \
                          d614g \
+                         del_1605_3 \
                          covv_accession_id \
                          covv_virus_name \
                          covv_location \

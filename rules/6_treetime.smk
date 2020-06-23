@@ -1,20 +1,20 @@
 
 rule treetime:
     input:
-        tree = config["output_path"] + "/5/{lineage}/trees/uk_lineage_UK{i}.tree",
+        tree = config["output_path"] + "/5/trees/uk_lineage_UK{i}.tree",
         metadata = config["output_path"] + "/5/cog_gisaid.lineages.with_all_traits.with_phylotype_traits.csv",
         fasta = config["output_path"] + "/3/cog_gisaid.fasta",
     params:
-        lineage="{lineage}",
         i="{i}"
     output:
-        temp_fasta = temp(config["output_path"] + "/6/{lineage}/trees/uk_lineage_UK{i}.temp.fasta"),
-        fasta = config["output_path"] + "/6/{lineage}/trees/uk_lineage_UK{i}.fasta",
-        metadata = config["output_path"] + "/6/{lineage}/trees/uk_lineage_UK{i}.timetree.csv",
-        tree = config["output_path"] + "/6/{lineage}/trees/uk_lineage_UK{i}.nexus",
-        directory = directory(config["output_path"] + "/6/{lineage}/trees/uk_lineage_UK{i}_timetree/")
+        temp_fasta = temp(config["output_path"] + "/6/trees/uk_lineage_UK{i}.temp.fasta"),
+        fasta = config["output_path"] + "/6/trees/uk_lineage_UK{i}.fasta",
+        metadata = config["output_path"] + "/6/trees/uk_lineage_UK{i}.timetree.csv",
+        tree = config["output_path"] + "/6/trees/uk_lineage_UK{i}.nexus",
+        directory = directory(config["output_path"] + "/6/trees/uk_lineage_UK{i}_timetree/")
     log:
-        config["output_path"] + "/logs/6_timetree_run_lineage{lineage}_uk{i}.log"
+        config["output_path"] + "/logs/6_timetree_run_uk{i}.log"
+    resources: mem_per_cpu=10000
     shell:
         """
         sed "s/'//g" {input.tree} > {output.tree}
@@ -57,24 +57,11 @@ rule treetime:
         """
 
 
-LINEAGES = []
-df = pd.read_csv(config["lineage_splits"])
-for i,row in df.iterrows():
-    LINEAGES.append(row['lineage'])
-
-UK = []
-for l in LINEAGES:
-    UK.append(glob_wildcards(config["output_path"] + "/5/" + l + "/trees/uk_lineage_UK{i}.tree").i)
-
-LINEAGES_REP = []
-for i,x in enumerate(UK):
-    LINEAGES_REP = LINEAGES_REP + [LINEAGES[i]] * len(x)
-
-UK = [item for sublist in UK for item in sublist]
+UK = glob_wildcards(config["output_path"] + "/5/trees/uk_lineage_UK{i}.tree").i
 
 rule summarize_treetime:
     input:
-        expand(config["output_path"] + "/logs/6_timetree_run_lineage{lineage}_uk{i}.log", zip, lineage = LINEAGES_REP, i = UK)
+        expand(config["output_path"] + "/logs/6_timetree_run_uk{i}.log", i = UK)
     params:
         webhook = config["webhook"],
     log:
