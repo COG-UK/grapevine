@@ -29,8 +29,9 @@ reference_fasta: /cephfs/covid/bham/climb-covid19-jacksonb/git/grapevine/referen
 trim_start: 265
 trim_end: 29674
 
-##### File of SNPs to search for #####
+##### Files of variants to search for #####
 snps: /cephfs/covid/bham/raccoon-dog/resources/snps.csv
+dels: /cephfs/covid/bham/raccoon-dog/resources/dels.csv
 
 ##### File of lineages to split by #####
 lineage_splits:

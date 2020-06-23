@@ -83,14 +83,11 @@ rule update_lineage_metadata:
 rule run_5_subroutine_on_lineages:
     input:
         metadata = rules.update_lineage_metadata.output.all_metadata,
-        lineage = config["lineage_splits"]
     params:
         path_to_script = workflow.current_basedir,
         output_path = config["output_path"],
         publish_path = config["publish_path"],
         export_path = config["export_path"],
-        prefix = config["output_path"] + "/5/lineage_",
-        guide_tree = config["guide_tree"],
     output:
         metadata = config["output_path"] + "/5/cog_gisaid.lineages.with_all_traits.with_phylotype_traits.csv",
         full_tree = config["output_path"] + "/5/cog_gisaid_full.tree.nexus",
@@ -99,7 +96,6 @@ rule run_5_subroutine_on_lineages:
     threads: 40
     shell:
         """
-        lineages=$(cat {input.lineage} | cut -f1 -d"," | tr '\\n' '  ')
         snakemake --nolock \
           --snakefile {params.path_to_script}/5_subroutine/5_process_lineages.smk \
           --cores {threads} \
@@ -108,8 +104,6 @@ rule run_5_subroutine_on_lineages:
           output_path={params.output_path} \
           publish_path={params.publish_path} \
           export_path={params.export_path} \
-          guide_tree="{params.guide_tree}" \
-          lineages="$lineages" \
           metadata={input.metadata} &> {log}
         """
 
