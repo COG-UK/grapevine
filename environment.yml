@@ -12,15 +12,27 @@ dependencies:
   - pip=19.3.1
   - python=3.7.4
   - snakemake-minimal
-  - pandoc=2.2.3.2
+  - pandoc=1.19.2.1
   - fasttree
   - gotree
   - pip:
+    - git+https://github.com/COG-UK/phylo-reports.git
+    - git+https://github.com/hCoV-2019/pangolin.git
+    - git+https://github.com/hCoV-2019/lineages.git
     - git+https://github.com/cov-ert/datafunk.git
     - git+https://github.com/cov-ert/fastafunk.git
-    - git+https://github.com/hCoV-2019/pangolin.git
-    - git+https://github.com/hCoV-2019/spangolin.git
     - git+https://github.com/cov-ert/clusterfunk.git
-    - git+https://github.com/hCoV-2019/lineages.git
-    - git+https://github.com/cov-ert/Reports.git
     - git+https://github.com/neherlab/treetime
+    - matplotlib==3.2.1
+    - numpy==1.18.1
+    - pweave==0.30.3
+    - scipy==1.4.1
+    - tabulate==0.8.7
+    - pandas==1.0.1
+    - requests==2.20.0
+    - epiweeks==2.1.1
+    - argparse==1.4.0
+    - geopandas==0.7.0
+    - shapely==1.7.0
+    - descartes==1.1.0
+    - joypy==0.2.2

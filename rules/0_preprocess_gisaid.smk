@@ -296,7 +296,6 @@ rule gisaid_normal_pangolin:
     log:
         config["output_path"] + "/logs/0_gisaid_normal_pangolin.log"
     threads: 40
-    conda: "/cephfs/covid/bham/climb-covid19-jacksonb/git/pangolin/environment.yml"
     shell:
         """
         pangolin {input.fasta} \
