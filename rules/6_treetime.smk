@@ -1,7 +1,6 @@
-
 rule treetime:
     input:
-        tree = config["output_path"] + "/5/trees/uk_lineage_UK{i}.tree",
+        tree=config["output_path"] + "/5/trees/uk_lineage_UK{i}.tree",
         metadata = config["output_path"] + "/5/cog_gisaid.lineages.with_all_traits.with_phylotype_traits.csv",
         fasta = config["output_path"] + "/3/cog_gisaid.fasta",
     params:
