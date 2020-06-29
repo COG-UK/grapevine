@@ -36,7 +36,7 @@ Taking as input:
 
 A **`UK Lineage`** is defined as a relabeling of del_lineage that tries to keep labels as consistent as possible from week to week to aid with long term analyses.
 
-Due to uncertainty in the tree, sequences are often reassigned to new deltrans designations, and lineages split and merge with each new dataset. Therefore at this point, lineage names are reassigned so that *one deltrans designation relates to one lineage*. 
+Due to uncertainty in the tree, sequences are often reassigned to new deltrans designations, and lineages split and merge with each new dataset. Therefore at this point, lineage names are reassigned so that **one deltrans designation relates to one lineage**. 
 
 The largest lineage name from the previous week becomes the new name for the lineage. 
 If it is the largest in more than one new designation, the designation with the most sequences of that lineage claims the name. In this way the names stay relatively stable from week to week.
