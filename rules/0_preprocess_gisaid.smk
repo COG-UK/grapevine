@@ -21,37 +21,13 @@ rule gisaid_process_json:
         """
 
 
-rule gisaid_remove_duplicates:
+rule gisaid_unify_headers:
     input:
         fasta = rules.gisaid_process_json.output.fasta,
         metadata = rules.gisaid_process_json.output.metadata
     output:
-        fasta = config["output_path"] + "/0/gisaid.RD.fasta",
-        metadata = config["output_path"] + "/0/gisaid.RD.csv"
-    log:
-        config["output_path"] + "/logs/0_gisaid_remove_duplicates.log"
-    shell:
-        """
-        fastafunk subsample \
-          --in-fasta {input.fasta} \
-          --in-metadata {input.metadata} \
-          --group-column covv_virus_name \
-          --index-column edin_header \
-          --out-fasta {output.fasta} \
-          --sample-size 1 \
-          --out-metadata {output.metadata} \
-          --select-by-min-column edin_epi_week &> {log}
-        """
-# ^^^ gives you a subsample_omit column in your metadata - True if omit it
-
-
-rule gisaid_unify_headers:
-    input:
-        fasta = rules.gisaid_remove_duplicates.output.fasta,
-        metadata = rules.gisaid_remove_duplicates.output.metadata
-    output:
-        fasta = config["output_path"] + "/0/gisaid.RD.UH.fasta",
-        metadata = config["output_path"] + "/0/gisaid.RD.UH.csv"
+        fasta = config["output_path"] + "/0/gisaid.UH.fasta",
+        metadata = config["output_path"] + "/0/gisaid.UH.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_unify_headers.log"
     shell:
@@ -66,9 +42,32 @@ rule gisaid_unify_headers:
         """
 
 
+rule gisaid_remove_duplicates:
+    input:
+        fasta = rules.gisaid_unify_headers.output.fasta,
+        metadata = rules.gisaid_unify_headers.output.metadata
+    output:
+        fasta = config["output_path"] + "/0/gisaid.UH.RD.fasta",
+        metadata = config["output_path"] + "/0/gisaid.UH.RD.csv"
+    log:
+        config["output_path"] + "/logs/0_gisaid_remove_duplicates.log"
+    shell:
+        """
+        fastafunk subsample \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata} \
+          --group-column sequence_name \
+          --index-column sequence_name \
+          --out-fasta {output.fasta} \
+          --sample-size 1 \
+          --out-metadata {output.metadata} \
+          --select-by-min-column edin_epi_week &> {log}
+        """
+
+
 rule gisaid_counts_by_country:
     input:
-        metadata = rules.gisaid_unify_headers.output.metadata
+        metadata = rules.gisaid_remove_duplicates.output.metadata
     output:
         counts = config["output_path"] + "/0/gisaid_counts_by_country.csv",
     log:
@@ -84,7 +83,7 @@ rule gisaid_counts_by_country:
 
 rule gisaid_filter_1:
     input:
-        fasta = rules.gisaid_unify_headers.output.fasta
+        fasta = rules.gisaid_remove_duplicates.output.fasta
     params:
         min_covg = config["min_covg"],
         min_length = config["min_length"]
@@ -177,7 +176,7 @@ rule gisaid_mask:
 rule gisaid_distance_QC:
     input:
         fasta = rules.gisaid_mask.output.fasta,
-        metadata = rules.gisaid_unify_headers.output.metadata
+        metadata = rules.gisaid_remove_duplicates.output.metadata
     log:
         config["output_path"] + "/logs/0_gisaid_distance_QC.log"
     output:
@@ -238,7 +237,7 @@ rule gisaid_snp_finder:
 rule gisaid_add_snp_finder_result_to_metadata:
     input:
         snps = config["snps"],
-        metadata = rules.gisaid_unify_headers.output.metadata,
+        metadata = rules.gisaid_remove_duplicates.output.metadata,
         new_data = rules.gisaid_snp_finder.output.found
     output:
         metadata = config["output_path"] + "/0/gisaid.RD.UH.SNPfinder.csv"
@@ -297,7 +296,6 @@ rule gisaid_normal_pangolin:
     log:
         config["output_path"] + "/logs/0_gisaid_normal_pangolin.log"
     threads: 40
-    conda: "/cephfs/covid/bham/climb-covid19-jacksonb/git/pangolin/environment.yml"
     shell:
         """
         pangolin {input.fasta} \

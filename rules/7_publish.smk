@@ -571,7 +571,6 @@ rule publish_full_report:
         outdir = directory(config["output_path"] + "/7/full_report/"),
     log:
         config["output_path"] + "/logs/7_publish_report_full.log"
-    conda: "/cephfs/covid/bham/climb-covid19-jacksonb/git/report/environment.yml"
     shell:
         """
         generate_report --m {input.metadata} \
@@ -610,7 +609,6 @@ rule publish_adm1_reports:
         outdir = directory(config["output_path"] + "/7/adm1_reports/{adm1}/"),
     log:
         config["output_path"] + "/logs/7_publish_report_{adm1}.log",
-    conda: "/cephfs/covid/bham/climb-covid19-jacksonb/git/report/environment.yml"
     shell:
         """
         generate_report --m {input.metadata} \
@@ -650,7 +648,6 @@ rule publish_sc_reports:
         outdir = directory(config["output_path"] + "/7/regional_reports/{sc}/"),
     log:
         config["output_path"] + "/logs/7_publish_report_{sc}.log",
-    conda: "/cephfs/covid/bham/climb-covid19-jacksonb/git/report/environment.yml"
     shell:
         """
         generate_report --m {input.metadata} \
@@ -774,6 +771,7 @@ rule summarize_publish:
         echo 'webhook {params.webhook}'
         curl -X POST -H "Content-type: application/json" -d @publish_data.json {params.webhook}
         """
+
 
 
 
