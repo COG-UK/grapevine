@@ -12,7 +12,7 @@
 > *All unaligned CoG-UK sequences*
 > 
 
-`config['output_path'] + /3/cog_gisaid.lineage.csv`
+`config['output_path'] + /3/cog_gisaid.lineages.csv`
 > *CoG-UK metadata associated with the fasta file above*
 > 
 
@@ -48,7 +48,10 @@
 
 2. Graft together the subtrees into one complete tree
 3. Annotate the tree with country and previous uk lineage designation
-4. CLUSTERFUNK LINEAGE DESIGNATIONS TO DO
+4. **Designate Lineages**
+	
+	
+	
 5. Output a full, unannotated public tree and lineage designation information to pass to the next step, defining UK lineages
 
 ### Output
