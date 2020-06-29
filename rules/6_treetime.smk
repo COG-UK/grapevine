@@ -1,7 +1,6 @@
-
 rule treetime:
     input:
-        tree = config["output_path"] + "/5/trees/uk_lineage_UK{i}.tree",
+        tree=config["output_path"] + "/5/trees/uk_lineage_UK{i}.tree",
         metadata = config["output_path"] + "/5/cog_gisaid.lineages.with_all_traits.with_phylotype_traits.csv",
         fasta = config["output_path"] + "/3/cog_gisaid.fasta",
     params:
@@ -57,11 +56,16 @@ rule treetime:
         """
 
 
-UK = glob_wildcards(config["output_path"] + "/5/trees/uk_lineage_UK{i}.tree").i
+def aggregate_input_treetime_logs(wildcards):
+    checkpoint_output_directory = checkpoints.cut_out_trees.get(**wildcards).output[0]
+    print(checkpoints.cut_out_trees.get(**wildcards).output[0])
+    required_files = expand( "%s/logs/6_timetree_run_uk{i}.log" %(config["output_path"]),
+                            i=glob_wildcards(os.path.join(checkpoint_output_directory, "uk_lineage_UK{i}.tree")).i)
+    return (sorted(required_files))
 
 rule summarize_treetime:
     input:
-        expand(config["output_path"] + "/logs/6_timetree_run_uk{i}.log", i = UK)
+        logs=aggregate_input_treetime_logs
     params:
         webhook = config["webhook"],
     log:

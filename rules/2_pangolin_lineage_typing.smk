@@ -12,7 +12,6 @@ rule uk_normal_pangolin:
     log:
         config["output_path"] + "/logs/2_uk_normal_pangolin.log"
     threads: 40
-    conda: "/cephfs/covid/bham/climb-covid19-jacksonb/git/pangolin/environment.yml"
     shell:
         """
         pangolin {input.fasta} \

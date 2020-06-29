@@ -77,13 +77,15 @@ rule uk_add_epi_week:
         --input-metadata {input.metadata} \
         --output-metadata {output.tmp_metadata} \
         --date-column received_date \
-        --epi-column-name edin_epi_week &> {log}
+        --epi-week-column-name edin_epi_week \
+        --epi-day-column-name edin_epi_day &> {log}
 
         datafunk add_epi_week \
         --input-metadata {output.tmp_metadata} \
         --output-metadata {output.metadata} \
         --date-column collection_date \
-        --epi-column-name edin_epi_week &>> {log}
+        --epi-week-column-name edin_epi_week \
+        --epi-day-column-name edin_epi_day &>> {log}
         """
 
 
@@ -131,7 +133,7 @@ rule uk_remove_duplicates_biosamplesourceid_by_date:
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --sample-size 1 \
-          --select-by-min-column edin_epi_week &> {log}
+          --select-by-min-column edin_epi_day &> {log}
         """
 
 
