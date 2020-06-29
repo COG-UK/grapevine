@@ -41,7 +41,7 @@ Due to uncertainty in the tree, sequences are often reassigned to new deltrans d
 The largest lineage name from the previous week becomes the new name for the lineage. 
 If it is the largest in more than one new designation, the designation with the most sequences of that lineage claims the name. In this way the names stay relatively stable from week to week.
 
-Example scenario: 
+**Example scenario:** 
 Group A contains 10 UK7 sequences and 5 UK2 sequences. Group B contains 8 UK7 sequences and 3 UK9 sequences. No other groups contain UK7 sequences. Group A claims the UK7 name, as it is the largest lineage in group A, and it also contains more UK7 sequences than group B. 
 For group B, we then assess its suitability to be named UK9.  However, group C contains 100 UK9 sequences and 10 UK2 sequences. Therefore group C claims the name UK9. Group B has no more old lineages represented, so it acquires an entirely new name.
 
