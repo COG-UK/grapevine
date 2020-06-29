@@ -236,14 +236,14 @@ This document provides an overview of the complete Grapevine pipeline, beginning
 
 	```
 	treetime \
-  --aln UK_lineage.fasta \
-  --clock-rate 0.00100 \
-  --clock-filter 0 \
-  --tree UK_lineage.tree \
-  --dates UK_lineage.csv \
-  --name-column sequence_name \
-  --date-column sample_date \
-  --outdir UK_lineage/    
+  	  --aln UK_lineage.fasta \
+  	  --clock-rate 0.00100 \
+  	  --clock-filter 0 \
+  	  --tree UK_lineage.tree \
+  	  --dates UK_lineage.csv \
+  	  --name-column sequence_name \
+  	  --date-column sample_date \
+  	  --outdir UK_lineage/    
 	```
 
 ### Output
