@@ -101,7 +101,7 @@ rule step_4_annotate_tree:
         """
         clusterfunk annotate_tips \
           --in-metadata {input.metadata} \
-          --trait-columns country uk_lineage \
+          --trait-columns country lineage uk_lineage \
           --index-column sequence_name \
           --boolean-for-trait country='UK' country='UK' country='UK' country='UK' \
           --boolean-trait-names country_uk country_uk_acctran country_uk_deltran \
