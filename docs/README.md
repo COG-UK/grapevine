@@ -187,7 +187,7 @@ This document provides an overview of the complete Grapevine pipeline, beginning
 
 2. Graft together the subtrees into one complete tree
 3. Annotate the tree with country and previous UK lineage designation
-4. **Designate Lineages** - LINK HERE
+4. **Designate lineages** - See ([_CoG-UK Lineage Designation_](https://github.com/COG-UK/grapevine/blob/docs/docs/lineages.md)) for more detail
 5. Output a full, unannotated public tree and lineage designation information to pass to the next step, which is (re-)defining UK lineages
 
 ### Output
@@ -220,7 +220,7 @@ This document provides an overview of the complete Grapevine pipeline, beginning
 1. Merge and create new UK lineage definitions and apply them to all CoG-UK samples:
 
 	>
-	> See (LINK) for more detail
+	> See ([_CoG-UK Lineage Designation_](https://github.com/COG-UK/grapevine/blob/docs/docs/lineages.md)) for more detail
 	>
 
 2. Annotate the full tree with UK lineage and deltrans information
@@ -229,7 +229,7 @@ This document provides an overview of the complete Grapevine pipeline, beginning
 4. Phylotyping
 
 	>
-	> See (LINK) for more detail
+	> See ([_CoG-UK Lineage Designation_](https://github.com/COG-UK/grapevine/blob/docs/docs/lineages.md)) for more detail
 	>
 	
 5. Run `TreeTime` on UK lineages:
