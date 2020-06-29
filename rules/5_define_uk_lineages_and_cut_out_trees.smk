@@ -137,7 +137,6 @@ checkpoint cut_out_trees:
         tree=rules.step_5_annotate_tree.output.tree
     params:
         outdir=config["output_path"] + "/5/trees",
-        pubdir=config["export_path"] + "/trees/uk_lineages",
     output:
         directory(config["output_path"] + "/5/trees")
     log:
@@ -154,11 +153,6 @@ checkpoint cut_out_trees:
 
           echo "Look at all those trees:" >> {log}
           ls {output}/* >> {log}
-          if [ ! -z "$(ls -A {params.outdir})" ]
-          then
-            mkdir -p {params.pubdir}
-            cp {params.outdir}/*.tree {params.pubdir}/
-          fi
         """
 
 
@@ -200,7 +194,7 @@ rule get_uk_phylotypes_csv:
 
 def aggregate_input_csv(wildcards):
     checkpoint_output_directory = checkpoints.cut_out_trees.get(**wildcards).output[0]
-    print(checkpoints.cut_out_trees.get(**wildcards).output[0])
+    # print(checkpoints.cut_out_trees.get(**wildcards).output[0])
     required_files = expand( "%s/5/phylotyped_trees/uk_lineage_UK{i}.csv" %(config["output_path"]),
                             i=glob_wildcards(os.path.join(checkpoint_output_directory, "uk_lineage_UK{i}.tree")).i)
     return (required_files)

@@ -244,17 +244,12 @@ rule summarize_make_trees:
     input:
         traits = rules.output_annotations.output.traits,
         public_tree = rules.sort.output.sorted_tree,
-    output:
-        exported_tree = config["export_path"] + "/public/cog_global_" + config["date"] + "_tree.newick",
     params:
         webhook = config["webhook"],
-        outdir = config["publish_path"] + "/COG_GISAID",
     log:
         config["output_path"] + "/logs/4_summarize_make_trees.log"
     shell:
         """
-        cp {input.public_tree} {output.exported_tree} &> {log}
-
         echo '{{"text":"' > 4b_data.json
         echo "*Step 4: Construct and annotate lineage trees completed*\\n" >> 4b_data.json
         echo '"}}' >> 4b_data.json
