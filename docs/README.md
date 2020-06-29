@@ -148,7 +148,7 @@ This document provides an overview of the complete Grapevine pipeline, beginning
 ### Input
 
 `config['output_path'] + /3/cog_gisaid.fasta`
-> *All unaligned CoG-UK sequences*
+> *GISAID + CoG-UK sequences passing Grapevine QC*
 >
 
 `config['output_path'] + /3/cog_gisaid.lineages.csv`
