@@ -1,4 +1,4 @@
-##CoG-UK Lineage Designation
+## CoG-UK Lineage Designation
 
 ### What are UK lineages?
 
