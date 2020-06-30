@@ -15,6 +15,7 @@ dependencies:
   - pandoc=1.19.2.1
   - fasttree
   - gotree
+  - nextflow
   - pip:
     - git+https://github.com/COG-UK/phylo-reports.git
     - git+https://github.com/hCoV-2019/pangolin.git
