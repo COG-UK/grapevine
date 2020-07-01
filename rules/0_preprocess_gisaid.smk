@@ -50,7 +50,7 @@ rule gisaid_remove_duplicates:
         fasta = config["output_path"] + "/0/gisaid.UH.RD.fasta",
         metadata = config["output_path"] + "/0/gisaid.UH.RD.csv"
     log:
-        config["output_path"] + "/logs/0_gisaid_remove_duplicates.log"
+        config["output_path"] + "/logs/0_gisaid_filter_duplicates.log"
     shell:
         """
         fastafunk subsample \
