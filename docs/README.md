@@ -264,3 +264,10 @@ and
 
 `config["output_path"] + "/6/trees/"`
 > *Directory containing TimeTree analyses in subdirectories*
+
+
+## Publishing
+
+Consortium-wide outputs are published to `config["export_path"]` (and `rsync`ed to `/cephfs/covid/bham/artifacts/published/[DATE]/phylogenetics/` on `climb`).
+
+See the [Grapevine README](https://github.com/COG-UK/grapevine/blob/master/README.md) for details of these outputs.
