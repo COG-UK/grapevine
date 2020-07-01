@@ -9,6 +9,10 @@ conda install -f environment.yml
 conda activate grapevine
 ```
 
+## The pipeline
+
+See [the documentation](https://github.com/COG-UK/grapevine/tree/master/docs) for more detailed methods
+
 ## The pipeline - in brief
 
 0) Process latest GISAID data 
