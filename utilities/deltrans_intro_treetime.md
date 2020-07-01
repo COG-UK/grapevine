@@ -1,5 +1,13 @@
 ## How to run `deltrans_intro_treetime.nf` on `climb`
 
+If you don't have one already, you need a Grapevine conda environment:
+```
+git clone https://github.com/COG-UK/grapevine.git
+cd grapevine
+conda install -f environment.yml
+conda activate grapevine
+```
+
 Navigate to the basal directory of a Grapevine run, eg.
 
 `cd /cephfs/covid/bham/raccoon-dog/2020-06-26`
