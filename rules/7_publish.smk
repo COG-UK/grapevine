@@ -354,40 +354,16 @@ rule publish_civet_data:
         """
 
 
-rule cp_civet_data:
-    input:
-        cog_all_fasta = rules.publish_civet_data.output.cog_all_fasta,
-        cog_all_metadata = rules.publish_civet_data.output.cog_all_metadata,
-        cog_fasta = rules.publish_civet_data.output.cog_fasta,
-        cog_metadata = rules.publish_civet_data.output.cog_metadata,
-        combined_metadata = rules.publish_civet_data.output.combined_metadata,
-        combined_fasta = rules.publish_civet_data.output.combined_fasta,
-        tree = rules.publish_civet_data.output.tree,
-    output:
-        cog_all_fasta = "/cephfs/covid/bham/civet-cat/cog_alignment_all.fasta",
-        cog_all_metadata = "/cephfs/covid/bham/civet-cat/cog_metadata_all.csv",
-        cog_fasta = "/cephfs/covid/bham/civet-cat/cog_alignment.fasta",
-        cog_metadata = "/cephfs/covid/bham/civet-cat/cog_metadata.csv",
-        combined_metadata = "/cephfs/covid/bham/civet-cat/cog_global_metadata.csv",
-        combined_fasta = "/cephfs/covid/bham/civet-cat/cog_global_alignment.fasta",
-        tree = "/cephfs/covid/bham/civet-cat/cog_global_tree.nexus",
-    log:
-        config["output_path"] + "/logs/7_cp_civet_data.log"
-    shell:
-        """
-        cp {input.cog_all_fasta} {output.cog_all_fasta} &> {log}
-        cp {input.cog_all_metadata} {output.cog_all_metadata} &>> {log}
-        cp {input.cog_fasta} {output.cog_fasta} &>> {log}
-        cp {input.cog_metadata} {output.cog_metadata} &>> {log}
-        cp {input.combined_metadata} {output.combined_metadata} &>> {log}
-        cp {input.combined_fasta} {output.combined_fasta} &>> {log}
-        cp {input.tree} {output.tree} &>> {log}
-        """
-
+# def aggregate_input_trees(wildcards):
+#     checkpoint_output_directory = checkpoints.cut_out_trees.get(**wildcards).output[0]
+#     print(checkpoints.cut_out_trees.get(**wildcards).output[0])
+#     required_files = expand( "%s/5/trees/uk_lineage_UK{i}.tree" %(config["output_path"]),
+#                             i=glob_wildcards(os.path.join(checkpoint_output_directory, "uk_lineage_UK{i}.tree")).i)
+#     return (sorted(required_files))
 
 rule publish_uk_lineage_specific_fasta_and_metadata_files:
     input:
-        tree = config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.tree",
+        tree = config["output_path"] + "5/trees/uk_lineage_UK{i}.tree",
         metadata = rules.publish_full_annotated_tree_and_metadata.output.metadata,
         fasta = rules.publish_full_annotated_tree_and_metadata.output.fasta
     params:
@@ -722,12 +698,11 @@ rule summarize_publish:
 
         log_uk_lineage_timetrees = rules.publish_time_trees.log,
 
-        log_civet = rules.cp_civet_data.log,
+        log_civet = rules.publish_civet_data.log,
     params:
         date = config["date"],
-        parsed_date = config["date"].replace('-', ''),
-        export_path = config["export_path"],
         webhook = config["webhook"],
+        export_path = config["export_path"],
         uk_trees_path = config["export_path"] + "/trees/uk_lineages/",
         local_civet_path = config["export_path"] + "/civet/",
         reports_path = config["export_path"] + "/reports/",
@@ -735,8 +710,96 @@ rule summarize_publish:
         config["output_path"] + "/logs/7_summarize_publish.log"
     shell:
         """
-        rsync -r {params.export_path}/ /cephfs/covid/bham/artifacts/published/{params.parsed_date}/phylogenetics
+        echo "> Reports published to {params.reports_path}\\n" >> {log}
+        echo "> \\n" >> {log}
+        echo "> Gisaid master metadata published to {input.GISAID_meta_master}\\n" >> {log}
+        echo "> COG master metadata published to {input.COG_meta_master}\\n" >> {log}
+        echo "> \\n" >> {log}
+        echo "> Unaligned (deduplicated, clean headers) COG sequences published to {input.COG_seq_all}\\n" >> {log}
+        echo "> \\n" >> {log}
+        echo "> Aligned (deduplicated, clean headers) COG sequences published to {input.COG_seq_all_aligned}\\n" >> {log}
+        echo "> Matching metadata published to {input.COG_meta_all_aligned}\\n" >> {log}
+        echo "> \\n" >> {log}
+        echo "> Filtered, aligned COG sequences published to {input.COG_seq_all_aligned_filtered}\\n" >> {log}
+        echo "> Matching metadata with lineage information published to {input.COG_meta_all_aligned_filtered}\\n" >> {log}
+        echo "> \\n" >> {log}
+        echo "> Full, annotated tree published to {input.COG_GISAID_nexus_tree}\\n" >> {log}
+        echo "> Matching metadata published to {input.COG_GISAID_meta}\\n" >> {log}
+        echo "> UK lineage subtrees published in {params.uk_trees_path}\\n" >> {log}
+        echo "> UK lineage timetrees published in {params.uk_trees_path}\\n" >> {log}
+        echo "> \\n" >> {log}
+        echo "> Public tree published to {input.public_COG_GISAID_newick_tree}\\n" >> {log}
+        echo "> Associated unaligned sequences published to {input.public_COG_GISAID_seq_all}\\n" >> {log}
+        echo "> Matching metadata with public fields only published to {input.public_COG_meta}\\n" >> {log}
+        echo "> \\n" >> {log}
+        echo "> Public tree for microreact published to {input.microreact_public_tree}\\n" >> {log}
+        echo "> Public metadata for microreact published to {input.microreact_public_metadata}\\n" >> {log}
+        echo "> Private metadata for microreact published to {input.microreact_private_metadata}\\n" >> {log}
+        echo "> \\n" >> {log}
+        echo "> Data for Civet published to {params.local_civet_path}\\n" >> {log}
+        echo '{{"text":"' > 7_data.json
+        echo "*Step 7: publish data to {params.export_path} complete*\\n" >> 7_data.json
+        cat {log} >> 7_data.json
+        echo '"}}' >> 7_data.json
+        echo 'webhook {params.webhook}'
+        curl -X POST -H "Content-type: application/json" -d @7_data.json {params.webhook}
+        """
 
+
+rule postpublish_cp_civet_data:
+    input:
+        cog_all_fasta = rules.publish_civet_data.output.cog_all_fasta,
+        cog_all_metadata = rules.publish_civet_data.output.cog_all_metadata,
+        cog_fasta = rules.publish_civet_data.output.cog_fasta,
+        cog_metadata = rules.publish_civet_data.output.cog_metadata,
+        combined_metadata = rules.publish_civet_data.output.combined_metadata,
+        combined_fasta = rules.publish_civet_data.output.combined_fasta,
+        tree = rules.publish_civet_data.output.tree,
+    output:
+        cog_all_fasta = "/cephfs/covid/bham/civet-cat/cog_alignment_all.fasta",
+        cog_all_metadata = "/cephfs/covid/bham/civet-cat/cog_metadata_all.csv",
+        cog_fasta = "/cephfs/covid/bham/civet-cat/cog_alignment.fasta",
+        cog_metadata = "/cephfs/covid/bham/civet-cat/cog_metadata.csv",
+        combined_metadata = "/cephfs/covid/bham/civet-cat/cog_global_metadata.csv",
+        combined_fasta = "/cephfs/covid/bham/civet-cat/cog_global_alignment.fasta",
+        tree = "/cephfs/covid/bham/civet-cat/cog_global_tree.nexus",
+    log:
+        config["output_path"] + "/logs/7_postpublish_cp_civet_data.log"
+    shell:
+        """
+        cp {input.cog_all_fasta} {output.cog_all_fasta} &> {log}
+        cp {input.cog_all_metadata} {output.cog_all_metadata} &>> {log}
+        cp {input.cog_fasta} {output.cog_fasta} &>> {log}
+        cp {input.cog_metadata} {output.cog_metadata} &>> {log}
+        cp {input.combined_metadata} {output.combined_metadata} &>> {log}
+        cp {input.combined_fasta} {output.combined_fasta} &>> {log}
+        cp {input.tree} {output.tree} &>> {log}
+        """
+
+rule postpublish_rsync_phylogenetics_data:
+    input:
+        publishdone = rules.summarize_publish.log
+    params:
+        date = config["date"],
+        parsed_date = config["date"].replace('-', ''),
+        export_path = config["export_path"],
+        webhook = config["webhook"],
+    log:
+        config["output_path"] + "/logs/7_postpublish_rsync_phylogenetics_data.log"
+    shell:
+        """
+        rsync -r {params.export_path}/ /cephfs/covid/bham/artifacts/published/{params.parsed_date}/phylogenetics
+        """
+
+rule summarize_postpublish:
+    input:
+        date = config["date"],
+        civet_log = config["output_path"] + "/logs/7_postpublish_cp_civet_data.log",
+        rsync_log = config["output_path"] + "/logs/7_postpublish_rsync_phylogenetics_data.log"
+    log:
+        config["output_path"] + "/logs/7_summarize_postpublish.log"
+    shell:
+        """
         echo "> Phylogenetics pipeline output published to \`/cephfs/covid/bham/artifacts/published/latest/phylogenetics/\`\\n" >> {log}
         echo "> \\n" >> {log}
         echo "> Reports published to \`reports/\`\\n" >> {log}
@@ -764,22 +827,13 @@ rule summarize_publish:
         echo "> \\n" >> {log}
         echo "> Data for Civet published to \`/cephfs/covid/bham/civet-cat/\`\\n" >> {log}
 
-        echo '{{"text":"' > publish_data.json
-        echo "*Phylogenetic pipeline complete*\\n" >> publish_data.json
-        cat {log} >> publish_data.json
-        echo '"}}' >> publish_data.json
+        echo '{{"text":"' > publish_data_to_consortium.json
+        echo "*Phylogenetic pipeline complete*\\n" >> publish_data_to_consortium.json
+        cat {log} >> publish_data_to_consortium.json
+        echo '"}}' >> publish_data_to_consortium.json
         echo 'webhook {params.webhook}'
-        curl -X POST -H "Content-type: application/json" -d @publish_data.json {params.webhook}
+        curl -X POST -H "Content-type: application/json" -d @publish_data_to_consortium.json {params.webhook}
         """
-
-
-
-
-
-
-
-
-
 
 
 
