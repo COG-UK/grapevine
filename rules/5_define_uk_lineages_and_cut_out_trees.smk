@@ -20,6 +20,25 @@ rule merge_and_create_new_uk_lineages:
         """
 
 
+rule step_5_generate_sankey_plot:
+    input:
+        old_traits = config["output_path"] + "/4/all_traits.csv",
+        new_traits = config["output_path"] + "/5/updated_traits.csv",
+    output:
+        links = config["output_path"] + "/5/sankey_links.txt",
+        plot = config["output_path"] + "/5/sankey.html"
+    params:
+        python_script = os.path.join(workflow.current_basedir, "../utilities/get_sankey_links.py"),
+        R_script = os.path.join(workflow.current_basedir, "../utilities/plot_sankey.R")
+    log:
+        config["output_path"] + "/logs/5_generate_sankey_plot.log"
+    shell:
+        """
+        python {params.python_script} {input.old_traits} {input.new_traits} {output.links} &> {log}
+        Rscript {params.R_script} {output.links} {output.plot} &>> {log}
+        """
+
+
 rule five_update_global_lineage_metadata:
     input:
         metadata = config["output_path"] + "/3/cog_gisaid.lineages.csv",
@@ -268,7 +287,8 @@ rule annotate_phylotypes:
 
 rule summarize_define_uk_lineages_and_cut_out_trees:
     input:
-        metadata = rules.annotate_phylotypes.output.annotated_tree
+        metadata = rules.annotate_phylotypes.output.annotated_tree,
+        sankey_plot = rules.step_5_generate_sankey_plot.output.plot
     params:
         webhook = config["webhook"],
     log:
@@ -279,6 +299,7 @@ rule summarize_define_uk_lineages_and_cut_out_trees:
 
         echo '{{"text":"' > 5b_data.json
         echo "*Step 5: Generate UK lineage trees is complete*\\n" >> 5b_data.json
+        echo "> _Look at this Sankey plot_: {input.sankey_plot}\\n" >> 5b_data.json
         echo '"}}' >> 5b_data.json
         echo "webhook {params.webhook}"
         curl -X POST -H "Content-type: application/json" -d @5b_data.json {params.webhook}
