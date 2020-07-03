@@ -363,6 +363,7 @@ rule publish_civet_data:
 
 rule publish_uk_lineage_specific_fasta_and_metadata_files:
     input:
+        step_5_done = rules.summarize_define_uk_lineages_and_cut_out_trees.log,
         tree = config["output_path"] + "5/trees/uk_lineage_UK{i}.tree",
         metadata = rules.publish_full_annotated_tree_and_metadata.output.metadata,
         fasta = rules.publish_full_annotated_tree_and_metadata.output.fasta
@@ -735,6 +736,8 @@ rule summarize_publish:
         echo "> Public tree for microreact published to {input.microreact_public_tree}\\n" >> {log}
         echo "> Public metadata for microreact published to {input.microreact_public_metadata}\\n" >> {log}
         echo "> Private metadata for microreact published to {input.microreact_private_metadata}\\n" >> {log}
+        echo "> \\n" >> {log}
+        echo "> Data (there is an alignment too) for Pangolin lineage releases published to {input.uk_lineage_fasta_csv_summary}\\n" >> {log}
         echo "> \\n" >> {log}
         echo "> Data for Civet published to {params.local_civet_path}\\n" >> {log}
         echo '{{"text":"' > 7_data.json

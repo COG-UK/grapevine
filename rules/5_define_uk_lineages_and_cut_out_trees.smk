@@ -287,7 +287,7 @@ rule annotate_phylotypes:
 
 rule summarize_define_uk_lineages_and_cut_out_trees:
     input:
-        metadata = rules.annotate_phylotypes.output.annotated_tree,
+        annotated_tree = rules.annotate_phylotypes.output.annotated_tree,
         sankey_plot = rules.step_5_generate_sankey_plot.output.plot
     params:
         webhook = config["webhook"],
