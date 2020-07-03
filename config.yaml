@@ -11,6 +11,9 @@ latest_gisaid_json:
 latest_uk_fasta:
 latest_uk_metadata:
 
+uk_omissions:
+uk_updated_dates:
+
 output_path: analysis
 publish_path: publish
 export_path: publish/phylogenetics

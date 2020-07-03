@@ -44,7 +44,7 @@ rule uk_add_pangolin_lineages_to_metadata:
 
 rule uk_output_lineage_table:
     input:
-        fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
+        fasta = rules.uk_filter_omitted_sequences.output.fasta,
         metadata = rules.uk_add_pangolin_lineages_to_metadata.output.metadata
     output:
         fasta = config["output_path"] + "/2/uk.matched.fasta",

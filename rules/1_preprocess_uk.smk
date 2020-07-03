@@ -232,11 +232,27 @@ rule uk_filter_low_coverage_sequences:
         """
 
 
+rule uk_filter_omitted_sequences:
+    input:
+        fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
+        omissions = config["uk_omissions"]
+    output:
+        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.omissions_filtered.fasta"
+    log:
+        config["output_path"] + "/logs/1_uk_filter_omitted_sequences.log"
+    shell:
+        """
+        datafunk remove_fasta \
+          -i {input.fasta} \
+          -f {input.omissions} \
+          -o {output.fasta}  &> {log}
+        """
+
+
 rule uk_full_untrimmed_alignment:
     input:
         sam = rules.uk_minimap2_to_reference.output.sam,
         reference = config["reference_fasta"],
-        omit_list = rules.uk_filter_low_coverage_sequences.log
     output:
         fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.full.fasta"
     log:
@@ -343,6 +359,27 @@ rule uk_add_del_finder_result_to_metadata:
         """
 
 
+rule uk_update_sample_dates:
+    input:
+        metadata = rules.uk_add_del_finder_result_to_metadata.output.metadata
+        updated_dates = config["uk_updated_dates"]
+    output:
+        metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.with_snp_finder.with_del_finder.with_updated_dates.csv"
+    log:
+        config["output_path"] + "/logs/1_uk_update_sample_dates.log"
+    shell:
+        """
+        fastafunk add_columns \
+          --in-metadata {input.metadata} \
+          --in-data {input.updated_dates} \
+          --index-column sequence_name \
+          --join-on sequence_name \
+          --new-columns sample_date \
+          --out-metadata {output.metadata} &>> {log}
+        """
+
+
+
 """
 Instead of new sequences (as determined by a date stamp), it might be more robust
 to extract sequences for lineage typing that don't currently have an associated
@@ -350,7 +387,7 @@ lineage designation in the metadata file.
 """
 rule uk_add_previous_lineages_to_metadata:
     input:
-        metadata = rules.uk_add_del_finder_result_to_metadata.output.metadata,
+        metadata = rules.uk_update_sample_dates.output.metadata,
         previous_metadata = config["previous_uk_metadata"],
         global_lineages = config["global_lineages"]
     output:
@@ -381,7 +418,7 @@ rule uk_add_previous_lineages_to_metadata:
 
 rule uk_extract_lineageless:
     input:
-        fasta = rules.uk_filter_low_coverage_sequences.output,
+        fasta = rules.uk_filter_omitted_sequences.output,
         metadata = rules.uk_add_previous_lineages_to_metadata.output.metadata,
     output:
         fasta = config["output_path"] + "/1/uk.new.pangolin_lineages.fasta",
@@ -415,6 +452,7 @@ rule summarize_preprocess_uk:
         deduplicated_fasta_by_biosampleid = rules.uk_remove_duplicates_biosamplesourceid_by_date.output.fasta,
         unify_headers_fasta = rules.uk_unify_headers.output.fasta,
         removed_low_covg_fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
+        removed_omitted_fasta = rules.uk_filter_omitted_sequences.output.fasta,
         full_alignment = rules.uk_full_untrimmed_alignment.output.fasta,
         full_metadata = rules.add_snp_finder_result_to_metadata.output.metadata,
         lineageless_fasta = rules.uk_extract_lineageless.output.fasta
@@ -433,6 +471,7 @@ rule summarize_preprocess_uk:
         echo "> Number of sequences after deduplication by bio_sample_id: $(cat {input.deduplicated_fasta_by_biosampleid} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after unifying headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after trimming and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)\\n" &>> {log}
+        echo "> Number of sequences after removing those in omissions file: $(cat {input.removed_omitted_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of new sequences passed to Pangolin for typing: $(cat {input.lineageless_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo ">\\n" >> {log}
 
