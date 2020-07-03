@@ -45,7 +45,7 @@ rule uk_add_lineage_information_back_to_master_metadata:
 
 rule publish_COG_master_metadata:
     input:
-        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.fasta",
+        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.omissions_filtered.fasta",
         metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata
     output:
         metadata_master = config["publish_path"] + "/COG/master.csv",
@@ -161,7 +161,7 @@ rule publish_full_aligned_cog_data:
 
 rule publish_filtered_aligned_cog_data:
     input:
-        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.fasta",
+        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.omissions_filtered.fasta",
         metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata
     output:
         fasta = config["export_path"] + "/alignments/cog_" + config["date"] + '_alignment.fasta',
@@ -189,7 +189,7 @@ rule publish_filtered_aligned_cog_data:
 
 rule combine_cog_gisaid:
     input:
-        cog_fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.fasta",
+        cog_fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.omissions_filtered.fasta",
         cog_metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata,
         gisaid_fasta = config["output_path"] + "/0/gisaid.RD.UH.filt.mapped.filt2.masked.filt3.fasta",
         gisaid_metadata = rules.gisaid_add_lineage_information_back_to_master_metadata.output.metadata
@@ -285,7 +285,7 @@ rule publish_full_annotated_tree_and_metadata:
 rule publish_civet_data:
     input:
         cog_all_fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.full.masked.fasta",
-        cog_fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.fasta",
+        cog_fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.omissions_filtered.fasta",
         cog_metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata,
         combined_metadata = rules.combine_cog_gisaid.output.metadata,
         combined_fasta = rules.combine_cog_gisaid.output.fasta,
@@ -436,7 +436,7 @@ rule publish_public_cog_data:
         public_tree = config["output_path"] + "/4/cog_gisaid_full.tree.public.newick",
         fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.unify_headers.fasta",
         metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata,
-        alignment = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.fasta",
+        alignment = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.omissions_filtered.fasta",
     output:
         public_tree = config["export_path"] + "/public/cog_global_" + config["date"] + "_tree.newick",
         fasta = config["export_path"] + "/public/cog_" + config["date"] + ".fasta",
