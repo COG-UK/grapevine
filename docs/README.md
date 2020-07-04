@@ -39,6 +39,15 @@ This document provides an overview of the complete Grapevine pipeline, beginning
 4. Remove insertions relative to the reference and pad sites outside of the CDS with `N`
 5. Filter sequences with more than 5% `N`s (excluding the padding in step 4)
 6. Mask predefined problematic sites
+
+	These are defined by column and regex match to sequence ID:
+	```
+	13402,?,^Belgium/
+	11083,?,\w
+	```
+	So (1-based) column `13402` is masked with `?` in all sequences from Belgium, and column `11083` is masked in all sequences
+	See this [Virological post](https://virological.org/t/issues-with-sars-cov-2-sequencing-data/473) for more information
+
 7. Calculate distance to `WH04` - the sequence closest to the 'root' of the outbreak
 8. Filter on excessive distance to `WH04` (anything more than 4 standard deviations from each epi-week's mean distance is removed)
 9. Genotype each sequence for predefined SNPs of interest
@@ -112,6 +121,14 @@ This document provides an overview of the complete Grapevine pipeline, beginning
 5. Remove insertions relative to the reference and pad sites outside of the CDS with `N`
 6. Filter sequences with more than 5% `N`s (excluding the padding in step 5)
 7. Mask predefined problematic sites
+
+	These are defined by column and regex match to sequence ID:
+	```
+	13402,?,^Belgium/
+	11083,?,\w
+	```
+	So (1-based) column `13402` is masked with `?` in all sequences from Belgium, and column `11083` is masked in all sequences
+	See this [Virological post](https://virological.org/t/issues-with-sars-cov-2-sequencing-data/473) for more information
 8. Genotype each sequence for predefined SNPs of interest
 9. Add previous Pangolin and UK lineage designations to metadata
 10. Assign a pangolin lineage to sequences that lack one
