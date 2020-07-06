@@ -66,7 +66,6 @@ rule publish_COG_master_metadata:
                           lineage lineage_support lineages_version uk_lineage acc_lineage del_lineage phylotype acc_introduction del_introduction \
                           sequencing_org_code \
           --where-column epi_week=edin_epi_week country=adm0 \
-                         sample_date=received_date sample_date=collection_date \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata_report} \
           --restrict &>> {log}
@@ -152,7 +151,7 @@ rule publish_full_aligned_cog_data:
               sequencing_org sequencing_org_code sequencing_submission_date sequencing_uuid \
               source_age source_sex start_time \
               submission_org submission_org_code submission_user swab_site \
-              header sequence_name length missing gaps cov_id subsample_omit edin_epi_week d614g del_1605_3 \
+              header sequence_name length missing gaps cov_id sample_date subsample_omit edin_epi_week d614g del_1605_3 \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --restrict &> {log}
@@ -180,7 +179,6 @@ rule publish_filtered_aligned_cog_data:
                           is_travel_history travel_history lineage \
                           lineage_support uk_lineage acc_lineage del_lineage phylotype \
           --where-column epi_week=edin_epi_week country=adm0 \
-                         sample_date=received_date sample_date=collection_date \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --restrict &> {log}
@@ -216,7 +214,6 @@ rule combine_cog_gisaid:
                           is_travel_history travel_history lineage \
                           lineage_support uk_lineage microreact_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype d614g del_1605_3 \
           --where-column epi_week=edin_epi_week country=adm0 \
-                         sample_date=received_date sample_date=collection_date \
           --out-fasta {params.intermediate_cog_fasta} \
           --out-metadata {params.intermediate_cog_metadata} \
           --restrict &>> {log}
@@ -315,7 +312,6 @@ rule publish_civet_data:
                           is_travel_history travel_history lineage \
                           lineage_support uk_lineage acc_lineage del_lineage phylotype \
           --where-column epi_week=edin_epi_week country=adm0 \
-                         sample_date=received_date sample_date=collection_date \
           --out-fasta {output.cog_all_fasta} \
           --out-metadata {output.cog_all_metadata} \
           --restrict &>> {log}
@@ -331,7 +327,6 @@ rule publish_civet_data:
                           is_travel_history travel_history lineage \
                           lineage_support uk_lineage acc_lineage del_lineage phylotype \
           --where-column epi_week=edin_epi_week country=adm0 \
-                         sample_date=received_date sample_date=collection_date \
           --out-fasta {output.cog_fasta} \
           --out-metadata {output.cog_metadata} \
           --restrict &>> {log}
@@ -347,24 +342,16 @@ rule publish_civet_data:
                           is_travel_history travel_history lineage \
                           lineage_support uk_lineage acc_lineage del_lineage phylotype \
           --where-column epi_week=edin_epi_week country=adm0 \
-                         sample_date=received_date sample_date=collection_date \
           --out-fasta {output.combined_fasta} \
           --out-metadata {output.combined_metadata} \
           --restrict &>> {log}
         """
 
 
-# def aggregate_input_trees(wildcards):
-#     checkpoint_output_directory = checkpoints.cut_out_trees.get(**wildcards).output[0]
-#     print(checkpoints.cut_out_trees.get(**wildcards).output[0])
-#     required_files = expand( "%s/5/trees/uk_lineage_UK{i}.tree" %(config["output_path"]),
-#                             i=glob_wildcards(os.path.join(checkpoint_output_directory, "uk_lineage_UK{i}.tree")).i)
-#     return (sorted(required_files))
-
 rule publish_uk_lineage_specific_fasta_and_metadata_files:
     input:
         step_5_done = rules.summarize_define_uk_lineages_and_cut_out_trees.log,
-        tree = config["output_path"] + "5/trees/uk_lineage_UK{i}.tree",
+        tree = config["output_path"] + "/5/trees/uk_lineage_UK{i}.tree",
         metadata = rules.publish_full_annotated_tree_and_metadata.output.metadata,
         fasta = rules.publish_full_annotated_tree_and_metadata.output.fasta
     params:
@@ -396,11 +383,21 @@ rule publish_uk_lineage_specific_fasta_and_metadata_files:
         """
 
 
-X = glob_wildcards(config["output_path"] + "/5/trees/uk_lineage_UK{i}.tree").i
+
+def aggregate_input_publish_trees_logs(wildcards):
+    checkpoint_output_directory = checkpoints.cut_out_trees.get(**wildcards).output[0]
+    print(checkpoints.cut_out_trees.get(**wildcards).output[0])
+    required_files = expand( "%s/logs/7_publish_uk_lineage_specific_fasta_and_metadata_files_uk{i}.log" %(config["output_path"]),
+                            i=glob_wildcards(os.path.join(checkpoint_output_directory, "uk_lineage_UK{i}.tree")).i)
+    return (sorted(required_files))
+
+# X = glob_wildcards(config["output_path"] + "/5/trees/uk_lineage_UK{i}.tree").i
+# csvs = expand(config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.csv", i = X)
 
 rule summarize_publish_uk_lineage_specific_fasta_and_metadata_files:
     input:
-        expand(config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.csv", i = X)
+        logs=aggregate_input_publish_trees_logs,
+        step_5_done = rules.summarize_define_uk_lineages_and_cut_out_trees.log,
     log:
         config["output_path"] + "/logs/7_summarize_publish_uk_lineage_specific_fasta_and_metadata_files.log"
     shell:
@@ -457,7 +454,6 @@ rule publish_public_cog_data:
                           sample_date epi_week lineage \
                           lineage_support \
           --where-column epi_week=edin_epi_week country=adm0 \
-                         sample_date=received_date sample_date=collection_date \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --restrict &>> {log}
@@ -737,7 +733,7 @@ rule summarize_publish:
         echo "> Public metadata for microreact published to {input.microreact_public_metadata}\\n" >> {log}
         echo "> Private metadata for microreact published to {input.microreact_private_metadata}\\n" >> {log}
         echo "> \\n" >> {log}
-        echo "> Data (there is an alignment too) for Pangolin lineage releases published to {input.uk_lineage_fasta_csv_summary}\\n" >> {log}
+        echo "> Data (there is an alignment too) for Pangolin lineage releases published to {input.lineage_report_metadata}\\n" >> {log}
         echo "> \\n" >> {log}
         echo "> Data for Civet published to {params.local_civet_path}\\n" >> {log}
         echo '{{"text":"' > 7_data.json
@@ -786,7 +782,6 @@ rule postpublish_rsync_phylogenetics_data:
         date = config["date"],
         parsed_date = config["date"].replace('-', ''),
         export_path = config["export_path"],
-        webhook = config["webhook"],
     log:
         config["output_path"] + "/logs/7_postpublish_rsync_phylogenetics_data.log"
     shell:
@@ -796,9 +791,11 @@ rule postpublish_rsync_phylogenetics_data:
 
 rule summarize_postpublish:
     input:
-        date = config["date"],
         civet_log = config["output_path"] + "/logs/7_postpublish_cp_civet_data.log",
         rsync_log = config["output_path"] + "/logs/7_postpublish_rsync_phylogenetics_data.log"
+    params:
+        date = config["date"],
+        phylopipe_webhook = config["phylopipe_webhook"],
     log:
         config["output_path"] + "/logs/7_summarize_postpublish.log"
     shell:
@@ -834,8 +831,8 @@ rule summarize_postpublish:
         echo "*Phylogenetic pipeline complete*\\n" >> publish_data_to_consortium.json
         cat {log} >> publish_data_to_consortium.json
         echo '"}}' >> publish_data_to_consortium.json
-        echo 'webhook {params.webhook}'
-        curl -X POST -H "Content-type: application/json" -d @publish_data_to_consortium.json {params.webhook}
+        echo 'webhook {params.phylopipe_webhook}'
+        curl -X POST -H "Content-type: application/json" -d @publish_data_to_consortium.json {params.phylopipe_webhook}
         """
 
 
