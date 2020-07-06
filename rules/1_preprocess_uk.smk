@@ -237,7 +237,7 @@ rule uk_remove_insertions_and_trim_and_pad:
 rule uk_mask_1:
     input:
         fasta = rules.uk_remove_insertions_and_trim_and_pad.output.fasta,
-        mask = config["gisaid_mask_file"]
+        mask = config["uk_mask_file"]
     output:
         fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.trimmed.masked.fasta",
     log:
@@ -307,7 +307,7 @@ rule uk_full_untrimmed_alignment:
 rule uk_mask_2:
     input:
         fasta = rules.uk_full_untrimmed_alignment.output.fasta,
-        mask = config["gisaid_mask_file"]
+        mask = config["uk_mask_file"]
     output:
         fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.full.masked.fasta"
     log:
@@ -418,7 +418,7 @@ rule uk_add_previous_lineages_to_metadata:
           --in-data {input.previous_metadata} \
           --index-column sequence_name \
           --join-on sequence_name \
-          --new-columns uk_lineage lineage lineage_support lineages_version edin_date_stamp \
+          --new-columns uk_lineage edin_date_stamp \
           --out-metadata {output.metadata_temp} &>> {log}
 
         fastafunk add_columns \
@@ -473,7 +473,7 @@ rule summarize_preprocess_uk:
         full_metadata = rules.add_snp_finder_result_to_metadata.output.metadata,
         lineageless_fasta = rules.uk_extract_lineageless.output.fasta
     params:
-        webhook = config["webhook"],
+        grapevine_webhook = config["grapevine_webhook"],
         outdir = config["publish_path"] + "/COG",
         prefix = config["publish_path"] + "/COG/cog",
         export_dir = config["export_path"] + "/alignments",
@@ -495,6 +495,6 @@ rule summarize_preprocess_uk:
         echo "*Step 1: COG-UK preprocessing complete*\\n" >> 1_data.json
         cat {log} >> 1_data.json
         echo '"}}' >> 1_data.json
-        echo "webhook {params.webhook}"
-        curl -X POST -H "Content-type: application/json" -d @1_data.json {params.webhook}
+        echo "webhook {params.grapevine_webhook}"
+        curl -X POST -H "Content-type: application/json" -d @1_data.json {params.grapevine_webhook}
         """

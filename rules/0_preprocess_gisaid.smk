@@ -461,7 +461,7 @@ rule summarize_preprocess_gisaid:
     params:
         publish_path = config["publish_path"] + "/GISAID/",
         published_counts = config["publish_path"] + "/GISAID/gisaid_counts_by_country.csv",
-        webhook = config["webhook"]
+        grapevine_webhook = config["grapevine_webhook"]
     log:
         config["output_path"] + "/logs/0_summarize_preprocess_gisaid.log"
     shell:
@@ -484,7 +484,7 @@ rule summarize_preprocess_gisaid:
         echo "*Step 0: GISAID preprocessing complete*\\n" >> 0_data.json
         cat {log} >> 0_data.json
         echo '"}}' >> 0_data.json
-        echo 'webhook {params.webhook}'
-        curl -X POST -H "Content-type: application/json" -d @0_data.json {params.webhook}
+        echo 'webhook {params.grapevine_webhook}'
+        curl -X POST -H "Content-type: application/json" -d @0_data.json {params.grapevine_webhook}
         # rm 0_data.json
         """
