@@ -61,7 +61,6 @@ rule uk_output_lineage_table:
                           sample_date epi_week \
                           lineage uk_lineage \
           --where-column epi_week=edin_epi_week country=adm0 \
-                         sample_date=received_date sample_date=collection_date \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --log-file {log} \

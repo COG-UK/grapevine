@@ -48,8 +48,9 @@ date:
 ##### Working directory #####
 cwd:
 
-##### Webhook to push to #####
+##### Webhooks to push to #####
 webhook:
+phylopipe_webhook:
 
 ##### report latex template #####
 latex_template:
