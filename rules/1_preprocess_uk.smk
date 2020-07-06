@@ -1,3 +1,4 @@
+import pandas as pd
 
 
 rule uk_add_header_column:
@@ -48,7 +49,7 @@ rule uk_remove_duplicates_covid_by_gaps:
         fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id.fasta",
         metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id.csv"
     log:
-        config["output_path"] + "/logs/1_uk_remove_duplicates_bycovid.log"
+        config["output_path"] + "/logs/1_uk_filter_duplicates_bycovid.log"
     shell:
         """
         fastafunk subsample \
@@ -63,29 +64,66 @@ rule uk_remove_duplicates_covid_by_gaps:
         """
 
 
+rule uk_add_sample_date:
+    input:
+        metadata = rules.uk_remove_duplicates_covid_by_gaps.output.metadata,
+    output:
+        metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id.sample_date.csv",
+    log:
+        config["output_path"] + "/logs/1_uk_add_sample_date.log"
+    run:
+        df = pd.read_csv(input.metadata)
+
+        sample_date = []
+
+        for i,row in df.iterrows():
+
+            if not pd.isnull(row['collection_date']):
+                sample_date.append(row['collection_date'])
+            elif not pd.isnull(row['received_date']):
+                sample_date.append(row['received_date'])
+            else:
+                sample_date.append("")
+
+        df['sample_date'] = sample_date
+        df.to_csv(output.metadata, index=False)
+
+
+rule uk_update_sample_dates:
+    input:
+        metadata = rules.uk_add_sample_date.output.metadata,
+        updated_dates = config["uk_updated_dates"],
+    output:
+        metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id.sample_date.updated_sample_date.csv",
+    log:
+        config["output_path"] + "/logs/1_uk_update_sample_dates.log"
+    shell:
+        """
+        fastafunk add_columns \
+          --in-metadata {input.metadata} \
+          --in-data {input.updated_dates} \
+          --index-column central_sample_id \
+          --join-on central_sample_id \
+          --new-columns sample_date \
+          --out-metadata {output.metadata} &>> {log}
+        """
+
+
 rule uk_add_epi_week:
     input:
-        metadata = rules.uk_remove_duplicates_covid_by_gaps.output.metadata
+        metadata = rules.uk_update_sample_dates.output.metadata
     output:
-        metadata = config["output_path"] + "/1/uk_latest.epi_week.csv",
-        tmp_metadata = temp(config["output_path"] + "/1/uk_latest.epi_week.csv.tmp")
+        metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id.sample_date.updated_sample_date.epi_week.csv",
     log:
         config["output_path"] + "/logs/1_uk_add_epi_week.log"
     shell:
         """
         datafunk add_epi_week \
         --input-metadata {input.metadata} \
-        --output-metadata {output.tmp_metadata} \
-        --date-column received_date \
+        --output-metadata {output.metadata} \
+        --date-column sample_date \
         --epi-week-column-name edin_epi_week \
         --epi-day-column-name edin_epi_day &> {log}
-
-        datafunk add_epi_week \
-        --input-metadata {output.tmp_metadata} \
-        --output-metadata {output.metadata} \
-        --date-column collection_date \
-        --epi-week-column-name edin_epi_week \
-        --epi-day-column-name edin_epi_day &>> {log}
         """
 
 
@@ -95,10 +133,8 @@ rule uk_annotate_to_remove_duplicates_by_biosample:
     output:
         metadata = config["output_path"] + "/1/uk_latest.epi_week.annotated2.csv",
     log:
-        config["output_path"] + "/logs/1_uk_remove_duplicates_by_biosample.log",
+        config["output_path"] + "/logs/1_uk_annotate_to_remove_duplicates_by_biosample.log",
     run:
-        import pandas as pd
-
         df = pd.read_csv(input.metadata)
 
         edin_biosample = []
@@ -122,7 +158,7 @@ rule uk_remove_duplicates_biosamplesourceid_by_date:
         fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id_biosample_source_id.fasta",
         metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id_biosample_source_id.csv"
     log:
-        config["output_path"] + "/logs/1_uk_remove_duplicates_by_biosample.log"
+        config["output_path"] + "/logs/1_uk_filter_duplicates_by_biosample.log"
     shell:
         """
         fastafunk subsample \
@@ -171,6 +207,7 @@ rule uk_minimap2_to_reference:
         """
         minimap2 -a -x asm5 {input.reference} {input.fasta} > {output.sam} 2> {log}
         """
+
 
 rule uk_remove_insertions_and_trim_and_pad:
     input:
@@ -232,11 +269,27 @@ rule uk_filter_low_coverage_sequences:
         """
 
 
+rule uk_filter_omitted_sequences:
+    input:
+        fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
+        omissions = config["uk_omissions"]
+    output:
+        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.omissions_filtered.fasta"
+    log:
+        config["output_path"] + "/logs/1_uk_filter_omitted_sequences.log"
+    shell:
+        """
+        datafunk remove_fasta \
+          -i {input.fasta} \
+          -f {input.omissions} \
+          -o {output.fasta}  &> {log}
+        """
+
+
 rule uk_full_untrimmed_alignment:
     input:
         sam = rules.uk_minimap2_to_reference.output.sam,
         reference = config["reference_fasta"],
-        omit_list = rules.uk_filter_low_coverage_sequences.log
     output:
         fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.full.fasta"
     log:
@@ -381,7 +434,7 @@ rule uk_add_previous_lineages_to_metadata:
 
 rule uk_extract_lineageless:
     input:
-        fasta = rules.uk_filter_low_coverage_sequences.output,
+        fasta = rules.uk_filter_omitted_sequences.output,
         metadata = rules.uk_add_previous_lineages_to_metadata.output.metadata,
     output:
         fasta = config["output_path"] + "/1/uk.new.pangolin_lineages.fasta",
@@ -415,6 +468,7 @@ rule summarize_preprocess_uk:
         deduplicated_fasta_by_biosampleid = rules.uk_remove_duplicates_biosamplesourceid_by_date.output.fasta,
         unify_headers_fasta = rules.uk_unify_headers.output.fasta,
         removed_low_covg_fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
+        removed_omitted_fasta = rules.uk_filter_omitted_sequences.output.fasta,
         full_alignment = rules.uk_full_untrimmed_alignment.output.fasta,
         full_metadata = rules.add_snp_finder_result_to_metadata.output.metadata,
         lineageless_fasta = rules.uk_extract_lineageless.output.fasta
@@ -432,7 +486,8 @@ rule summarize_preprocess_uk:
         echo "> Number of sequences after deduplication by cov_id: $(cat {input.deduplicated_fasta_by_covid} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after deduplication by bio_sample_id: $(cat {input.deduplicated_fasta_by_biosampleid} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after unifying headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)\\n" &>> {log}
-        echo "> Number of sequences after trimming and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)\\n" &>> {log}
+        echo "> Number of sequences after mapping and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)\\n" &>> {log}
+        echo "> Number of sequences after removing those in omissions file: $(cat {input.removed_omitted_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of new sequences passed to Pangolin for typing: $(cat {input.lineageless_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo ">\\n" >> {log}
 

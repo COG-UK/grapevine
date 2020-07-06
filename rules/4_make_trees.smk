@@ -75,24 +75,26 @@ rule run_4_subroutine_on_lineages:
           metadata="{input.metadata}" &> {log}
         """
 
-rule sort:
+rule sort_collapse:
     input:
         grafted_tree = rules.run_4_subroutine_on_lineages.output.grafted_tree,
     output:
-        sorted_tree = config["output_path"] + '/4/cog_gisaid_full.tree.public.newick',
+        sorted_tree = config["output_path"] + '/4/cog_gisaid_grafted.sorted.tree',
+        sorted_collapsed_tree = config["output_path"] + '/4/cog_gisaid_full.tree.public.newick',
+    params:
+        collapse=0.000005,
     log:
-        config["output_path"] + "/logs/4_sort.log",
+        config["output_path"] + "/logs/4_sort_collapse.log",
     shell:
         """
         gotree rotate sort -i {input.grafted_tree} -o {output.sorted_tree} &> {log}
+        gotree collapse length --length {params.collapse} -i {output.sorted_tree} -o {output.sorted_collapsed_tree} &>> {log}
         """
 
 rule step_4_annotate_tree:
     input:
-        tree = rules.sort.output.sorted_tree,
+        tree = rules.sort_collapse.output.sorted_collapsed_tree,
         metadata = config["output_path"] + "/3/cog_gisaid.lineages.csv",
-    params:
-        collapse=0.000005,
     output:
         tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.tree"
     log:
@@ -101,13 +103,12 @@ rule step_4_annotate_tree:
         """
         clusterfunk annotate_tips \
           --in-metadata {input.metadata} \
-          --trait-columns country uk_lineage \
+          --trait-columns country lineage uk_lineage \
           --index-column sequence_name \
           --boolean-for-trait country='UK' country='UK' country='UK' country='UK' \
           --boolean-trait-names country_uk country_uk_acctran country_uk_deltran \
           --in-format newick \
           --out-format nexus \
-          --collapse_to_polytomies {params.collapse} \
           --input {input.tree} \
           --output {output.tree} &> {log}
         """
@@ -243,7 +244,7 @@ rule output_annotations:
 rule summarize_make_trees:
     input:
         traits = rules.output_annotations.output.traits,
-        public_tree = rules.sort.output.sorted_tree,
+        public_tree = rules.sort_collapse.output.sorted_collapsed_tree,
     params:
         webhook = config["webhook"],
     log:
