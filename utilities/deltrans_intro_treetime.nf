@@ -95,6 +95,8 @@ process treetime {
     --clock-rate 0.00100 \
     --clock-filter 0 \
     --tree sedded_tree.nexus \
+    --keep-root \
+    --max-iter 10 \
     --dates metadata.csv \
     --name-column sequence_name \
     --date-column sample_date \

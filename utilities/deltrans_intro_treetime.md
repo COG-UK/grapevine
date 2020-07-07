@@ -4,7 +4,7 @@ If you don't have one already, you need a Grapevine conda environment:
 ```
 git clone https://github.com/COG-UK/grapevine.git
 cd grapevine
-conda install -f environment.yml
+conda env create -f environment.yml
 conda activate grapevine
 ```
 
