@@ -5,7 +5,7 @@ Phylogenetic pipeline for the COG-UK project
 ```
 git clone https://github.com/COG-UK/grapevine.git
 cd grapevine
-conda install -f environment.yml
+conda env create -f environment.yml
 conda activate grapevine
 ```
 
