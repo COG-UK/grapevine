@@ -251,6 +251,8 @@ rule publish_updated_global_lineages:
         combined_metadata = rules.combine_cog_gisaid.output.metadata,
     output:
         fasta = config["publish_path"] + "/COG_GISAID/cog_gisaid.fasta",
+        temp_metadata_1 = temp(config["publish_path"] + "/COG_GISAID/global_lineages_temp1.csv"),
+        temp_metadata_2 = temp(config["publish_path"] + "/COG_GISAID/global_lineages_temp2.csv"),
         metadata = config["publish_path"] + "/COG_GISAID/global_lineages.csv",
     log:
         config["output_path"] + "/logs/7_publish_updated_global_lineages.log"
@@ -260,12 +262,15 @@ rule publish_updated_global_lineages:
           --in-fasta {input.combined_fasta} \
           --in-metadata {input.combined_metadata} \
           --index-column sequence_name \
-          --filter-column taxon lineage UFbootstrap lineages_version \
-          --where-column taxon=sequence_name UFbootstrap=lineage_support \
+          --filter-column sequence_name lineage lineage_support lineages_version \
           --out-fasta {output.fasta} \
-          --out-metadata {output.metadata} \
+          --out-metadata {output.temp_metadata_1} \
           --restrict &>> {log}
+
+        sed '1s/sequence_name/taxon/' {output.temp_metadata_1} > {output.temp_metadata_2}
+        sed '1s/lineage_support/UFbootstrap/' {output.temp_metadata_2} > {output.metadata}
         """
+
 
 rule publish_full_annotated_tree_and_metadata:
     input:
@@ -700,7 +705,7 @@ rule summarize_publish:
 
         COG_GISAID_nexus_tree = rules.publish_full_annotated_tree_and_metadata.output.annotated_tree,
         COG_GISAID_meta = rules.publish_full_annotated_tree_and_metadata.output.metadata,
-        updaged_global_lineages = rules.publish_updated_global_lineages.log,
+        updated_global_lineages = rules.publish_updated_global_lineages.log,
 
         public_COG_GISAID_newick_tree = rules.publish_public_cog_data.output.public_tree,
         public_COG_GISAID_seq_all = rules.publish_unaligned_cog_sequences.output.fasta,
