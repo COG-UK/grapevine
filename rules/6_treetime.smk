@@ -59,10 +59,10 @@ rule treetime:
 
 
 def aggregate_input_treetime_logs(wildcards):
-    checkpoint_output_directory = checkpoints.cut_out_trees.get(**wildcards).output[0]
-    print(checkpoints.cut_out_trees.get(**wildcards).output[0])
+    checkpoint_output_directory = checkpoints.get_uk_lineage_samples.get(**wildcards).output[0]
+    print(checkpoints.get_uk_lineage_samples.get(**wildcards).output[0])
     required_files = expand( "%s/logs/6_timetree_run_uk{i}.log" %(config["output_path"]),
-                            i=glob_wildcards(os.path.join(checkpoint_output_directory, "uk_lineage_UK{i}.tree")).i)
+                            i=glob_wildcards(os.path.join(checkpoint_output_directory, "UK{i}.samples.txt")).i)
     return (sorted(required_files))
 
 rule summarize_treetime:
