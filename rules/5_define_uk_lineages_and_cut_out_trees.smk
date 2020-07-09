@@ -151,27 +151,59 @@ This is a checkpoint so the dag will get remade after this run. At that point ag
 ask for trait files with wildcards that match the number of uk lineage (i). These were made in this step and everything
 should flow from there
 """
-checkpoint cut_out_trees:
+checkpoint get_uk_lineage_samples:
     input:
-        tree=rules.step_5_annotate_tree.output.tree
-    params:
-        outdir=config["output_path"] + "/5/trees",
+        metadata = rules.merge_and_create_new_uk_lineages.output
     output:
-        directory(config["output_path"] + "/5/trees")
+        outdir = directory(config["output_path"] + "/5/samples/")
     log:
-        config["output_path"] + "/logs/5_cut_out_trees.log"
+        config["output_path"] + "/logs/5_get_uk_lineage_samples.log"
     threads: 40
     shell:
         """
-        clusterfunk prune \
-          --extract \
-          --trait uk_lineage \
-          --input {input.tree} \
-          --threads {threads} \
-          --output {params.outdir} &> {log}
+        mkdir -p {output.outdir} &> {log}
 
-          echo "Look at all those trees:" >> {log}
-          ls {output}/* >> {log}
+        tail -n+2 {input.metadata} | cut -d, -f2 | sort | uniq | while read LINE
+        do
+          I=`echo ${{LINE}} | cut -d"K" -f2`
+          if [ $(grep -c ",${{LINE}}," {input.metadata}) -ge 3 ]
+          then
+            grep ",${{LINE}}," {input.metadata} | cut -d"," -f1 > {output.outdir}UK${{I}}.samples.txt
+          fi
+        done 2>> {log}
+        """
+
+
+rule dequote_tree:
+    input:
+        full_newick_tree = rules.sort_collapse.output.sorted_collapsed_tree,
+    output:
+        tree = config["output_path"] + "/5/cog_gisaid_full.tree.noquotes.newick"
+    log:
+        config["output_path"] + "/logs/5_dequote_tree.log"
+    shell:
+        """
+        sed "s/'//g" {input.full_newick_tree} > {output.tree} 2> {log}
+        """
+
+"""
+It would probably be faster for the step below to loop through the whole
+directory, cutting out trees, and
+"""
+rule cut_out_trees:
+    input:
+        full_tree = rules.dequote_tree.output.tree,
+        samples=config["output_path"] + "/5/samples/UK{i}.samples.txt",
+    output:
+        tree=config["output_path"] + "/5/trees/uk_lineage_UK{i}.tree",
+    log:
+        config["output_path"] + "/logs/5_cut_out_trees_UK{i}.log"
+    shell:
+        """
+        gotree prune -r \
+            -i {input.full_tree} \
+            --tipfile {input.samples} \
+            -o {output.tree} &>> {log}
         """
 
 
@@ -192,8 +224,10 @@ rule phylotype_cut_trees:
         --threshold {params.threshold} \
         --prefix UK{params.i}_1 \
         --input {input.tree} \
+        --in-format newick \
         --output {output.tree} &> {log}
         """
+
 
 rule get_uk_phylotypes_csv:
     input:
@@ -212,10 +246,9 @@ rule get_uk_phylotypes_csv:
 
 
 def aggregate_input_csv(wildcards):
-    checkpoint_output_directory = checkpoints.cut_out_trees.get(**wildcards).output[0]
-    # print(checkpoints.cut_out_trees.get(**wildcards).output[0])
+    checkpoint_output_directory = checkpoints.get_uk_lineage_samples.get(**wildcards).output[0]
     required_files = expand( "%s/5/phylotyped_trees/uk_lineage_UK{i}.csv" %(config["output_path"]),
-                            i=glob_wildcards(os.path.join(checkpoint_output_directory, "uk_lineage_UK{i}.tree")).i)
+                            i=glob_wildcards(os.path.join(checkpoint_output_directory, "UK{i}.samples.txt")).i)
     return (required_files)
 #
 # def aggregate_input_trees(wildcards):
