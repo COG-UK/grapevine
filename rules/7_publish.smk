@@ -72,38 +72,38 @@ rule publish_COG_master_metadata:
         """
 
 
-rule gisaid_add_lineage_information_back_to_master_metadata:
-    input:
-        metadata = config["output_path"] + "/0/gisaid.all.csv",
-        global_lineage_data = config["global_lineages"]
-    output:
-        metadata = config["output_path"] + "/7/gisaid.master.csv"
-    log:
-        config["output_path"] + "/logs/7_gisaid_add_lineage_information_back_to_master_metadata.log"
-    shell:
-        """
-      fastafunk add_columns \
-        --in-metadata {input.metadata} \
-        --in-data {input.global_lineage_data} \
-        --index-column sequence_name \
-        --join-on taxon  \
-        --new-columns lineage lineage_support lineages_version \
-        --where-column lineage_support=UFbootstrap \
-        --out-metadata {output.metadata} &>> {log}
-        """
+# rule gisaid_add_lineage_information_back_to_master_metadata:
+#     input:
+#         metadata = config["GISAID_background_metadata"],
+#         global_lineage_data = config["global_lineages"]
+#     output:
+#         metadata = config["output_path"] + "/7/gisaid.master.csv"
+#     log:
+#         config["output_path"] + "/logs/7_gisaid_add_lineage_information_back_to_master_metadata.log"
+#     shell:
+#         """
+#       fastafunk add_columns \
+#         --in-metadata {input.metadata} \
+#         --in-data {input.global_lineage_data} \
+#         --index-column sequence_name \
+#         --join-on taxon  \
+#         --new-columns lineage lineage_support lineages_version \
+#         --where-column lineage_support=UFbootstrap \
+#         --out-metadata {output.metadata} &>> {log}
+#         """
 
 
-rule publish_gisaid_master_metadata:
-    input:
-        metadata = rules.gisaid_add_lineage_information_back_to_master_metadata.output.metadata,
-    output:
-        metadata = config["publish_path"] + "/GISAID/master.csv"
-    log:
-        config["output_path"] + "/logs/7_publish_gisaid_master_metadata.log"
-    shell:
-        """
-        cp {input.metadata} {output.metadata} &> {log}
-        """
+# rule publish_gisaid_master_metadata:
+#     input:
+#         metadata = rules.gisaid_add_lineage_information_back_to_master_metadata.output.metadata,
+#     output:
+#         metadata = config["publish_path"] + "/GISAID/master.csv"
+#     log:
+#         config["output_path"] + "/logs/7_publish_gisaid_master_metadata.log"
+#     shell:
+#         """
+#         cp {input.metadata} {output.metadata} &> {log}
+#         """
 
 
 rule publish_unaligned_cog_sequences:
@@ -189,8 +189,8 @@ rule combine_cog_gisaid:
     input:
         cog_fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.omissions_filtered.fasta",
         cog_metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata,
-        gisaid_fasta = config["output_path"] + "/0/gisaid.RD.UH.filt.mapped.filt2.masked.filt3.fasta",
-        gisaid_metadata = rules.gisaid_add_lineage_information_back_to_master_metadata.output.metadata
+        gisaid_fasta = config["GISAID_background_fasta"],
+        gisaid_metadata = config["GISAID_background_metadata"]
     params:
         intermediate_cog_fasta = config["output_path"] + "/7/cog.combine_cog_gisaid.temp.cog.fasta",
         intermediate_cog_metadata = config["output_path"] + "/7/cog.combine_cog_gisaid.temp.cog.csv",
@@ -211,8 +211,8 @@ rule combine_cog_gisaid:
                           sequence_name sample_date epi_week \
                           country adm1 adm2 submission_org_code \
                           is_surveillance is_community is_hcw \
-                          is_travel_history travel_history lineage \
-                          lineage_support uk_lineage microreact_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype d614g del_1605_3 \
+                          is_travel_history travel_history lineage lineage_support lineages_version \
+                          uk_lineage microreact_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype d614g del_1605_3 \
           --where-column epi_week=edin_epi_week country=adm0 \
           --out-fasta {params.intermediate_cog_fasta} \
           --out-metadata {params.intermediate_cog_metadata} \
@@ -227,8 +227,8 @@ rule combine_cog_gisaid:
                           sequence_name sample_date epi_week \
                           country adm1 adm2 submission_org_code \
                           is_surveillance is_community is_hcw \
-                          is_travel_history travel_history lineage \
-                          lineage_support uk_lineage microreact_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype d614g del_1605_3 \
+                          is_travel_history travel_history lineage lineage_support lineages_version \
+                          uk_lineage microreact_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype d614g del_1605_3 \
           --where-column uk_omit=is_uk sample_date=covv_collection_date epi_week=edin_epi_week \
                          country=edin_admin_0 travel_history=edin_travel \
           --out-fasta {params.intermediate_gisaid_fasta} \
@@ -242,6 +242,33 @@ rule combine_cog_gisaid:
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --index-column sequence_name &>> {log}
+        """
+
+
+rule publish_updated_global_lineages:
+    input:
+        combined_fasta = rules.combine_cog_gisaid.output.fasta,
+        combined_metadata = rules.combine_cog_gisaid.output.metadata,
+    output:
+        fasta = config["publish_path"] + "/COG_GISAID/cog_gisaid.fasta",
+        temp_metadata_1 = temp(config["publish_path"] + "/COG_GISAID/global_lineages_temp1.csv"),
+        temp_metadata_2 = temp(config["publish_path"] + "/COG_GISAID/global_lineages_temp2.csv"),
+        metadata = config["publish_path"] + "/COG_GISAID/global_lineages.csv",
+    log:
+        config["output_path"] + "/logs/7_publish_updated_global_lineages.log"
+    shell:
+        """
+        fastafunk fetch \
+          --in-fasta {input.combined_fasta} \
+          --in-metadata {input.combined_metadata} \
+          --index-column sequence_name \
+          --filter-column sequence_name lineage lineage_support lineages_version \
+          --out-fasta {output.fasta} \
+          --out-metadata {output.temp_metadata_1} \
+          --restrict &>> {log}
+
+        sed '1s/sequence_name/taxon/' {output.temp_metadata_1} > {output.temp_metadata_2}
+        sed '1s/lineage_support/UFbootstrap/' {output.temp_metadata_2} > {output.metadata}
         """
 
 
@@ -666,7 +693,7 @@ rule summarize_publish:
     input:
         reports_log = rules.summarize_publish_reports.log,
 
-        GISAID_meta_master = rules.publish_gisaid_master_metadata.output.metadata,
+        # GISAID_meta_master = rules.publish_gisaid_master_metadata.output.metadata,
         COG_meta_master = rules.publish_COG_master_metadata.output.metadata_master,
 
         COG_seq_all = rules.publish_unaligned_cog_sequences.output.fasta,
@@ -678,6 +705,7 @@ rule summarize_publish:
 
         COG_GISAID_nexus_tree = rules.publish_full_annotated_tree_and_metadata.output.annotated_tree,
         COG_GISAID_meta = rules.publish_full_annotated_tree_and_metadata.output.metadata,
+        updated_global_lineages = rules.publish_updated_global_lineages.log,
 
         public_COG_GISAID_newick_tree = rules.publish_public_cog_data.output.public_tree,
         public_COG_GISAID_seq_all = rules.publish_unaligned_cog_sequences.output.fasta,
@@ -698,7 +726,7 @@ rule summarize_publish:
         log_civet = rules.publish_civet_data.log,
     params:
         date = config["date"],
-        webhook = config["webhook"],
+        grapevine_webhook = config["grapevine_webhook"],
         export_path = config["export_path"],
         uk_trees_path = config["export_path"] + "/trees/uk_lineages/",
         local_civet_path = config["export_path"] + "/civet/",
@@ -709,7 +737,6 @@ rule summarize_publish:
         """
         echo "> Reports published to {params.reports_path}\\n" >> {log}
         echo "> \\n" >> {log}
-        echo "> Gisaid master metadata published to {input.GISAID_meta_master}\\n" >> {log}
         echo "> COG master metadata published to {input.COG_meta_master}\\n" >> {log}
         echo "> \\n" >> {log}
         echo "> Unaligned (deduplicated, clean headers) COG sequences published to {input.COG_seq_all}\\n" >> {log}
@@ -740,9 +767,10 @@ rule summarize_publish:
         echo "*Step 7: publish data to {params.export_path} complete*\\n" >> 7_data.json
         cat {log} >> 7_data.json
         echo '"}}' >> 7_data.json
-        echo 'webhook {params.webhook}'
-        curl -X POST -H "Content-type: application/json" -d @7_data.json {params.webhook}
+        echo 'webhook {params.grapevine_webhook}'
+        curl -X POST -H "Content-type: application/json" -d @7_data.json {params.grapevine_webhook}
         """
+        # echo "> Gisaid master metadata published to {input.GISAID_meta_master}\\n" >> {log}
 
 
 rule postpublish_cp_civet_data:

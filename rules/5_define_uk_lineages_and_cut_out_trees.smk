@@ -290,7 +290,7 @@ rule summarize_define_uk_lineages_and_cut_out_trees:
         annotated_tree = rules.annotate_phylotypes.output.annotated_tree,
         sankey_plot = rules.step_5_generate_sankey_plot.output.plot
     params:
-        webhook = config["webhook"],
+        grapevine_webhook = config["grapevine_webhook"],
     log:
         config["output_path"] + "/logs/5_summarize_define_uk_lineages_and_cut_out_trees.log"
     shell:
@@ -301,6 +301,6 @@ rule summarize_define_uk_lineages_and_cut_out_trees:
         echo "*Step 5: Generate UK lineage trees is complete*\\n" >> 5b_data.json
         echo "> _Look at this Sankey plot_: {input.sankey_plot}\\n" >> 5b_data.json
         echo '"}}' >> 5b_data.json
-        echo "webhook {params.webhook}"
-        curl -X POST -H "Content-type: application/json" -d @5b_data.json {params.webhook}
+        echo "webhook {params.grapevine_webhook}"
+        curl -X POST -H "Content-type: application/json" -d @5b_data.json {params.grapevine_webhook}
         """
