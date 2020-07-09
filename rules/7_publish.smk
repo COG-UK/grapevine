@@ -542,25 +542,25 @@ rule publish_microreact_specific_output:
         """
 
 
-# rule publish_time_trees:
-#     input:
-#         config["output_path"] + "/logs/6_summarize_treetime.log"
-#     params:
-#         treedir = config["output_path"] + "/6/",
-#         outdir = config["export_path"] + "/trees/uk_lineages/"
-#     log:
-#         config["output_path"] + "/logs/7_publish_time_trees.log"
-#     shell:
-#         """
-#         for DIR in {params.treedir}trees/*timetree/
-#         do
-#             FILECOUNT=$(ls $DIR | wc -l)
-#             if [ $FILECOUNT -gt 0 ]
-#             then
-#                 cp -r $DIR {params.outdir}
-#             fi
-#         done &>> {log}
-#         """
+rule publish_time_trees:
+    input:
+        config["output_path"] + "/logs/6_summarize_treetime.log"
+    params:
+        treedir = config["output_path"] + "/6/",
+        outdir = config["export_path"] + "/trees/uk_lineages/"
+    log:
+        config["output_path"] + "/logs/7_publish_time_trees.log"
+    shell:
+        """
+        for DIR in {params.treedir}trees/*timetree/
+        do
+            FILECOUNT=$(ls $DIR | wc -l)
+            if [ $FILECOUNT -gt 0 ]
+            then
+                cp -r $DIR {params.outdir}
+            fi
+        done &>> {log}
+        """
 
 
 rule publish_full_report:
@@ -724,7 +724,7 @@ rule summarize_publish:
 
         uk_lineage_fasta_csv_summary = rules.summarize_publish_uk_lineage_specific_fasta_and_metadata_files.log,
 
-        # log_uk_lineage_timetrees = rules.publish_time_trees.log,
+        log_uk_lineage_timetrees = rules.publish_time_trees.log,
 
         log_civet = rules.publish_civet_data.log,
     params:
