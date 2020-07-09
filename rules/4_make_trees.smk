@@ -6,7 +6,7 @@ rule split_based_on_lineages:
         lineage = config["lineage_splits"]
     params:
         prefix = config["output_path"] + "/4/lineage_",
-        webhook = config["webhook"]
+        grapevine_webhook = config["grapevine_webhook"]
     output:
         temp(config["output_path"] + "/4/split_done")
     log:
@@ -21,8 +21,6 @@ rule split_based_on_lineages:
           --lineage-csv {input.lineage} \
           --out-folder {params.prefix} &> {log}
 
-        # echo {params.webhook}
-
         echo '{{"text":"' > 4a_data.json
         echo "*Step 4: Ready for tree building*\\n" >> 4a_data.json
         num_lineages=$(cat {input.lineage} | wc -l)
@@ -33,10 +31,10 @@ rule split_based_on_lineages:
           echo ">$line\\n" >> 4a_data.json
         done
         echo '"}}' >> 4a_data.json
-        # echo "webhook {params.webhook}"
+        echo "webhook {params.grapevine_webhook}"
 
         touch {output}
-        curl -X POST -H "Content-type: application/json" -d @4a_data.json {params.webhook}
+        curl -X POST -H "Content-type: application/json" -d @4a_data.json {params.grapevine_webhook}
         """
 
 
@@ -246,7 +244,7 @@ rule summarize_make_trees:
         traits = rules.output_annotations.output.traits,
         public_tree = rules.sort_collapse.output.sorted_collapsed_tree,
     params:
-        webhook = config["webhook"],
+        grapevine_webhook = config["grapevine_webhook"],
     log:
         config["output_path"] + "/logs/4_summarize_make_trees.log"
     shell:
@@ -254,6 +252,6 @@ rule summarize_make_trees:
         echo '{{"text":"' > 4b_data.json
         echo "*Step 4: Construct and annotate lineage trees completed*\\n" >> 4b_data.json
         echo '"}}' >> 4b_data.json
-        echo "webhook {params.webhook}"
-        curl -X POST -H "Content-type: application/json" -d @4b_data.json {params.webhook}
+        echo "webhook {params.grapevine_webhook}"
+        curl -X POST -H "Content-type: application/json" -d @4b_data.json {params.grapevine_webhook}
         """

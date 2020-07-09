@@ -73,7 +73,7 @@ rule summarize_pangolin_lineage_typing:
         fasta = rules.uk_output_lineage_table.output.fasta,
         metadata = rules.uk_output_lineage_table.output.metadata,
     params:
-        webhook = config["webhook"],
+        grapevine_webhook = config["grapevine_webhook"],
     log:
         config["output_path"] + "/logs/2_summarize_pangolin_lineage_typing.log"
     shell:
@@ -81,6 +81,6 @@ rule summarize_pangolin_lineage_typing:
         echo '{{"text":"' > 2_data.json
         echo "*Step 2: COG-UK pangolin typing complete*\\n" >> 2_data.json
         echo '"}}' >> 2_data.json
-        echo "webhook {params.webhook}"
-        curl -X POST -H "Content-type: application/json" -d @2_data.json {params.webhook}
+        echo "webhook {params.grapevine_webhook}"
+        curl -X POST -H "Content-type: application/json" -d @2_data.json {params.grapevine_webhook}
         """
