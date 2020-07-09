@@ -8,7 +8,7 @@ rule uk_normal_pangolin:
         outdir = config["output_path"] + "/2/normal_pangolin",
         tmpdir = config["output_path"] + "/2/normal_pangolin/tmp"
     output:
-        lineages = protected(config["output_path"] + "/2/normal_pangolin/lineage_report.csv")
+        lineages = config["output_path"] + "/2/normal_pangolin/lineage_report.csv"
     log:
         config["output_path"] + "/logs/2_uk_normal_pangolin.log"
     threads: 40

@@ -385,11 +385,14 @@ rule publish_uk_lineage_specific_fasta_and_metadata_files:
         temp_fasta = temp(config["output_path"] + "/7/uk_lineage_UK{i}.fasta")
     output:
         fasta = config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.fasta",
-        metadata = config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.csv"
+        metadata = config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.csv",
+        tree = config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.newick"
     log:
         config["output_path"] + "/logs/7_publish_uk_lineage_specific_fasta_and_metadata_files_uk{i}.log"
     shell:
         """
+        cp {input.tree} {output.tree}
+
         fastafunk extract \
           --in-fasta {input.fasta} \
           --in-tree {input.tree} \
@@ -412,10 +415,10 @@ rule publish_uk_lineage_specific_fasta_and_metadata_files:
 
 
 def aggregate_input_publish_trees_logs(wildcards):
-    checkpoint_output_directory = checkpoints.cut_out_trees.get(**wildcards).output[0]
-    print(checkpoints.cut_out_trees.get(**wildcards).output[0])
+    checkpoint_output_directory = checkpoints.get_uk_lineage_samples.get(**wildcards).output[0]
+    print(checkpoints.get_uk_lineage_samples.get(**wildcards).output[0])
     required_files = expand( "%s/logs/7_publish_uk_lineage_specific_fasta_and_metadata_files_uk{i}.log" %(config["output_path"]),
-                            i=glob_wildcards(os.path.join(checkpoint_output_directory, "uk_lineage_UK{i}.tree")).i)
+                            i=glob_wildcards(os.path.join(checkpoint_output_directory, "UK{i}.samples.txt")).i)
     return (sorted(required_files))
 
 # X = glob_wildcards(config["output_path"] + "/5/trees/uk_lineage_UK{i}.tree").i
@@ -539,25 +542,25 @@ rule publish_microreact_specific_output:
         """
 
 
-rule publish_time_trees:
-    input:
-        config["output_path"] + "/logs/6_summarize_treetime.log"
-    params:
-        treedir = config["output_path"] + "/6/",
-        outdir = config["export_path"] + "/trees/uk_lineages/"
-    log:
-        config["output_path"] + "/logs/7_publish_time_trees.log"
-    shell:
-        """
-        for DIR in {params.treedir}trees/*timetree/
-        do
-            FILECOUNT=$(ls $DIR | wc -l)
-            if [ $FILECOUNT -gt 0 ]
-            then
-                cp -r $DIR {params.outdir}
-            fi
-        done &>> {log}
-        """
+# rule publish_time_trees:
+#     input:
+#         config["output_path"] + "/logs/6_summarize_treetime.log"
+#     params:
+#         treedir = config["output_path"] + "/6/",
+#         outdir = config["export_path"] + "/trees/uk_lineages/"
+#     log:
+#         config["output_path"] + "/logs/7_publish_time_trees.log"
+#     shell:
+#         """
+#         for DIR in {params.treedir}trees/*timetree/
+#         do
+#             FILECOUNT=$(ls $DIR | wc -l)
+#             if [ $FILECOUNT -gt 0 ]
+#             then
+#                 cp -r $DIR {params.outdir}
+#             fi
+#         done &>> {log}
+#         """
 
 
 rule publish_full_report:
@@ -721,7 +724,7 @@ rule summarize_publish:
 
         uk_lineage_fasta_csv_summary = rules.summarize_publish_uk_lineage_specific_fasta_and_metadata_files.log,
 
-        log_uk_lineage_timetrees = rules.publish_time_trees.log,
+        # log_uk_lineage_timetrees = rules.publish_time_trees.log,
 
         log_civet = rules.publish_civet_data.log,
     params:
@@ -750,7 +753,6 @@ rule summarize_publish:
         echo "> Full, annotated tree published to {input.COG_GISAID_nexus_tree}\\n" >> {log}
         echo "> Matching metadata published to {input.COG_GISAID_meta}\\n" >> {log}
         echo "> UK lineage subtrees published in {params.uk_trees_path}\\n" >> {log}
-        echo "> UK lineage timetrees published in {params.uk_trees_path}\\n" >> {log}
         echo "> \\n" >> {log}
         echo "> Public tree published to {input.public_COG_GISAID_newick_tree}\\n" >> {log}
         echo "> Associated unaligned sequences published to {input.public_COG_GISAID_seq_all}\\n" >> {log}
@@ -843,7 +845,6 @@ rule summarize_postpublish:
         echo "> Full, annotated tree published to \`trees/cog_{params.date}_tree.nexus\`\\n" >> {log}
         echo "> Matching metadata published to \`trees/cog_global_{params.date}_metadata.csv\`\\n" >> {log}
         echo "> UK lineage subtrees published in \`trees/uk_lineages/\`\\n" >> {log}
-        echo "> UK lineage timetrees published in \`trees/uk_lineages/\`\\n" >> {log}
         echo "> \\n" >> {log}
         echo "> Public tree published to \`public/cog_global_{params.date}_tree.newick\`\\n" >> {log}
         echo "> Associated unaligned sequences published to \`alignments/cog_{params.date}_all.fasta\`\\n" >> {log}
