@@ -471,8 +471,8 @@ rule summarize_preprocess_gisaid:
         cp {input.counts} {params.published_counts}
 
         echo "Number of sequences in latest GISAID download: $(cat {input.latest_fasta} | grep '>' | wc -l)\\n" >> {log}
-        echo "Number of sequence after deduplicating: $(cat {input.deduplicated_fasta} | grep '>' | wc -l)\\n" >> {log}
         echo "Number of sequences after unifying headers: $(cat {input.unify_headers_fasta} | grep '>' | wc -l)\\n" >> {log}
+        echo "Number of sequence after deduplicating: $(cat {input.deduplicated_fasta} | grep '>' | wc -l)\\n" >> {log}
         echo "Number of sequences after removing sequences <29000bps: $(cat {input.removed_short_fasta} | grep '>' | wc -l)\\n" >> {log}
         echo "Number of sequences after mapping and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep '>' | wc -l)\\n" >> {log}
         echo "Number of sequences after removing those >4 epi-week stddevs to WH04: $(cat {input.removed_distance_to_root_fasta} | grep '>' | wc -l)\\n" >> {log}
