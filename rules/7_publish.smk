@@ -588,6 +588,7 @@ rule publish_full_report:
             -V mainfont="Helvetica Neue" \
             -V monofont="Helvetica Neue" \
             -V fontsize=9pt \
+            --columns=10000 \
             --template={params.template} \
             --latex-engine=pdflatex \
             -o {output.outdir}UK_report.pdf &>> {log}
@@ -627,6 +628,7 @@ rule publish_adm1_reports:
             -V mainfont="Helvetica Neue" \
             -V monofont="Helvetica Neue" \
             -V fontsize=9pt \
+            --columns=10000 \
             --template={params.template} \
             --latex-engine=pdflatex \
             -o {output.outdir}{wildcards.adm1}.pdf &>> {log}
@@ -666,6 +668,7 @@ rule publish_sc_reports:
             -V mainfont="Helvetica Neue" \
             -V monofont="Helvetica Neue" \
             -V fontsize=9pt \
+            --columns=10000 \
             --template={params.template} \
             --latex-engine=pdflatex \
             -o {output.outdir}report_{wildcards.sc}.pdf &>> {log}
