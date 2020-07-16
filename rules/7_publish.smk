@@ -817,7 +817,7 @@ rule postpublish_rsync_phylogenetics_data:
     shell:
         """
         rsync -r {params.export_path}/ /cephfs/covid/bham/results/phylogenetics/{params.parsed_date}/
-        ln -sf /cephfs/covid/bham/results/phylogenetics/{params.parsed_date} /cephfs/covid/bham/results/phylogenetics/latest
+        ln -sfn /cephfs/covid/bham/results/phylogenetics/{params.parsed_date} /cephfs/covid/bham/results/phylogenetics/latest
         """
 
 rule summarize_postpublish:
@@ -832,7 +832,7 @@ rule summarize_postpublish:
         config["output_path"] + "/logs/7_summarize_postpublish.log"
     shell:
         """
-        ln -sf /cephfs/covid/bham/raccoon-dog/{params.date} /cephfs/covid/bham/raccoon-dog/previous
+        ln -sfn /cephfs/covid/bham/raccoon-dog/{params.date} /cephfs/covid/bham/raccoon-dog/previous
 
         echo "> Phylogenetics pipeline output published to \`/cephfs/covid/bham/results/phylogenetics/latest/\`\\n" >> {log}
         echo "> \\n" >> {log}
