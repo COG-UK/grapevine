@@ -811,12 +811,12 @@ rule postpublish_rsync_phylogenetics_data:
     params:
         date = config["date"],
         parsed_date = config["date"].replace('-', ''),
-        export_path = config["export_path"],
     log:
         config["output_path"] + "/logs/7_postpublish_rsync_phylogenetics_data.log"
     shell:
         """
-        rsync -r {params.export_path}/ /cephfs/covid/bham/artifacts/published/{params.parsed_date}/phylogenetics
+        rsync -r {params.export_path}/ /cephfs/covid/bham/results/phylogenetics/{params.parsed_date}/
+        ln -sf /cephfs/covid/bham/results/phylogenetics/{params.parsed_date} /cephfs/covid/bham/results/phylogenetics/latest
         """
 
 rule summarize_postpublish:
@@ -830,7 +830,7 @@ rule summarize_postpublish:
         config["output_path"] + "/logs/7_summarize_postpublish.log"
     shell:
         """
-        echo "> Phylogenetics pipeline output published to \`/cephfs/covid/bham/artifacts/published/latest/phylogenetics/\`\\n" >> {log}
+        echo "> Phylogenetics pipeline output published to \`/cephfs/covid/bham/results/phylogenetics/latest/\`\\n" >> {log}
         echo "> \\n" >> {log}
         echo "> Reports published to \`reports/\`\\n" >> {log}
         echo "> \\n" >> {log}
