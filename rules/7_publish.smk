@@ -731,6 +731,7 @@ rule summarize_publish:
         date = config["date"],
         grapevine_webhook = config["grapevine_webhook"],
         export_path = config["export_path"],
+        json_path = config["json_path"],
         uk_trees_path = config["export_path"] + "/trees/uk_lineages/",
         local_civet_path = config["export_path"] + "/civet/",
         reports_path = config["export_path"] + "/reports/",
@@ -765,12 +766,12 @@ rule summarize_publish:
         echo "> Data (there is an alignment too) for Pangolin lineage releases published to {input.lineage_report_metadata}\\n" >> {log}
         echo "> \\n" >> {log}
         echo "> Data for Civet published to {params.local_civet_path}\\n" >> {log}
-        echo '{{"text":"' > 7_data.json
-        echo "*Step 7: publish data to {params.export_path} complete*\\n" >> 7_data.json
-        cat {log} >> 7_data.json
-        echo '"}}' >> 7_data.json
+        echo '{{"text":"' > {params.json_path}/7_data.json
+        echo "*Step 7: publish data to {params.export_path} complete*\\n" >> {params.json_path}/7_data.json
+        cat {log} >> {params.json_path}/7_data.json
+        echo '"}}' >> {params.json_path}/7_data.json
         echo 'webhook {params.grapevine_webhook}'
-        curl -X POST -H "Content-type: application/json" -d @7_data.json {params.grapevine_webhook}
+        curl -X POST -H "Content-type: application/json" -d @{params.json_path}/7_data.json {params.grapevine_webhook}
         """
         # echo "> Gisaid master metadata published to {input.GISAID_meta_master}\\n" >> {log}
 
@@ -822,10 +823,11 @@ rule postpublish_rsync_phylogenetics_data:
 rule summarize_postpublish:
     input:
         civet_log = config["output_path"] + "/logs/7_postpublish_cp_civet_data.log",
-        rsync_log = config["output_path"] + "/logs/7_postpublish_rsync_phylogenetics_data.log"
+        rsync_log = config["output_path"] + "/logs/7_postpublish_rsync_phylogenetics_data.log",
     params:
         date = config["date"],
         phylopipe_webhook = config["phylopipe_webhook"],
+        json_path = config["json_path"],
     log:
         config["output_path"] + "/logs/7_summarize_postpublish.log"
     shell:
@@ -856,12 +858,12 @@ rule summarize_postpublish:
         echo "> \\n" >> {log}
         echo "> Data for Civet published to \`/cephfs/covid/bham/civet-cat/\`\\n" >> {log}
 
-        echo '{{"text":"' > publish_data_to_consortium.json
-        echo "*Phylogenetic pipeline complete*\\n" >> publish_data_to_consortium.json
-        cat {log} >> publish_data_to_consortium.json
-        echo '"}}' >> publish_data_to_consortium.json
+        echo '{{"text":"' > {params.json_path}/publish_data_to_consortium.json
+        echo "*Phylogenetic pipeline complete*\\n" >> {params.json_path}/publish_data_to_consortium.json
+        cat {log} >> {params.json_path}/publish_data_to_consortium.json
+        echo '"}}' >> {params.json_path}/publish_data_to_consortium.json
         echo 'webhook {params.phylopipe_webhook}'
-        curl -X POST -H "Content-type: application/json" -d @publish_data_to_consortium.json {params.phylopipe_webhook}
+        curl -X POST -H "Content-type: application/json" -d @{params.json_path}/publish_data_to_consortium.json {params.phylopipe_webhook}
         """
 
 
