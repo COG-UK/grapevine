@@ -70,15 +70,16 @@ rule summarize_treetime:
         logs=aggregate_input_treetime_logs
     params:
         grapevine_webhook = config["grapevine_webhook"],
+        json_path = config["json_path"],
     log:
         config["output_path"] + "/logs/6_summarize_treetime.log"
     shell:
         """
-        echo '{{"text":"' > 6_data.json
-        echo "*Step 6: treetime for UK lineages complete*\\n" >> 6_data.json
-        echo '"}}' >> 6_data.json
+        echo '{{"text":"' > {params.json_path}/6_data.json
+        echo "*Step 6: treetime for UK lineages complete*\\n" >> {params.json_path}/6_data.json
+        echo '"}}' >> {params.json_path}/6_data.json
         echo 'webhook {params.grapevine_webhook}'
-        curl -X POST -H "Content-type: application/json" -d @6_data.json {params.grapevine_webhook}
+        curl -X POST -H "Content-type: application/json" -d @{params.json_path}/6_data.json {params.grapevine_webhook}
         """
 
 

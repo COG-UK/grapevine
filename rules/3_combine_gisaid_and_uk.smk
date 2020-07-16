@@ -56,6 +56,7 @@ rule summarize_combine_gisaid_and_cog:
         metadata = rules.combine_gisaid_and_cog.output.metadata,
     params:
         grapevine_webhook = config["grapevine_webhook"],
+        json_path = config["json_path"],
     log:
         config["output_path"] + "/logs/3_summarize_combine_gisaid_and_cog.log"
     shell:
@@ -63,10 +64,10 @@ rule summarize_combine_gisaid_and_cog:
         echo "> Number of sequences in combined COG and GISAID matched files: $(cat {input.fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo "> \\n" &>> {log}
 
-        echo '{{"text":"' > 3_data.json
-        echo "*Step 3: Combine COG-UK and GISAID data complete*\\n" >> 3_data.json
-        cat {log} >> 3_data.json
-        echo '"}}' >> 3_data.json
+        echo '{{"text":"' > {params.json_path}/3_data.json
+        echo "*Step 3: Combine COG-UK and GISAID data complete*\\n" >> {params.json_path}/3_data.json
+        cat {log} >> {params.json_path}/3_data.json
+        echo '"}}' >> {params.json_path}/3_data.json
         echo "webhook {params.grapevine_webhook}"
-        curl -X POST -H "Content-type: application/json" -d @3_data.json {params.grapevine_webhook}
+        curl -X POST -H "Content-type: application/json" -d @{params.json_path}/3_data.json {params.grapevine_webhook}
         """

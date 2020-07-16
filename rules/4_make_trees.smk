@@ -6,7 +6,8 @@ rule split_based_on_lineages:
         lineage = config["lineage_splits"]
     params:
         prefix = config["output_path"] + "/4/lineage_",
-        grapevine_webhook = config["grapevine_webhook"]
+        grapevine_webhook = config["grapevine_webhook"],
+        json_path = config["json_path"],
     output:
         temp(config["output_path"] + "/4/split_done")
     log:
@@ -21,20 +22,20 @@ rule split_based_on_lineages:
           --lineage-csv {input.lineage} \
           --out-folder {params.prefix} &> {log}
 
-        echo '{{"text":"' > 4a_data.json
-        echo "*Step 4: Ready for tree building*\\n" >> 4a_data.json
+        echo '{{"text":"' > {params.json_path}/4a_data.json
+        echo "*Step 4: Ready for tree building*\\n" >> {params.json_path}/4a_data.json
         num_lineages=$(cat {input.lineage} | wc -l)
         range={{$num_lineages..1}}
         for i in $(eval echo ${{range}})
         do
           line=$(tail -n$i {log} | head -n1)
-          echo ">$line\\n" >> 4a_data.json
+          echo ">$line\\n" >> {params.json_path}/4a_data.json
         done
-        echo '"}}' >> 4a_data.json
+        echo '"}}' >> {params.json_path}/4a_data.json
         echo "webhook {params.grapevine_webhook}"
 
         touch {output}
-        curl -X POST -H "Content-type: application/json" -d @4a_data.json {params.grapevine_webhook}
+        curl -X POST -H "Content-type: application/json" -d @{params.json_path}/4a_data.json {params.grapevine_webhook}
         """
 
 
