@@ -254,7 +254,6 @@ rule publish_updated_global_lineages:
         temp_metadata_1 = temp(config["publish_path"] + "/COG_GISAID/global_lineages_temp1.csv"),
         temp_metadata_2 = temp(config["publish_path"] + "/COG_GISAID/global_lineages_temp2.csv"),
         metadata = config["publish_path"] + "/COG_GISAID/global_lineages.csv",
-        metadata_for_next_time = "/cephfs/covid/bham/raccoon-dog/resources"
     log:
         config["output_path"] + "/logs/7_publish_updated_global_lineages.log"
     shell:
@@ -268,9 +267,8 @@ rule publish_updated_global_lineages:
           --out-metadata {output.temp_metadata_1} \
           --restrict &>> {log}
 
-        sed '1s/sequence_name/taxon/' {output.temp_metadata_1} > {output.temp_metadata_2} &>> {log}
-        sed '1s/lineage_support/UFbootstrap/' {output.temp_metadata_2} > {output.metadata} &>> {log}
-        cp {output.metadata} {output.metadata_for_next_time} &>> {log}
+        sed '1s/sequence_name/taxon/' {output.temp_metadata_1} > {output.temp_metadata_2}
+        sed '1s/lineage_support/UFbootstrap/' {output.temp_metadata_2} > {output.metadata}
         """
 
 
@@ -710,7 +708,7 @@ rule summarize_publish:
 
         COG_GISAID_nexus_tree = rules.publish_full_annotated_tree_and_metadata.output.annotated_tree,
         COG_GISAID_meta = rules.publish_full_annotated_tree_and_metadata.output.metadata,
-        updated_global_lineages = rules.publish_updated_global_lineages.log,
+        updated_global_lineages = rules.publish_updated_global_lineages.output.metadata,
 
         public_COG_GISAID_newick_tree = rules.publish_public_cog_data.output.public_tree,
         public_COG_GISAID_seq_all = rules.publish_unaligned_cog_sequences.output.fasta,
