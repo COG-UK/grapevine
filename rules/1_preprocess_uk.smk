@@ -474,10 +474,7 @@ rule summarize_preprocess_uk:
         lineageless_fasta = rules.uk_extract_lineageless.output.fasta
     params:
         grapevine_webhook = config["grapevine_webhook"],
-        outdir = config["publish_path"] + "/COG",
-        prefix = config["publish_path"] + "/COG/cog",
-        export_dir = config["export_path"] + "/alignments",
-        export_prefix = config["export_path"] + "/alignments/cog_" + config["date"]
+        json_path = config["json_path"],
     log:
         config["output_path"] + "/logs/1_summarize_preprocess_uk.log"
     shell:
@@ -491,10 +488,10 @@ rule summarize_preprocess_uk:
         echo "> Number of new sequences passed to Pangolin for typing: $(cat {input.lineageless_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo ">\\n" >> {log}
 
-        echo '{{"text":"' > 1_data.json
-        echo "*Step 1: COG-UK preprocessing complete*\\n" >> 1_data.json
-        cat {log} >> 1_data.json
-        echo '"}}' >> 1_data.json
+        echo '{{"text":"' > {params.json_path}/1_data.json
+        echo "*Step 1: COG-UK preprocessing complete*\\n" >> {params.json_path}/1_data.json
+        cat {log} >> {params.json_path}/1_data.json
+        echo '"}}' >> {params.json_path}/1_data.json
         echo "webhook {params.grapevine_webhook}"
-        curl -X POST -H "Content-type: application/json" -d @1_data.json {params.grapevine_webhook}
+        curl -X POST -H "Content-type: application/json" -d @{params.json_path}/1_data.json {params.grapevine_webhook}
         """

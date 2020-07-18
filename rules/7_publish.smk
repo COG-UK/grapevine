@@ -711,7 +711,7 @@ rule summarize_publish:
 
         COG_GISAID_nexus_tree = rules.publish_full_annotated_tree_and_metadata.output.annotated_tree,
         COG_GISAID_meta = rules.publish_full_annotated_tree_and_metadata.output.metadata,
-        updated_global_lineages = rules.publish_updated_global_lineages.log,
+        updated_global_lineages = rules.publish_updated_global_lineages.output.metadata,
 
         public_COG_GISAID_newick_tree = rules.publish_public_cog_data.output.public_tree,
         public_COG_GISAID_seq_all = rules.publish_unaligned_cog_sequences.output.fasta,
@@ -734,6 +734,7 @@ rule summarize_publish:
         date = config["date"],
         grapevine_webhook = config["grapevine_webhook"],
         export_path = config["export_path"],
+        json_path = config["json_path"],
         uk_trees_path = config["export_path"] + "/trees/uk_lineages/",
         local_civet_path = config["export_path"] + "/civet/",
         reports_path = config["export_path"] + "/reports/",
@@ -768,12 +769,12 @@ rule summarize_publish:
         echo "> Data (there is an alignment too) for Pangolin lineage releases published to {input.lineage_report_metadata}\\n" >> {log}
         echo "> \\n" >> {log}
         echo "> Data for Civet published to {params.local_civet_path}\\n" >> {log}
-        echo '{{"text":"' > 7_data.json
-        echo "*Step 7: publish data to {params.export_path} complete*\\n" >> 7_data.json
-        cat {log} >> 7_data.json
-        echo '"}}' >> 7_data.json
+        echo '{{"text":"' > {params.json_path}/7_data.json
+        echo "*Step 7: publish data to {params.export_path} complete*\\n" >> {params.json_path}/7_data.json
+        cat {log} >> {params.json_path}/7_data.json
+        echo '"}}' >> {params.json_path}/7_data.json
         echo 'webhook {params.grapevine_webhook}'
-        curl -X POST -H "Content-type: application/json" -d @7_data.json {params.grapevine_webhook}
+        curl -X POST -H "Content-type: application/json" -d @{params.json_path}/7_data.json {params.grapevine_webhook}
         """
         # echo "> Gisaid master metadata published to {input.GISAID_meta_master}\\n" >> {log}
 
@@ -819,21 +820,23 @@ rule postpublish_rsync_phylogenetics_data:
         config["output_path"] + "/logs/7_postpublish_rsync_phylogenetics_data.log"
     shell:
         """
-        rsync -r {params.export_path}/ /cephfs/covid/bham/artifacts/published/{params.parsed_date}/phylogenetics
+        rsync -r {params.export_path}/ /cephfs/covid/bham/results/phylogenetics/{params.parsed_date}/
+        ln -sfn /cephfs/covid/bham/results/phylogenetics/{params.parsed_date} /cephfs/covid/bham/results/phylogenetics/latest
         """
 
 rule summarize_postpublish:
     input:
         civet_log = config["output_path"] + "/logs/7_postpublish_cp_civet_data.log",
-        rsync_log = config["output_path"] + "/logs/7_postpublish_rsync_phylogenetics_data.log"
+        rsync_log = config["output_path"] + "/logs/7_postpublish_rsync_phylogenetics_data.log",
     params:
         date = config["date"],
         phylopipe_webhook = config["phylopipe_webhook"],
+        json_path = config["json_path"],
     log:
         config["output_path"] + "/logs/7_summarize_postpublish.log"
     shell:
         """
-        echo "> Phylogenetics pipeline output published to \`/cephfs/covid/bham/artifacts/published/latest/phylogenetics/\`\\n" >> {log}
+        echo "> Phylogenetics pipeline output published to \`/cephfs/covid/bham/results/phylogenetics/latest/\`\\n" >> {log}
         echo "> \\n" >> {log}
         echo "> Reports published to \`reports/\`\\n" >> {log}
         echo "> \\n" >> {log}
@@ -859,12 +862,12 @@ rule summarize_postpublish:
         echo "> \\n" >> {log}
         echo "> Data for Civet published to \`/cephfs/covid/bham/civet-cat/\`\\n" >> {log}
 
-        echo '{{"text":"' > publish_data_to_consortium.json
-        echo "*Phylogenetic pipeline complete*\\n" >> publish_data_to_consortium.json
-        cat {log} >> publish_data_to_consortium.json
-        echo '"}}' >> publish_data_to_consortium.json
+        echo '{{"text":"' > {params.json_path}/publish_data_to_consortium.json
+        echo "*Phylogenetic pipeline complete*\\n" >> {params.json_path}/publish_data_to_consortium.json
+        cat {log} >> {params.json_path}/publish_data_to_consortium.json
+        echo '"}}' >> {params.json_path}/publish_data_to_consortium.json
         echo 'webhook {params.phylopipe_webhook}'
-        curl -X POST -H "Content-type: application/json" -d @publish_data_to_consortium.json {params.phylopipe_webhook}
+        curl -X POST -H "Content-type: application/json" -d @{params.json_path}/publish_data_to_consortium.json {params.phylopipe_webhook}
         """
 
 
