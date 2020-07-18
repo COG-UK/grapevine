@@ -74,13 +74,14 @@ rule summarize_pangolin_lineage_typing:
         metadata = rules.uk_output_lineage_table.output.metadata,
     params:
         grapevine_webhook = config["grapevine_webhook"],
+        json_path = config["json_path"],
     log:
         config["output_path"] + "/logs/2_summarize_pangolin_lineage_typing.log"
     shell:
         """
-        echo '{{"text":"' > 2_data.json
-        echo "*Step 2: COG-UK pangolin typing complete*\\n" >> 2_data.json
-        echo '"}}' >> 2_data.json
+        echo '{{"text":"' > {params.json_path}/2_data.json
+        echo "*Step 2: COG-UK pangolin typing complete*\\n" >> {params.json_path}/2_data.json
+        echo '"}}' >> {params.json_path}/2_data.json
         echo "webhook {params.grapevine_webhook}"
-        curl -X POST -H "Content-type: application/json" -d @2_data.json {params.grapevine_webhook}
+        curl -X POST -H "Content-type: application/json" -d @{params.json_path}/2_data.json {params.grapevine_webhook}
         """
