@@ -812,6 +812,7 @@ rule postpublish_rsync_phylogenetics_data:
     params:
         date = config["date"],
         parsed_date = config["date"].replace('-', ''),
+        export_path = config["export_path"],
     log:
         config["output_path"] + "/logs/7_postpublish_rsync_phylogenetics_data.log"
     shell:
@@ -832,8 +833,6 @@ rule summarize_postpublish:
         config["output_path"] + "/logs/7_summarize_postpublish.log"
     shell:
         """
-        ln -sfn /cephfs/covid/bham/raccoon-dog/{params.date} /cephfs/covid/bham/raccoon-dog/previous
-
         echo "> Phylogenetics pipeline output published to \`/cephfs/covid/bham/results/phylogenetics/latest/\`\\n" >> {log}
         echo "> \\n" >> {log}
         echo "> Reports published to \`reports/\`\\n" >> {log}
