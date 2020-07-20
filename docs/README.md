@@ -42,10 +42,9 @@ This document provides an overview of the complete Grapevine pipeline, beginning
 
 	These are defined by column and regex match to sequence ID:
 	```
-	13402,?,^Belgium/
 	11083,?,\w
 	```
-	So (1-based) column `13402` is masked with `?` in all sequences from Belgium, and column `11083` is masked in all sequences
+	So (1-based) column `11083` is masked in all sequences
 	See this [Virological post](https://virological.org/t/issues-with-sars-cov-2-sequencing-data/473) for more information
 
 7. Calculate distance to `WH04` - the sequence closest to the 'root' of the outbreak
@@ -124,10 +123,9 @@ This document provides an overview of the complete Grapevine pipeline, beginning
 
 	These are defined by column and regex match to sequence ID:
 	```
-	13402,?,^Belgium/
 	11083,?,\w
 	```
-	So (1-based) column `13402` is masked with `?` in all sequences from Belgium, and column `11083` is masked in all sequences
+	So (1-based) column `11083` is masked in all sequences
 	See this [Virological post](https://virological.org/t/issues-with-sars-cov-2-sequencing-data/473) for more information
 8. Genotype each sequence for predefined SNPs of interest
 9. Add previous Pangolin and UK lineage designations to metadata
