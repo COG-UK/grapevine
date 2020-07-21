@@ -21,10 +21,23 @@ rule uk_add_header_column:
         """
 
 
+rule uk_restrict_to_found_headers:
+    input:
+        metadata = rules.uk_add_header_column.output.metadata
+    output:
+        metadata = config["output_path"] + "/1/uk_latest.found_headers_only.csv"
+    log:
+        config["output_path"] + "/logs/1_uk_restrict_to_found_headers.log"
+    run:
+        df = pd.read_csv(input.metadata)
+        df = df[df['header'].notna()]
+        df.to_csv(output.metadata, index=False)
+
+
 rule uk_annotate_to_remove_duplicates:
     input:
         fasta = rules.uk_add_header_column.output.fasta,
-        metadata = rules.uk_add_header_column.output.metadata
+        metadata = rules.uk_restrict_to_found_headers.output.metadata
     output:
         metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.csv"
     log:
