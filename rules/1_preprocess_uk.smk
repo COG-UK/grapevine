@@ -32,9 +32,9 @@ rule uk_add_sample_date:
 
         for i,row in df.iterrows():
 
-            if not pd.isnull(row['collection_date']):
+            if not pd.isnull(row['collection_date']) and row['collection_date'] != "None":
                 sample_date.append(row['collection_date'])
-            elif not pd.isnull(row['received_date']):
+            elif not pd.isnull(row['received_date']) and row['received_date'] != "None":
                 sample_date.append(row['received_date'])
             else:
                 sample_date.append("")
