@@ -1,91 +1,32 @@
 import pandas as pd
+from Bio import SeqIO
 
 
-rule uk_add_header_column:
+rule uk_strip_header_digits:
     input:
         fasta = config["latest_uk_fasta"],
-        metadata = config["latest_uk_metadata"]
     output:
-        fasta = config["output_path"] + "/1/uk_latest.add_header.fasta",
-        metadata = config["output_path"] + "/1/uk_latest.add_header.csv"
+        fasta = config["output_path"] + "/1/uk_latest.headerstripped.fasta",
     log:
-        config["output_path"] + "/logs/1_add_header_column.log"
-    shell:
-        """
-        datafunk add_header_column \
-        --input-fasta {input.fasta} \
-        --input-metadata {input.metadata} \
-        --output-metadata {output.metadata} \
-        --output-fasta {output.fasta} \
-        --cog-uk &> {log}
-        """
-
-
-rule uk_restrict_to_found_headers:
-    input:
-        metadata = rules.uk_add_header_column.output.metadata
-    output:
-        metadata = config["output_path"] + "/1/uk_latest.found_headers_only.csv"
-    log:
-        config["output_path"] + "/logs/1_uk_restrict_to_found_headers.log"
+        config["output_path"] + "/logs/1_uk_strip_header_digits.log"
     run:
-        df = pd.read_csv(input.metadata)
-        df = df[df['header'].notna()]
-        df.to_csv(output.metadata, index=False)
-
-
-rule uk_annotate_to_remove_duplicates:
-    input:
-        fasta = rules.uk_add_header_column.output.fasta,
-        metadata = rules.uk_restrict_to_found_headers.output.metadata
-    output:
-        metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.csv"
-    log:
-        config["output_path"] + "/logs/1_uk_annotate_to_remove_duplicates.log"
-    shell:
-        """
-        fastafunk annotate \
-          --in-fasta {input.fasta} \
-          --in-metadata {input.metadata} \
-          --out-metadata {output.metadata} \
-          --log-file {log} \
-          --add-cov-id \
-          --index-column header &> {log}
-        """
-
-
-rule uk_remove_duplicates_covid_by_gaps:
-    input:
-        fasta = rules.uk_add_header_column.output.fasta,
-        metadata = rules.uk_annotate_to_remove_duplicates.output.metadata
-    output:
-        fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id.fasta",
-        metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id.csv"
-    log:
-        config["output_path"] + "/logs/1_uk_filter_duplicates_bycovid.log"
-    shell:
-        """
-        fastafunk subsample \
-          --in-fasta {input.fasta} \
-          --in-metadata {input.metadata} \
-          --group-column cov_id \
-          --index-column header \
-          --out-fasta {output.fasta} \
-          --out-metadata {output.metadata} \
-          --sample-size 1 \
-          --select-by-min-column gaps &> {log}
-        """
+        fasta_in = SeqIO.parse(str(input.fasta), "fasta")
+        with open(str(output.fasta), 'w') as f:
+            for record in fasta_in:
+                ID = record.description.split("|")[0]
+                f.write(">" + ID + "\n")
+                f.write(str(record.seq) + "\n")
 
 
 rule uk_add_sample_date:
     input:
-        metadata = rules.uk_remove_duplicates_covid_by_gaps.output.metadata,
+        metadata = config["latest_uk_metadata"],
     output:
-        metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id.sample_date.csv",
+        metadata = config["output_path"] + "/1/uk_latest.add_sample_date.csv",
     log:
         config["output_path"] + "/logs/1_uk_add_sample_date.log"
     run:
-        df = pd.read_csv(input.metadata)
+        df = pd.read_csv(input.metadata, sep = "\t")
 
         sample_date = []
 
@@ -99,12 +40,86 @@ rule uk_add_sample_date:
                 sample_date.append("")
 
         df['sample_date'] = sample_date
+        df.to_csv(output.metadata, index=False, sep = ",")
+
+
+rule uk_make_sequence_name:
+    input:
+        metadata = rules.uk_add_sample_date.output.metadata,
+    output:
+        metadata = config["output_path"] + "/1/uk_latest.add_sample_date.add_sequence_name.csv",
+    log:
+        config["output_path"] + "/logs/1_uk_make_sequence_name.log"
+    run:
+        df = pd.read_csv(input.metadata)
+
+        adm1_to_country = {"UK-SCT": "Scotland",
+                           "UK-WLS": "Wales",
+                           "UK-ENG": "England",
+                           "UK-NIR": "Northern_Ireland"}
+
+        sequence_name = []
+
+        for i,row in df.iterrows():
+            country = adm1_to_country[row['adm1']]
+            id = row['central_sample_id']
+            year = str(row['sample_date']).split("-")[0]
+            name = country + "/" + id + "/" + year
+
+            sequence_name.append(name)
+
+
+        df['sequence_name'] = sequence_name
         df.to_csv(output.metadata, index=False)
+
+
+
+rule uk_annotate_to_remove_duplicates:
+    input:
+        fasta = rules.uk_strip_header_digits.output.fasta,
+        metadata = rules.uk_make_sequence_name.output.metadata,
+    output:
+        metadata = config["output_path"] + "/1/uk_latest.add_sample_date.add_sequence_name.annotated.csv"
+    log:
+        config["output_path"] + "/logs/1_uk_annotate_to_remove_duplicates.log"
+    shell:
+        """
+        fastafunk annotate \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata} \
+          --out-metadata {output.metadata} \
+          --log-file {log} \
+          --index-column fasta_header &> {log}
+        """
+          # --add-cov-id \
+
+
+rule uk_remove_duplicates_COGID_by_gaps:
+    input:
+        fasta = rules.uk_strip_header_digits.output.fasta,
+        metadata = rules.uk_annotate_to_remove_duplicates.output.metadata
+    output:
+        fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id.fasta",
+        metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id.csv"
+    log:
+        config["output_path"] + "/logs/1_uk_filter_duplicates_bycovid.log"
+    shell:
+        """
+        fastafunk subsample \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata} \
+          --group-column central_sample_id \
+          --index-column fasta_header \
+          --out-fasta {output.fasta} \
+          --out-metadata {output.metadata} \
+          --sample-size 1 \
+          --select-by-min-column gaps &> {log}
+        """
 
 
 rule uk_update_sample_dates:
     input:
-        metadata = rules.uk_add_sample_date.output.metadata,
+        metadata = rules.uk_remove_duplicates_COGID_by_gaps.output.metadata,
         updated_dates = config["uk_updated_dates"],
     output:
         metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id.sample_date.updated_sample_date.csv",
@@ -154,7 +169,7 @@ rule uk_annotate_to_remove_duplicates_by_biosample:
 
         for i,row in df.iterrows():
             if pd.isnull(row['biosample_source_id']):
-                edin_biosample.append(row['cov_id'])
+                edin_biosample.append(row['central_sample_id'])
             else:
                 edin_biosample.append(row['biosample_source_id'])
 
@@ -165,7 +180,7 @@ rule uk_annotate_to_remove_duplicates_by_biosample:
 
 rule uk_remove_duplicates_biosamplesourceid_by_date:
     input:
-        fasta = rules.uk_remove_duplicates_covid_by_gaps.output.fasta,
+        fasta = rules.uk_remove_duplicates_COGID_by_gaps.output.fasta,
         metadata = rules.uk_annotate_to_remove_duplicates_by_biosample.output.metadata
     output:
         fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id_biosample_source_id.fasta",
@@ -178,7 +193,7 @@ rule uk_remove_duplicates_biosamplesourceid_by_date:
           --in-fasta {input.fasta} \
           --in-metadata {input.metadata} \
           --group-column edin_biosample \
-          --index-column header \
+          --index-column fasta_header \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --sample-size 1 \
@@ -195,17 +210,23 @@ rule uk_unify_headers:
         metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.unify_headers.csv"
     log:
         config["output_path"] + "/logs/1_uk_unify_headers.log"
-    shell:
-        """
-        datafunk set_uniform_header \
-          --input-fasta {input.fasta} \
-          --input-metadata {input.metadata} \
-          --output-fasta {output.fasta} \
-          --output-metadata {output.metadata} \
-          --cog-uk  &> {log}
+    run:
+        df = pd.read_csv(input.metadata)
+        header_dict = {}
 
-        sed --in-place=.tmp 's/United Kingdom/UK/g' {output.metadata}
-        """
+        for i,row in df.iterrows():
+            header_dict[row['fasta_header']] = row['sequence_name']
+
+        fasta_in = SeqIO.parse(str(input.fasta), "fasta")
+        with open(str(output.fasta), 'w') as f:
+            for record in fasta_in:
+                new_ID = header_dict[record.description]
+                f.write(">" + new_ID + "\n")
+                f.write(str(record.seq) + "\n")
+
+        df.to_csv(output.metadata, index=False)
+
+
 
 
 rule uk_minimap2_to_reference:
@@ -454,9 +475,6 @@ rule uk_extract_lineageless:
     log:
         config["output_path"] + "/logs/1_extract_lineageless.log"
     run:
-        from Bio import SeqIO
-        import pandas as pd
-
         fasta_in = SeqIO.index(str(input.fasta), "fasta")
         df = pd.read_csv(input.metadata)
 
@@ -477,7 +495,7 @@ rule uk_extract_lineageless:
 rule summarize_preprocess_uk:
     input:
         raw_fasta = config["latest_uk_fasta"],
-        deduplicated_fasta_by_covid = rules.uk_remove_duplicates_covid_by_gaps.output.fasta,
+        deduplicated_fasta_by_covid = rules.uk_remove_duplicates_COGID_by_gaps.output.fasta,
         deduplicated_fasta_by_biosampleid = rules.uk_remove_duplicates_biosamplesourceid_by_date.output.fasta,
         unify_headers_fasta = rules.uk_unify_headers.output.fasta,
         removed_low_covg_fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
@@ -493,7 +511,7 @@ rule summarize_preprocess_uk:
     shell:
         """
         echo "> Number of sequences in raw UK fasta: $(cat {input.raw_fasta} | grep ">" | wc -l)\\n" &> {log}
-        echo "> Number of sequences after deduplication by cov_id: $(cat {input.deduplicated_fasta_by_covid} | grep ">" | wc -l)\\n" &>> {log}
+        echo "> Number of sequences after deduplication by central_sample_id: $(cat {input.deduplicated_fasta_by_covid} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after deduplication by bio_sample_id: $(cat {input.deduplicated_fasta_by_biosampleid} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after unifying headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after mapping and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)\\n" &>> {log}
