@@ -227,6 +227,17 @@ rule uk_unify_headers:
         df.to_csv(output.metadata, index=False)
 
 
+rule uk_sed_United_Kingdom_to_UK:
+    input:
+        metadata = rules.uk_unify_headers.output.metadata
+    output:
+        metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.unify_headers.uk_sedded.csv"
+    log:
+        config["output_path"] + "/logs/1_uk_unify_headers.log"
+    shell:
+        """
+        sed 's/United Kingdom/UK/g' {input.metadata} > {output.metadata}
+        """
 
 
 rule uk_minimap2_to_reference:
@@ -372,7 +383,7 @@ rule run_snp_finder:
 rule add_snp_finder_result_to_metadata:
     input:
         snps = config["snps"],
-        metadata = rules.uk_unify_headers.output.metadata,
+        metadata = rules.uk_sed_United_Kingdom_to_UK.output.metadata,
         new_data = rules.run_snp_finder.output.found
     output:
         metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.with_snp_finder.csv"
