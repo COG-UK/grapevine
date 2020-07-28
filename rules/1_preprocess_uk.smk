@@ -233,7 +233,7 @@ rule uk_sed_United_Kingdom_to_UK:
     output:
         metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.unify_headers.uk_sedded.csv"
     log:
-        config["output_path"] + "/logs/1_uk_unify_headers.log"
+        config["output_path"] + "/logs/1_uk_sed_United_Kingdom_to_UK.log"
     shell:
         """
         sed 's/United Kingdom/UK/g' {input.metadata} > {output.metadata}
