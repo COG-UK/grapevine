@@ -29,7 +29,7 @@ rule uk_add_lineage_information_back_to_master_metadata:
           --index-column sequence_name \
           --join-on taxon  \
           --new-columns lineage lineage_support lineages_version \
-          --where-column lineage_support=UFbootstrap \
+          --where-column lineage_support=probability lineages_version=pangoLEARN_version \
           --out-metadata {output.metadata_temp2} &>> {log}
 
         fastafunk add_columns \
@@ -38,7 +38,7 @@ rule uk_add_lineage_information_back_to_master_metadata:
           --index-column sequence_name \
           --join-on taxon  \
           --new-columns lineage lineage_support lineages_version \
-          --where-column lineage_support=UFbootstrap \
+          --where-column lineage_support=probability lineages_version=pangoLEARN_version \
           --out-metadata {output.metadata} &>> {log}
         """
 
