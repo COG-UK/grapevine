@@ -472,7 +472,7 @@ rule uk_add_previous_lineages_to_metadata:
           --index-column sequence_name \
           --join-on taxon \
           --new-columns lineage lineage_support lineages_version \
-          --where-column lineage_support=UFbootstrap \
+          --where-column lineage_support=probability lineages_version=pangoLEARN_version \
           --out-metadata {output.metadata} &>> {log}
         """
 
