@@ -3,7 +3,7 @@ rule gisaid_process_json:
     input:
         json = config["latest_gisaid_json"],
         omitted = config["previous_omitted_file"],
-        metadata = config["previous_gisaid_metadata"]
+        # metadata = config["previous_gisaid_metadata"]
     output:
         fasta = config["output_path"] + "/0/gisaid.fasta",
         metadata = config["output_path"] + "/0/gisaid.csv"
@@ -12,9 +12,9 @@ rule gisaid_process_json:
     shell:
         """
         datafunk process_gisaid_data \
-          --input-json \"{input.json}\" \
-          --input-metadata \"{input.metadata}\" \
-          --exclude-file \"{input.omitted}\" \
+          --input-json {input.json} \
+          --input-metadata False \
+          --exclude-file {input.omitted} \
           --output-fasta {output.fasta} \
           --output-metadata {output.metadata} \
           --exclude-undated &> {log}
@@ -61,7 +61,7 @@ rule gisaid_remove_duplicates:
           --out-fasta {output.fasta} \
           --sample-size 1 \
           --out-metadata {output.metadata} \
-          --select-by-min-column edin_epi_week &> {log}
+          --select-by-min-column edin_epi_day &> {log}
         """
 
 
@@ -216,7 +216,7 @@ rule gisaid_filter_on_distance_to_WH04:
                         fasta_out.write('>' + record.id + '\n')
                         fasta_out.write(str(record.seq) + '\n')
                 else:
-                    log_out.write(sequence_name + ' was filtered for having too high a distance to WH04 (' + str(distance) + ') epi-week std devs\n')
+                    log_out.write(sequence_name + ' was filtered for having too high a distance to WH04 (' + str(distance) + ' epi-week std devs)\n')
 
 
 
@@ -274,8 +274,18 @@ rule gisaid_extract_lineageless:
         sequence_record = []
 
         with open(str(output.fasta), 'w') as fasta_out:
-            for i,row in df.iterrows():
-                if pd.isnull(row['lineage']):
+            if 'lineage' in df.columns:
+                for i,row in df.iterrows():
+                    if pd.isnull(row['lineage']):
+                        sequence_name = row['sequence_name']
+                        if sequence_name in fasta_in:
+                            if sequence_name not in sequence_record:
+                                record = fasta_in[sequence_name]
+                                fasta_out.write('>' + record.id + '\n')
+                                fasta_out.write(str(record.seq) + '\n')
+                                sequence_record.append(sequence_name)
+            else:
+                for i,row in df.iterrows():
                     sequence_name = row['sequence_name']
                     if sequence_name in fasta_in:
                         if sequence_name not in sequence_record:
@@ -298,11 +308,7 @@ rule gisaid_normal_pangolin:
     threads: 40
     shell:
         """
-        pangolin {input.fasta} \
-        -p \
-        --threads {threads} \
-        --tempdir {params.tmpdir} \
-        --outdir {params.outdir} > {log} 2>&1
+        pangolin {input.fasta} -p -t{threads} --tempdir {params.tmpdir} --outdir {params.outdir} --verbose > {log} 2>&1
         """
 
 
@@ -322,7 +328,7 @@ rule gisaid_add_pangolin_lineages_to_metadata:
           --index-column sequence_name \
           --join-on taxon \
           --new-columns lineage lineage_support lineages_version \
-          --where-column lineage_support=UFbootstrap \
+          --where-column lineage_support=probability lineages_version=pangoLEARN_version \
           --out-metadata {output.metadata} &> {log}
         """
 
@@ -417,7 +423,6 @@ rule gisaid_output_matched_fasta_and_metadata_table:
                          edin_date_stamp \
                          sample_date \
                          epi_week \
-                         special_lineage \
                          lineage \
                          lineages_version \
                          lineage_support \
