@@ -29,7 +29,7 @@ rule uk_add_lineage_information_back_to_master_metadata:
           --index-column sequence_name \
           --join-on taxon  \
           --new-columns lineage lineage_support lineages_version \
-          --where-column lineage_support=UFbootstrap \
+          --where-column lineage_support=probability lineages_version=pangoLEARN_version \
           --out-metadata {output.metadata_temp2} &>> {log}
 
         fastafunk add_columns \
@@ -38,7 +38,7 @@ rule uk_add_lineage_information_back_to_master_metadata:
           --index-column sequence_name \
           --join-on taxon  \
           --new-columns lineage lineage_support lineages_version \
-          --where-column lineage_support=UFbootstrap \
+          --where-column lineage_support=probability lineages_version=pangoLEARN_version \
           --out-metadata {output.metadata} &>> {log}
         """
 
@@ -253,6 +253,7 @@ rule publish_updated_global_lineages:
         fasta = config["publish_path"] + "/COG_GISAID/cog_gisaid.fasta",
         temp_metadata_1 = temp(config["publish_path"] + "/COG_GISAID/global_lineages_temp1.csv"),
         temp_metadata_2 = temp(config["publish_path"] + "/COG_GISAID/global_lineages_temp2.csv"),
+        temp_metadata_3 = temp(config["publish_path"] + "/COG_GISAID/global_lineages_temp3.csv"),
         metadata = config["publish_path"] + "/COG_GISAID/global_lineages.csv",
     log:
         config["output_path"] + "/logs/7_publish_updated_global_lineages.log"
@@ -268,7 +269,8 @@ rule publish_updated_global_lineages:
           --restrict &>> {log}
 
         sed '1s/sequence_name/taxon/' {output.temp_metadata_1} > {output.temp_metadata_2}
-        sed '1s/lineage_support/UFbootstrap/' {output.temp_metadata_2} > {output.metadata}
+        sed '1s/lineage_support/probability/' {output.temp_metadata_2} > {output.temp_metadata_3}
+        sed '1s/lineages_version/pangoLEARN_version/' {output.temp_metadata_3} > {output.metadata}
         """
 
 
