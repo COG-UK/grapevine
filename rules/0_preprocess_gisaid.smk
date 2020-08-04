@@ -3,7 +3,7 @@ rule gisaid_process_json:
     input:
         json = config["latest_gisaid_json"],
         omitted = config["previous_omitted_file"],
-        # metadata = config["previous_gisaid_metadata"]
+        metadata = config["previous_gisaid_metadata"]
     output:
         fasta = config["output_path"] + "/0/gisaid.fasta",
         metadata = config["output_path"] + "/0/gisaid.csv"
@@ -13,7 +13,7 @@ rule gisaid_process_json:
         """
         datafunk process_gisaid_data \
           --input-json {input.json} \
-          --input-metadata False \
+          --input-metadata {input.metadata} \
           --exclude-file {input.omitted} \
           --output-fasta {output.fasta} \
           --output-metadata {output.metadata} \
