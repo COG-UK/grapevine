@@ -2,3 +2,7 @@
 .snakemake
 env/
 .nextflow*
+resources/date_corrections.csv
+resources/gisaid_omissions.txt
+resources/config_template.yaml
+resources/resequencing_omissions.txt
