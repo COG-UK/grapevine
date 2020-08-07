@@ -18,7 +18,7 @@ rule all:
         config["output_path"] + "/logs/0_summarize_preprocess_gisaid.log",
         config["output_path"] + "/0/gisaid.matched.fasta",
         config["output_path"] + "/0/gisaid.matched.lineages.csv",
-        expand(config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}.fa", bs = range(100)),
+        expand(config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}0.fa", bs = range(100)),
         config["output_path"] + "/0.5/gisaid.trimmed_alignment.TBE.tree"
 
 ##### Modules #####
