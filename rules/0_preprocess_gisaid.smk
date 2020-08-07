@@ -579,7 +579,7 @@ rule reroot:
     input:
         tree = rules.compute_tbe.output.tree
     params:
-        outgroup = "Wuhan/WH04/2020"
+        outgroup = config["outgroup"]
     output:
         tree = config["output_path"] + "/0.5/gisaid.trimmed_alignment.TBE.tree"
     shell:
