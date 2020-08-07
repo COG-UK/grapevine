@@ -535,7 +535,7 @@ rule build_sequence_bootstraps:
     params:
         bootprefix = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}"
     output:
-        bootstrap = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}.fa"
+        bootstrap = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}0.fa"
     shell:
         """
         goalign build seqboot -i {input.fasta:q} -t 1 -n 1 -S -o {params.bootprefix}
@@ -543,7 +543,7 @@ rule build_sequence_bootstraps:
 
 rule run_bootstraps:
     input:
-        bootstrap = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}.fa",
+        bootstrap = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}0.fa",
     output:
         tree = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}.unrooted.tree"
     shell:
