@@ -562,7 +562,7 @@ rule compute_tbe:
     input:
         trees = rules.gather_bootstraps.output.trees,
         tree = rules.reference_tree.output.tree
-    threads = workflow.cores
+    threads: workflow.cores
     output:
         tree = config["output_path"] + "/0.5/gisaid.trimmed_alignment.TBE.unrooted.tree"
     shell:
