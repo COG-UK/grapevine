@@ -15,6 +15,7 @@ dependencies:
   - pandoc=1.19.2.1
   - fasttree
   - gotree
+  - goalign
   - nextflow
   - r-base=3.5.1
   - r-networkd3

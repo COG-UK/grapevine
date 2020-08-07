@@ -126,7 +126,8 @@ rule gisaid_remove_insertions_and_pad:
         fasta = config["output_path"] + "/0/gisaid.RD.UH.filt1.mapped.fasta"
     log:
         config["output_path"] + "/logs/0_gisaid_remove_insertions_and_pad.log"
-    shell:
+    run:
+        shell(
         """
         datafunk sam_2_fasta \
           -s {input.sam} \
@@ -134,10 +135,12 @@ rule gisaid_remove_insertions_and_pad:
           -o {output} \
           -t [{params.trim_start}:{params.trim_end}] \
           --pad \
-          --log-inserts &> {log}
+          --log-inserts &> {log} """)
+        if os.path.exists("insertions.txt"):
+            shell("""
+            mv insertions.txt {params.insertions}
+            """)
 
-        mv insertions.txt {params.insertions}
-        """
 
 
 rule gisaid_filter_2:
