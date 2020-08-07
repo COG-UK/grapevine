@@ -13,7 +13,7 @@ rule gisaid_process_json:
         """
         datafunk process_gisaid_data \
           --input-json {input.json} \
-          --input-metadata {input.metadata} \
+          --input-metadata False \
           --exclude-file {input.omitted} \
           --output-fasta {output.fasta} \
           --output-metadata {output.metadata} \
