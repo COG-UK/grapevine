@@ -569,7 +569,7 @@ rule compute_tbe:
     shell:
         """
         gotree compute support tbe \
-        -i {input.tree:q} \ 
+        -i {input.tree:q} \
         -b {input.trees:q} \
         -t {threads} \
         -o {output.tree}
