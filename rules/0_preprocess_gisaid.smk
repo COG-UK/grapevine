@@ -2,8 +2,8 @@
 rule gisaid_process_json:
     input:
         json = config["latest_gisaid_json"],
-        omitted = config["previous_omitted_file"],
-        metadata = config["previous_gisaid_metadata"]
+        omitted = config["previous_omitted_file"]
+        # metadata = config["previous_gisaid_metadata"]
     output:
         fasta = config["output_path"] + "/0/gisaid.fasta",
         metadata = config["output_path"] + "/0/gisaid.csv"
