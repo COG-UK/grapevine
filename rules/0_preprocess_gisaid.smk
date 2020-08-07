@@ -493,3 +493,96 @@ rule summarize_preprocess_gisaid:
         curl -X POST -H "Content-type: application/json" -d @0_data.json {params.grapevine_webhook}
         # rm 0_data.json
         """
+
+rule reference_tree_mid:
+    input:
+        fasta = rules.gisaid_output_matched_fasta_and_metadata_table.output.published_fasta
+    output:
+        tree = config["output_path"] + "/0.5/gisaid.trimmed_alignment.1.multi.fasttree"
+    shell:
+        """
+        fasttree \
+        -nt -gamma \
+        -nosupport \
+        -sprlength 500 \
+        -nni 0 -spr 5 \
+        -refresh 0.8 \
+        -topm 1.5 \
+        -close 0.75 -noml \
+        {input.fasta:q} > {output.tree:q}
+        """
+
+rule reference_tree:
+    input:
+        tree = rules.reference_tree_mid.output.tree,
+        fasta = rules.gisaid_output_matched_fasta_and_metadata_table.output.published_fasta
+    output:
+        tree = config["output_path"] + "/0.5/gisaid.trimmed_alignment.multi.fasttree"
+    shell:
+        """
+        fasttree \
+        -nt -gamma -sprlength 200 -spr 5 \
+        -intree {input.tree} \
+        {input.fasta:q} > {output.tree:q}
+        """
+
+rule build_sequence_bootstraps:
+    input:
+        fasta = rules.gisaid_output_matched_fasta_and_metadata_table.output.published_fasta
+    params:
+        bootprefix = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}"
+    output:
+        bootstrap = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}.fa"
+    shell:
+        """
+        goalign build seqboot -i {input.fasta:q} -t 1 -n 1 -S -o {params.bootprefix}
+        """
+
+rule run_bootstraps:
+    input:
+        bootstrap = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}.fa",
+    output:
+        tree = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}.unrooted.tree"
+    shell:
+        """
+        fasttree -nosupport -nt -fastest {input.bootstrap} > {output.tree:q}
+        """
+
+rule gather_bootstraps:
+    input:
+        expand(config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}.unrooted.tree", bs = range(100))
+    output:
+        trees = config["output_path"] + "/0.5/gisaid.trimmed_alignment.ft_replicates.multi.tree"
+    shell:
+        """
+        cat {input} > {output.trees:q}
+        """
+
+rule compute_tbe:
+    input:
+        trees = rules.gather_bootstraps.output.trees,
+        tree = rules.reference_tree.output.tree
+    threads = workflow.cores
+    output:
+        tree = config["output_path"] + "/0.5/gisaid.trimmed_alignment.TBE.unrooted.tree"
+    shell:
+        """
+        gotree compute support tbe \
+        -i {input.tree:q} \ 
+        -b {input.trees:q} \
+        -t {threads} \
+        -o {output.tree}
+        """
+
+rule reroot:
+    input:
+        tree = rules.compute_tbe.output.tree
+    params:
+        outgroup = "Wuhan/WH04/2020"
+    output:
+        tree = config["output_path"] + "/0.5/gisaid.trimmed_alignment.TBE.tree"
+    shell:
+        """
+        clusterfunk root -i {input.tree} --in-format newick --out-format newick -o {output.tree} --outgroup {params.outgroup}
+        """
+
