@@ -527,9 +527,19 @@ rule reference_tree:
         {input.fasta:q} > {output.tree:q}
         """
 
+rule remove_non_julia_characters:
+    input:
+        aln = rules.gisaid_output_matched_fasta_and_metadata_table.output.published_fasta
+    output:
+        aln = config["output_path"] + "/0.5/gisaid.trimmed_alignment.N.fasta"
+    shell:
+        """
+        sed "s/?/N/g" {input.aln} > {output.aln}
+        """
+
 rule build_sequence_bootstraps:
     input:
-        fasta = rules.gisaid_output_matched_fasta_and_metadata_table.output.published_fasta
+        fasta = rules.remove_non_julia_characters.output.aln
     params:
         bootprefix = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}"
     output:
