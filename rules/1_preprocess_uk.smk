@@ -366,38 +366,38 @@ rule uk_mask_2:
         """
 
 
-rule run_snp_finder:
+rule UK_AA_finder:
     input:
         fasta = rules.uk_mask_2.output.fasta,
-        snps = config["snps"]
+        AAs = config["AAs"]
     output:
-        found = config["output_path"] + "/1/cog.snp_finder.csv",
+        found = config["output_path"] + "/1/cog.AA_finder.csv",
     log:
-        config["output_path"] + "/logs/1_run_snp_finder.log"
+        config["output_path"] + "/logs/1_UK_AA_finder.log"
     shell:
         """
-        datafunk snp_finder -a {input.fasta} -o {output.found} --snp-csv {input.snps} &> {log}
+        datafunk AA_finder -i {input.fasta} --codons-file {input.AAs} --genotypes-table {output.found} &> {log}
         """
 
 
-rule add_snp_finder_result_to_metadata:
+rule add_AA_finder_result_to_metadata:
     input:
-        snps = config["snps"],
+        AAs = config["AAs"],
         metadata = rules.uk_sed_United_Kingdom_to_UK.output.metadata,
-        new_data = rules.run_snp_finder.output.found
+        new_data = rules.UK_AA_finder.output.found
     output:
-        metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.with_snp_finder.csv"
+        metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.with_AA_finder.csv"
     log:
-        config["output_path"] + "/logs/1_add_snp_finder_result_to_metadata.log"
+        config["output_path"] + "/logs/1_add_AA_finder_result_to_metadata.log"
     shell:
         """
-        columns=$(head -n1 {input.new_data} | cut -d',' -f2-)
+        columns=$(head -n1 {input.new_data} | cut -d',' -f2- | tr ',' ' ')
         fastafunk add_columns \
           --in-metadata {input.metadata} \
           --in-data {input.new_data} \
           --index-column sequence_name \
-          --join-on name \
-          --new-columns "$columns" \
+          --join-on sequence_name \
+          --new-columns $columns \
           --out-metadata {output.metadata} &>> {log}
         """
 
@@ -422,21 +422,21 @@ rule uk_del_finder:
 rule uk_add_del_finder_result_to_metadata:
     input:
         dels = config["dels"],
-        metadata = rules.add_snp_finder_result_to_metadata.output.metadata,
+        metadata = rules.add_AA_finder_result_to_metadata.output.metadata,
         new_data = rules.uk_del_finder.output.metadata
     output:
-        metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.with_snp_finder.with_del_finder.csv"
+        metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.with_AA_finder.with_del_finder.csv"
     log:
         config["output_path"] + "/logs/1_add_del_finder_result_to_metadata.log"
     shell:
         """
-        columns=$(head -n1 {input.new_data} | cut -d',' -f2-)
+        columns=$(head -n1 {input.new_data} | cut -d',' -f2- | tr ',' ' ')
         fastafunk add_columns \
           --in-metadata {input.metadata} \
           --in-data {input.new_data} \
           --index-column sequence_name \
           --join-on sequence_name \
-          --new-columns "$columns" \
+          --new-columns $columns \
           --out-metadata {output.metadata} &>> {log}
         """
 
@@ -512,7 +512,7 @@ rule summarize_preprocess_uk:
         removed_low_covg_fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
         removed_omitted_fasta = rules.uk_filter_omitted_sequences.output.fasta,
         full_alignment = rules.uk_full_untrimmed_alignment.output.fasta,
-        full_metadata = rules.add_snp_finder_result_to_metadata.output.metadata,
+        full_metadata = rules.uk_add_previous_lineages_to_metadata.output.metadata,
         lineageless_fasta = rules.uk_extract_lineageless.output.fasta
     params:
         grapevine_webhook = config["grapevine_webhook"],

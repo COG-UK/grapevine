@@ -151,7 +151,7 @@ rule publish_full_aligned_cog_data:
               sequencing_org sequencing_org_code sequencing_submission_date sequencing_uuid \
               source_age source_sex start_time \
               submission_org submission_org_code submission_user swab_site \
-              header sequence_name length missing gaps cov_id sample_date subsample_omit edin_epi_week d614g del_1605_3 \
+              header sequence_name length missing gaps cov_id sample_date subsample_omit edin_epi_week d614g n439k p323l del_1605_3 \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --restrict &> {log}
@@ -212,7 +212,7 @@ rule combine_cog_gisaid:
                           country adm1 adm2 submission_org_code \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage lineage_support lineages_version \
-                          uk_lineage microreact_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype d614g del_1605_3 \
+                          uk_lineage microreact_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype d614g n439k p323l del_1605_3 \
           --where-column epi_week=edin_epi_week country=adm0 \
           --out-fasta {params.intermediate_cog_fasta} \
           --out-metadata {params.intermediate_cog_metadata} \
@@ -228,7 +228,7 @@ rule combine_cog_gisaid:
                           country adm1 adm2 submission_org_code \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage lineage_support lineages_version \
-                          uk_lineage microreact_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype d614g del_1605_3 \
+                          uk_lineage microreact_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype d614g n439k p323l del_1605_3 \
           --where-column uk_omit=is_uk sample_date=covv_collection_date epi_week=edin_epi_week \
                          country=edin_admin_0 adm1=edin_admin_1 adm2=edin_admin_2 travel_history=edin_travel \
           --out-fasta {params.intermediate_gisaid_fasta} \
@@ -517,7 +517,7 @@ rule publish_microreact_specific_output:
           --index-column sequence_name \
           --filter-column sequence_name sample_date epi_week \
                           country adm1 adm2 submission_org_code lineage \
-                          lineage_support uk_lineage primary_uk_lineage d614g \
+                          lineage_support uk_lineage primary_uk_lineage d614g n439k p323l \
           --where-column primary_uk_lineage=microreact_lineage \
           --out-fasta {output.fasta1} \
           --out-metadata {output.temp_public_metadata} \
@@ -536,7 +536,7 @@ rule publish_microreact_specific_output:
           --filter-column sequence_name sample_date epi_week \
                           country adm1 adm2 submission_org_code \
                           is_hcw travel_history \
-                          lineage lineage_support uk_lineage primary_uk_lineage d614g \
+                          lineage lineage_support uk_lineage primary_uk_lineage d614g n439k p323l \
           --where-column primary_uk_lineage=microreact_lineage \
           --out-fasta {output.fasta2} \
           --out-metadata {output.private_metadata} \
@@ -870,6 +870,8 @@ rule summarize_postpublish:
         echo '"}}' >> {params.json_path}/publish_data_to_consortium.json
         echo 'webhook {params.phylopipe_webhook}'
         curl -X POST -H "Content-type: application/json" -d @{params.json_path}/publish_data_to_consortium.json {params.phylopipe_webhook}
+
+        ln -sfn /cephfs/covid/bham/raccoon-dog/{params.date} /cephfs/covid/bham/raccoon-dog/previous
         """
 
 

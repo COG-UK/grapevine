@@ -220,38 +220,38 @@ rule gisaid_filter_on_distance_to_WH04:
 
 
 
-rule gisaid_snp_finder:
+rule gisaid_AA_finder:
     input:
         fasta = rules.gisaid_filter_on_distance_to_WH04.output.fasta,
-        snps = config["snps"]
+        AAs = config["AAs"]
     output:
-        found = config["output_path"] + "/0/gisaid.snp_finder.csv",
+        found = config["output_path"] + "/0/gisaid.AA_finder.csv",
     log:
-        config["output_path"] + "/logs/0_gisaid_snp_finder.log"
+        config["output_path"] + "/logs/0_gisaid_AA_finder.log"
     shell:
         """
-        datafunk snp_finder -a {input.fasta} -o {output.found} --snp-csv {input.snps} &> {log}
+        datafunk AA_finder -i {input.fasta} --codons-file {input.AAs} --genotypes-table {output.found} &> {log}
         """
 
 
-rule gisaid_add_snp_finder_result_to_metadata:
+rule gisaid_add_AA_finder_result_to_metadata:
     input:
         snps = config["snps"],
         metadata = rules.gisaid_remove_duplicates.output.metadata,
-        new_data = rules.gisaid_snp_finder.output.found
+        new_data = rules.gisaid_AA_finder.output.found
     output:
-        metadata = config["output_path"] + "/0/gisaid.RD.UH.SNPfinder.csv"
+        metadata = config["output_path"] + "/0/gisaid.RD.UH.AAfinder.csv"
     log:
-        config["output_path"] + "/logs/0_gisaid_add_snp_finder_result_to_metadata.log"
+        config["output_path"] + "/logs/0_gisaid_add_AA_finder_result_to_metadata.log"
     shell:
         """
-        columns=$(head -n1 {input.new_data} | cut -d',' -f2-)
+        columns=$(head -n1 {input.new_data} | cut -d',' -f2- | tr ',' ' ')
         fastafunk add_columns \
           --in-metadata {input.metadata} \
           --in-data {input.new_data} \
           --index-column sequence_name \
-          --join-on name \
-          --new-columns "$columns" \
+          --join-on sequence_name \
+          --new-columns $columns \
           --out-metadata {output.metadata} &>> {log}
         """
 
@@ -259,7 +259,7 @@ rule gisaid_add_snp_finder_result_to_metadata:
 rule gisaid_extract_lineageless:
     input:
         fasta = rules.gisaid_filter_on_distance_to_WH04.output,
-        metadata = rules.gisaid_add_snp_finder_result_to_metadata.output.metadata,
+        metadata = rules.gisaid_add_AA_finder_result_to_metadata.output.metadata,
     output:
         fasta = config["output_path"] + "/0/gisaid.new.pangolin_lineages.fasta",
     log:
@@ -314,7 +314,7 @@ rule gisaid_normal_pangolin:
 
 rule gisaid_add_pangolin_lineages_to_metadata:
     input:
-        metadata = rules.gisaid_add_snp_finder_result_to_metadata.output.metadata,
+        metadata = rules.gisaid_add_AA_finder_result_to_metadata.output.metadata,
         normal_lineages = rules.gisaid_normal_pangolin.output.lineages
     output:
         metadata = config["output_path"] + "/0/gisaid.RD.UH.SNPfinder.lineages.csv"
@@ -361,13 +361,13 @@ rule gisaid_add_del_finder_result_to_metadata:
         config["output_path"] + "/logs/0_gisaid_add_del_finder_result_to_metadata.log"
     shell:
         """
-        columns=$(head -n1 {input.new_data} | cut -d',' -f2-)
+        columns=$(head -n1 {input.new_data} | cut -d',' -f2- | tr ',' ' ')
         fastafunk add_columns \
           --in-metadata {input.metadata} \
           --in-data {input.new_data} \
           --index-column sequence_name \
           --join-on sequence_name \
-          --new-columns "$columns" \
+          --new-columns $columns \
           --out-metadata {output.metadata} &>> {log}
         """
 
@@ -427,6 +427,8 @@ rule gisaid_output_matched_fasta_and_metadata_table:
                          lineages_version \
                          lineage_support \
                          d614g \
+                         n439k \
+                         p323l \
                          del_1605_3 \
                          covv_accession_id \
                          covv_virus_name \
