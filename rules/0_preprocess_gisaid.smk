@@ -531,35 +531,23 @@ rule reference_tree:
         {input.fasta:q} > {output.tree:q} &>> {log}
         """
 
-rule remove_non_julia_characters:
-    input:
-        aln = rules.gisaid_output_matched_fasta_and_metadata_table.output.published_fasta
-    output:
-        aln = config["output_path"] + "/0.5/gisaid.trimmed_alignment.N.fasta"
-    log:
-        config["output_path"] + "/logs/0.5_remove_non_julia_characters.log"
-    shell:
-        """
-        sed "s/?/N/g" {input.aln} > {output.aln} &>> {log}
-        """
-
 rule build_sequence_bootstraps:
     input:
-        fasta = rules.remove_non_julia_characters.output.aln
+        fasta = rules.gisaid_output_matched_fasta_and_metadata_table.output.published_fasta
     params:
         bootprefix = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}"
     output:
-        bootstrap = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}0.fa"
+        bootstrap = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}_1.fasta"
     log:
-        config["output_path"] + "/logs/0.5_build_sequence_bootstraps.log"
+        config["output_path"] + "/logs/0.5_build_sequence_bootstraps{bs}.log"
     shell:
         """
-        goalign build seqboot -i {input.fasta:q} -t 1 -n 1 -S -o {params.bootprefix} &>> {log}
+        datafunk bootstrap -i {input.fasta} --output-prefix {params.bootprefix} &>> {log}
         """
 
 rule run_bootstraps:
     input:
-        bootstrap = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}0.fa",
+        bootstrap = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}_1.fasta",
     output:
         tree = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}.unrooted.tree"
     log:

@@ -15,7 +15,6 @@ dependencies:
   - pandoc=1.19.2.1
   - fasttree
   - gotree
-  - julia=1.0.5
   - nextflow
   - r-base=3.5.1
   - r-networkd3
