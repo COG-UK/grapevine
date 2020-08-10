@@ -33,7 +33,7 @@ rule fasttree:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.unrooted.tree",
     log:
         config["output_path"] + "/logs/4_fasttree_{lineage}.log"
-    resources: mem_per_cpu=10000
+    resources: mem_per_cpu=20000
     threads: 3
     shell:
         """
