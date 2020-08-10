@@ -500,6 +500,8 @@ rule reference_tree_mid:
         fasta = rules.gisaid_output_matched_fasta_and_metadata_table.output.published_fasta
     output:
         tree = config["output_path"] + "/0.5/gisaid.trimmed_alignment.1.multi.fasttree"
+    log:
+        config["output_path"] + "/logs/0.5_reference_tree_mid.log"
     shell:
         """
         fasttree \
@@ -510,7 +512,7 @@ rule reference_tree_mid:
         -refresh 0.8 \
         -topm 1.5 \
         -close 0.75 -noml \
-        {input.fasta:q} > {output.tree:q}
+        {input.fasta:q} > {output.tree:q} &>> {log}
         """
 
 rule reference_tree:
@@ -519,12 +521,14 @@ rule reference_tree:
         fasta = rules.gisaid_output_matched_fasta_and_metadata_table.output.published_fasta
     output:
         tree = config["output_path"] + "/0.5/gisaid.trimmed_alignment.multi.fasttree"
+    log:
+        config["output_path"] + "/logs/0.5_reference_tree.log"
     shell:
         """
         fasttree \
         -nt -gamma -sprlength 200 -spr 5 \
         -intree {input.tree} \
-        {input.fasta:q} > {output.tree:q}
+        {input.fasta:q} > {output.tree:q} &>> {log}
         """
 
 rule remove_non_julia_characters:
@@ -532,9 +536,11 @@ rule remove_non_julia_characters:
         aln = rules.gisaid_output_matched_fasta_and_metadata_table.output.published_fasta
     output:
         aln = config["output_path"] + "/0.5/gisaid.trimmed_alignment.N.fasta"
+    log:
+        config["output_path"] + "/logs/0.5_remove_non_julia_characters.log"
     shell:
         """
-        sed "s/?/N/g" {input.aln} > {output.aln}
+        sed "s/?/N/g" {input.aln} > {output.aln} &>> {log}
         """
 
 rule build_sequence_bootstraps:
@@ -544,9 +550,11 @@ rule build_sequence_bootstraps:
         bootprefix = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}"
     output:
         bootstrap = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}0.fa"
+    log:
+        config["output_path"] + "/logs/0.5_build_sequence_bootstraps.log"
     shell:
         """
-        goalign build seqboot -i {input.fasta:q} -t 1 -n 1 -S -o {params.bootprefix}
+        goalign build seqboot -i {input.fasta:q} -t 1 -n 1 -S -o {params.bootprefix} &>> {log}
         """
 
 rule run_bootstraps:
@@ -554,9 +562,11 @@ rule run_bootstraps:
         bootstrap = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}0.fa",
     output:
         tree = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}.unrooted.tree"
+    log:
+        config["output_path"] + "/logs/0.5_run_bootstraps.log"
     shell:
         """
-        fasttree -nosupport -nt -fastest {input.bootstrap} > {output.tree:q}
+        fasttree -nosupport -nt -fastest {input.bootstrap} > {output.tree:q} &>> {log}
         """
 
 rule gather_bootstraps:
@@ -564,9 +574,11 @@ rule gather_bootstraps:
         expand(config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}.unrooted.tree", bs = range(100))
     output:
         trees = config["output_path"] + "/0.5/gisaid.trimmed_alignment.ft_replicates.multi.tree"
+    log:
+        config["output_path"] + "/logs/0.5_gather_bootstraps.log"
     shell:
         """
-        cat {input} > {output.trees:q}
+        cat {input} > {output.trees:q} &>> {log
         """
 
 rule compute_tbe:
@@ -574,6 +586,8 @@ rule compute_tbe:
         trees = rules.gather_bootstraps.output.trees,
         tree = rules.reference_tree.output.tree
     threads: workflow.cores
+    log:
+        config["output_path"] + "/logs/0.5_compute_tbe.log"
     output:
         tree = config["output_path"] + "/0.5/gisaid.trimmed_alignment.TBE.unrooted.tree"
     shell:
@@ -582,7 +596,8 @@ rule compute_tbe:
         -i {input.tree:q} \
         -b {input.trees:q} \
         -t {threads} \
-        -o {output.tree}
+        -o {output.tree} \
+        &>> {log}
         """
 
 rule reroot:
@@ -592,8 +607,15 @@ rule reroot:
         outgroup = config["outgroup"]
     output:
         tree = config["output_path"] + "/0.5/gisaid.trimmed_alignment.TBE.tree"
+    log:
+        config["output_path"] + "/logs/0.5_reroot.log"
     shell:
         """
-        clusterfunk root -i {input.tree} --in-format newick --out-format newick -o {output.tree} --outgroup {params.outgroup}
+        clusterfunk root -i {input.tree} \
+        --in-format newick \
+        --out-format newick \
+        -o {output.tree} \
+        --outgroup {params.outgroup} \
+        --log-file {log}
         """
 
