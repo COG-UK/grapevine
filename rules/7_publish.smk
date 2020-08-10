@@ -173,7 +173,7 @@ rule publish_filtered_aligned_cog_data:
           --in-fasta {input.fasta} \
           --in-metadata {input.metadata} \
           --index-column sequence_name \
-          --filter-column sequence_name sample_date epi_week \
+          --filter-column sequence_name secondary_identifier sample_date epi_week \
                           country adm1 adm2 outer_postcode \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
@@ -207,7 +207,7 @@ rule combine_cog_gisaid:
           --in-fasta {input.cog_fasta} \
           --in-metadata {input.cog_metadata} \
           --index-column sequence_name \
-          --filter-column covv_accession_id central_sample_id biosample_source_id \
+          --filter-column covv_accession_id central_sample_id biosample_source_id secondary_identifier \
                           sequence_name sample_date epi_week \
                           country adm1 adm2 submission_org_code \
                           is_surveillance is_community is_hcw \
@@ -223,7 +223,7 @@ rule combine_cog_gisaid:
           --in-fasta {input.gisaid_fasta} \
           --in-metadata {input.gisaid_metadata} \
           --index-column sequence_name \
-          --filter-column covv_accession_id central_sample_id biosample_source_id \
+          --filter-column covv_accession_id central_sample_id biosample_source_id secondary_identifier \
                           sequence_name sample_date epi_week \
                           country adm1 adm2 submission_org_code \
                           is_surveillance is_community is_hcw \
@@ -297,7 +297,7 @@ rule publish_full_annotated_tree_and_metadata:
           --in-fasta {input.combined_fasta} \
           --in-metadata {input.combined_metadata} \
           --index-column sequence_name \
-          --filter-column sequence_name sample_date epi_week \
+          --filter-column sequence_name secondary_identifier sample_date epi_week \
                           country adm1 adm2 outer_postcode \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
@@ -334,7 +334,7 @@ rule publish_civet_data:
           --in-fasta {input.cog_all_fasta} \
           --in-metadata {input.cog_metadata} \
           --index-column sequence_name \
-          --filter-column central_sample_id biosample_source_id sequence_name \
+          --filter-column central_sample_id biosample_source_id sequence_name secondary_identifier \
                           sample_date epi_week \
                           country adm1 adm2 outer_postcode \
                           is_surveillance is_community is_hcw \
@@ -349,7 +349,7 @@ rule publish_civet_data:
           --in-fasta {input.cog_fasta} \
           --in-metadata {input.cog_metadata} \
           --index-column sequence_name \
-          --filter-column central_sample_id biosample_source_id sequence_name \
+          --filter-column central_sample_id biosample_source_id sequence_name secondary_identifier \
                           sample_date epi_week \
                           country adm1 adm2 outer_postcode \
                           is_surveillance is_community is_hcw \
@@ -364,7 +364,7 @@ rule publish_civet_data:
           --in-fasta {input.combined_fasta} \
           --in-metadata {input.combined_metadata} \
           --index-column sequence_name \
-          --filter-column central_sample_id biosample_source_id sequence_name \
+          --filter-column central_sample_id biosample_source_id sequence_name secondary_identifier \
                           sample_date epi_week \
                           country adm1 adm2 outer_postcode \
                           is_surveillance is_community is_hcw \
@@ -404,7 +404,7 @@ rule publish_uk_lineage_specific_fasta_and_metadata_files:
           --in-fasta {output.fasta} \
           --in-metadata {input.metadata} \
           --index-column sequence_name \
-          --filter-column sequence_name sample_date epi_week \
+          --filter-column sequence_name secondary_identifier sample_date epi_week \
                           country adm1 adm2 outer_postcode \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
