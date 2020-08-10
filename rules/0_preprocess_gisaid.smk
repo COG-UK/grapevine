@@ -537,7 +537,7 @@ rule build_sequence_bootstraps:
     params:
         bootprefix = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}"
     output:
-        bootstrap = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}_1.fasta"
+        bootstrap = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}1.fasta"
     log:
         config["output_path"] + "/logs/0.5_build_sequence_bootstraps{bs}.log"
     shell:
@@ -547,7 +547,7 @@ rule build_sequence_bootstraps:
 
 rule run_bootstraps:
     input:
-        bootstrap = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}_1.fasta",
+        bootstrap = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}1.fasta",
     output:
         tree = config["output_path"] + "/0.5/gisaid.trimmed_alignment.boot{bs}.unrooted.tree"
     log:
