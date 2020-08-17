@@ -3,6 +3,7 @@ channels:
   - bioconda
   - conda-forge
   - defaults
+  - cov-ert
 dependencies:
   - biopython=1.74
   - coreutils=8.25
@@ -18,6 +19,7 @@ dependencies:
   - nextflow
   - r-base=3.5.1
   - r-networkd3
+  - jclusterfunk
   - pip:
     - git+https://github.com/COG-UK/phylo-reports.git
     - git+https://github.com/cov-lineages/pangolin.git
