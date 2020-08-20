@@ -618,7 +618,7 @@ rule publish_full_pillar_2_report:
         generate_report --m {input.metadata} \
             --w {params.date} \
             --s UK_report \
-            --od {output.outdir}
+            --od {output.outdir} \
             --p2 True &>> {log}
 
         pandoc {output.outdir}UK_report.md \
@@ -779,7 +779,7 @@ rule summarize_publish:
         uk_trees_path = config["export_path"] + "/trees/uk_lineages/",
         local_civet_path = config["export_path"] + "/civet/",
         reports_path = config["export_path"] + "/reports/",
-        pillar_2_reports_path = config["export_path"] + "/reports/full_report_pillar_2/
+        pillar_2_reports_path = config["export_path"] + "/reports/full_report_pillar_2/"
     log:
         config["output_path"] + "/logs/7_summarize_publish.log"
     shell:
