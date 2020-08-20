@@ -602,6 +602,45 @@ rule publish_full_report:
         """
 
 
+rule publish_full_pillar_2_report:
+    input:
+        metadata = rules.publish_COG_master_metadata.output.metadata_report,
+    params:
+        date = config["date"],
+        template = config["latex_template"],
+        publish_dir = config["export_path"] + "/reports/full_report_pillar_2/"
+    output:
+        outdir = directory(config["output_path"] + "/7/full_report_pillar_2/"),
+    log:
+        config["output_path"] + "/logs/7_publish_report_pillar_2_full.log"
+    shell:
+        """
+        generate_report --m {input.metadata} \
+            --w {params.date} \
+            --s UK_report \
+            --od {output.outdir}
+            --p2 True &>> {log}
+
+        pandoc {output.outdir}UK_report.md \
+            -V linkcolor:blue \
+            -V geometry:a4paper \
+            -V geometry:margin=2cm \
+            -V mainfont="Helvetica Neue" \
+            -V monofont="Helvetica Neue" \
+            -V fontsize=9pt \
+            --columns=10000 \
+            --template={params.template} \
+            --latex-engine=pdflatex \
+            -o {output.outdir}UK_report_pillar_2.pdf &>> {log}
+
+        mkdir -p {params.publish_dir} &>> {log}
+        cp {output.outdir}UK_report_pillar_2.pdf {params.publish_dir} &>> {log}
+        cp {output.outdir}UK_report.md {params.publish_dir}UK_report_pillar_2.md &>> {log}
+        cp -r {output.outdir}figures/ {params.publish_dir} &>> {log}
+        cp -r {output.outdir}summary_files/ {params.publish_dir} &>> {log}
+        """
+
+
 rule publish_adm1_reports:
     input:
         metadata = rules.publish_COG_master_metadata.output.metadata_report,
@@ -650,7 +689,7 @@ rule publish_sc_reports:
         template = config["latex_template"],
         publish_dir = config["export_path"] + "/reports/regional_reports/"
     wildcard_constraints:
-        sc = "[A-Z]{4}"
+        sc = "[A-Z]{4}|[A-Z]{4}_[A-Z]{4}"
     output:
         outdir = directory(config["output_path"] + "/7/regional_reports/{sc}/"),
     log:
@@ -683,8 +722,8 @@ rule publish_sc_reports:
 
 
 ADM1 = ['England', 'Scotland', 'Wales', 'Northern_Ireland']
-SC = ['LIVE', 'PHWC', 'CAMB', 'NORW', 'GLAS', 'EDIN', 'SHEF', 'EXET', 'NOTT', 'PORT', 'OXON', 'NORT', 'NIRE', 'LOND', 'SANG', 'BIRM', 'PHEC']
-REPORTS = ['full'] + ADM1 + SC
+SC = ['BIRM','CAMB','EDIN','EXET','GLAS','GSTT','LIVE','LOND','LOND_BART','LOND_UCLH','NIRE','NORT','NORW','NOTT','OXON','PHEC','PHWC','PORT','SANG','SHEF']
+REPORTS = ['full', 'pillar_2_full'] + ADM1 + SC
 
 rule summarize_publish_reports:
     input:
@@ -740,11 +779,13 @@ rule summarize_publish:
         uk_trees_path = config["export_path"] + "/trees/uk_lineages/",
         local_civet_path = config["export_path"] + "/civet/",
         reports_path = config["export_path"] + "/reports/",
+        pillar_2_reports_path = config["export_path"] + "/reports/full_report_pillar_2/
     log:
         config["output_path"] + "/logs/7_summarize_publish.log"
     shell:
         """
         echo "> Reports published to {params.reports_path}\\n" >> {log}
+        echo "> Pillar_2 full report published to {params.pillar_2_reports_path}\\n" >> {log}
         echo "> \\n" >> {log}
         echo "> COG master metadata published to {input.COG_meta_master}\\n" >> {log}
         echo "> \\n" >> {log}
