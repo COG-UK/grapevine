@@ -261,7 +261,7 @@ rule uk_remove_insertions_and_trim_and_pad:
     params:
         trim_start = config["trim_start"],
         trim_end = config["trim_end"],
-        insertions = config["output_path"] + "/1/uk_insertions.txt"
+        insertions = config["output_path"] + "/1/uk_insertions.txt",
         deletions = config["output_path"] + "/1/uk_deletions.txt"
     output:
         fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.trimmed.fasta"
