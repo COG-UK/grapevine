@@ -276,7 +276,7 @@ rule uk_remove_insertions_and_trim_and_pad:
           -t [{params.trim_start}:{params.trim_end}] \
           --pad \
           --log-inserts \
-          ==log-deletions &> {log}
+          --log-deletions &> {log}
         mv insertions.txt {params.insertions}
         mv deletions.txt {params.deletions}
         """
