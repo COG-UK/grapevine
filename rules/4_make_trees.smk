@@ -1,3 +1,21 @@
+import os
+
+##### Configuration from original subsnake #####
+config["publish_path"] = os.path.abspath(config["publish_path"])
+lineage_to_outgroup_map = {}
+LINEAGES = []
+OUTGROUPS = []
+with open(config["lineage_splits"]) as lineage_fh:
+    # Read the lineage file into LINEAGES and OUTGROUPS
+    for i, line in enumerate(lineage_fh):
+        lineage, outgroup = line.strip().split(',')
+
+        if i == 0:
+            continue
+        LINEAGES.append(lineage)
+        OUTGROUPS.append(outgroup)
+        lineage_to_outgroup_map[lineage] = outgroup
+
 rule split_based_on_lineages:
     input:
         previous_stage = config["output_path"] + "/logs/3_summarize_combine_gisaid_and_cog.log",
@@ -9,7 +27,8 @@ rule split_based_on_lineages:
         grapevine_webhook = config["grapevine_webhook"],
         json_path = config["json_path"],
     output:
-        temp(config["output_path"] + "/4/split_done")
+        done=temp(config["output_path"] + "/4/split_done"),
+        lineage_fastas = [config["output_path"] + "/4/lineage_%s.fasta" % l for l in LINEAGES],
     log:
         config["output_path"] + "/logs/4_split_based_on_lineages.log"
     shell:
@@ -34,49 +53,93 @@ rule split_based_on_lineages:
         echo '"}}' >> {params.json_path}/4a_data.json
         echo "webhook {params.grapevine_webhook}"
 
-        touch {output}
+        touch {output.done}
         curl -X POST -H "Content-type: application/json" -d @{params.json_path}/4a_data.json {params.grapevine_webhook}
         """
 
 
-rule run_4_subroutine_on_lineages:
+rule fasttree:
     input:
         split_done = rules.split_based_on_lineages.log,
-        metadata = config["output_path"] + "/3/cog_gisaid.lineages.csv",
-        lineage = config["lineage_splits"],
+        lineage_fasta = config["output_path"] + "/4/lineage_{lineage}.fasta"
     params:
-        path_to_script = workflow.current_basedir,
-        output_path = config["output_path"],
-        publish_path = config["publish_path"],
-        export_path = config["export_path"],
-        date = config["date"],
-        guide_tree = config["guide_tree"],
-        prefix = config["output_path"] + "/4/lineage_"
+        lineage = "{lineage}",
     output:
-        grafted_tree = config["output_path"] + '/4/cog_gisaid_grafted.tree'
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.unrooted.tree",
     log:
-        config["output_path"] + "/logs/4_run_4_subroutine_on_lineages.log"
-    threads: 16
+        config["output_path"] + "/logs/4_fasttree_{lineage}.log"
+    resources: mem_per_cpu=10000 # 10gb * 4 threads * 4 lineages = 160gb < 192gb
+    threads: 4
     shell:
         """
-        lineages=$(cat {input.lineage} | cut -f1 -d"," | tr '\\n' '  ')
-        outgroups=$(cat {input.lineage} | cut -f2 -d"," | tr '\\n' '  ')
-        snakemake --nolock \
-          --snakefile {params.path_to_script}/4_subroutine/4_process_lineages.smk \
-          --cores {threads} \
-          --configfile {params.path_to_script}/4_subroutine/config.yaml \
-          --config \
-          output_path={params.output_path} \
-          publish_path={params.publish_path} \
-          lineages="$lineages" \
-          lineage_specific_outgroups="$outgroups" \
-          guide_tree="{params.guide_tree}" \
-          metadata="{input.metadata}" &> {log}
+        echo "{input.lineage_fasta} {params.lineage}"
+
+        export OMP_NUM_THREADS={threads}
+
+        FastTreeMP -nosupport -nt {input.lineage_fasta} > {output.tree} 2> {log}
         """
+
+
+rule root_tree:
+    input:
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.unrooted.tree",
+    params:
+        lineage = "{lineage}",
+        outgroup = lambda wildcards: lineage_to_outgroup_map[wildcards.lineage]
+    output:
+        tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.tree",
+    log:
+        config["output_path"] + "/logs/4_root_tree_{lineage}.log",
+    shell:
+        """
+        echo "{params.lineage} {params.outgroup}"
+
+        clusterfunk root \
+          --in-format newick \
+          -i {input.tree} \
+          --out-format newick \
+          -o {output.tree} \
+          --outgroup {params.outgroup} &>> {log}
+        """
+
+
+rule graft:
+    input:
+        # not sure how to pass this as a space separated list below. Also assuming the order here matches lineages
+        scions = expand(config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.tree", lineage=sorted(LINEAGES)),
+        guide_tree = config["guide_tree"]
+    params:
+        lineages = sorted(LINEAGES),
+    output:
+        grafted_tree = config["output_path"] + '/4/cog_gisaid_grafted.tree',
+    log:
+        config["output_path"] + "/logs/4_graft.log",
+    run:
+        if len(input.scions) > 1:
+            shell("""
+                clusterfunk graft \
+                  --scions {input.scions} \
+                  --scion-annotation-name scion_lineage \
+                  --annotate-scions {params.lineages} \
+                  --input {input.guide_tree} \
+                  --in-format newick \
+                  --out-format newick \
+                  --output {output.grafted_tree} &> {log}
+                """)
+
+        else:
+            shell("""
+                clusterfunk reformat \
+                  -i {input.scions} \
+                  --in-format newick \
+                  --out-format newick \
+                  -o {output.grafted_tree} &> {log}
+            """)
+
 
 rule sort_collapse:
     input:
-        grafted_tree = rules.run_4_subroutine_on_lineages.output.grafted_tree,
+        grafted_tree = rules.graft.output.grafted_tree,
     output:
         sorted_tree = config["output_path"] + '/4/cog_gisaid_grafted.sorted.tree',
         sorted_collapsed_tree = config["output_path"] + '/4/cog_gisaid_full.tree.public.newick',
