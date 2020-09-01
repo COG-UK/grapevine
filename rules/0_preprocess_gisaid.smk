@@ -121,7 +121,8 @@ rule gisaid_remove_insertions_and_pad:
     params:
         trim_start = config["trim_start"],
         trim_end = config["trim_end"],
-        insertions = config["output_path"] + "/0/gisaid_insertions.txt"
+        insertions = config["output_path"] + "/0/gisaid_insertions.txt",
+        deletions = config["output_path"] + "/0/gisaid_deletions.txt",
     output:
         fasta = config["output_path"] + "/0/gisaid.RD.UH.filt1.mapped.fasta"
     log:
@@ -134,9 +135,11 @@ rule gisaid_remove_insertions_and_pad:
           -o {output} \
           -t [{params.trim_start}:{params.trim_end}] \
           --pad \
-          --log-inserts &> {log}
+          --log-inserts \
+          --log-deletions &> {log}
 
         mv insertions.txt {params.insertions}
+        mv deletions.txt {params.deletions}
         """
 
 
