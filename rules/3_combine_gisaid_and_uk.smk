@@ -17,9 +17,7 @@ rule gisaid_output_lineage_table:
           --filter-column sequence_name country adm1 adm2 \
                           sample_date epi_week \
                           lineage uk_lineage \
-          --where-column uk_omit=is_uk sample_date=covv_collection_date \
-                                 epi_week=edin_epi_week country=edin_admin_0 \
-                                 adm1=edin_admin_1 adm2=edin_admin_2 \
+          --where-column adm1=edin_admin_1 adm2=edin_admin_2 \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --log-file {log} \

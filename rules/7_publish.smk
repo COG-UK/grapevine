@@ -229,8 +229,7 @@ rule combine_cog_gisaid:
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage lineage_support lineages_version \
                           uk_lineage microreact_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype d614g n439k p323l del_1605_3 \
-          --where-column uk_omit=is_uk sample_date=covv_collection_date epi_week=edin_epi_week \
-                         country=edin_admin_0 adm1=edin_admin_1 travel_history=edin_travel \
+          --where-column adm1=edin_admin_1 travel_history=edin_travel \
           --out-fasta {params.intermediate_gisaid_fasta} \
           --out-metadata {params.intermediate_gisaid_metadata} \
           --restrict &>> {log}
