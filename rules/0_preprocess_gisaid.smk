@@ -1,4 +1,3 @@
-
 rule gisaid_process_json:
     input:
         json = config["latest_gisaid_json"],
@@ -359,7 +358,7 @@ rule gisaid_add_del_finder_result_to_metadata:
         metadata = rules.gisaid_add_pangolin_lineages_to_metadata.output.metadata,
         new_data = rules.gisaid_del_finder.output.metadata
     output:
-        metadata = config["output_path"] + "/0/gisaid.all.csv"
+        metadata = config["output_path"] + "/0/gisaid.RD.UH.SNPfinder.lineages.del_finder.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_add_del_finder_result_to_metadata.log"
     shell:
@@ -375,25 +374,50 @@ rule gisaid_add_del_finder_result_to_metadata:
         """
 
 
-rule gisaid_output_lineage_table:
+rule gisaid_output_all_matched_metadata:
     input:
         fasta = rules.gisaid_filter_on_distance_to_WH04.output.fasta,
         metadata = rules.gisaid_add_del_finder_result_to_metadata.output.metadata
     output:
-        fasta = config["output_path"] + "/0/gisaid.matched.fasta",
-        metadata = config["output_path"] + "/0/gisaid.matched.lineages.csv"
+        fasta = config["output_path"] + "/0/gisaid.all.fasta",
+        metadata = config["output_path"] + "/0/gisaid.all.csv"
     log:
-        config["output_path"] + "/logs/0_gisaid_output_lineage_table.log"
+        config["output_path"] + "/logs/0_gisaid_output_all_matched_metadata.log"
     shell:
         """
         fastafunk fetch \
           --in-fasta {input.fasta} \
           --in-metadata {input.metadata} \
           --index-column sequence_name \
-          --filter-column sequence_name country adm1 adm2 \
-                          sample_date epi_week \
-                          lineage uk_lineage \
-          --where-column uk_omit=is_uk sample_date=covv_collection_date \
+          --filter-column \
+                         sequence_name \
+                         country \
+                         edin_admin_1 \
+                         edin_admin_2 \
+                         edin_travel \
+                         edin_date_stamp \
+                         sample_date \
+                         epi_week \
+                         lineage \
+                         lineages_version \
+                         lineage_support \
+                         d614g \
+                         n439k \
+                         p323l \
+                         del_1605_3 \
+                         covv_accession_id \
+                         covv_virus_name \
+                         covv_location \
+                         covv_add_host_info \
+                         covv_assembly_method \
+                         covv_gender \
+                         covv_host \
+                         covv_passage \
+                         covv_patient_age \
+                         covv_seq_technology \
+                         covv_specimen \
+                         covv_subm_date \
+          --where-column sample_date=covv_collection_date \
                                  epi_week=edin_epi_week country=edin_admin_0 \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
@@ -402,15 +426,115 @@ rule gisaid_output_lineage_table:
         """
 
 
-rule gisaid_output_matched_fasta_and_metadata_table:
+rule gisaid_exclude_uk_seqs:
     input:
         fasta = rules.gisaid_filter_on_distance_to_WH04.output.fasta,
+    output:
+        fasta = config["output_path"] + "/0/gisaid.global.fasta"
+    run:
+        from Bio import SeqIO
+
+        out_handle = open(str(output.fasta), 'w')
+        with open(str(input.fasta), 'r') as f:
+            for record in SeqIO.parse(f, 'fasta'):
+                id = record.id
+                seq = str(record.seq)
+                if id.split('/')[0] in ['England', 'Wales', 'Scotland', 'Northern_Ireland']:
+                    continue
+                else:
+                    out_handle.write('>' + id + '\n')
+                    out_handle.write(seq + '\n')
+
+        out_handle.close()
+
+
+rule gisaid_output_global_matched_metadata:
+    input:
+        fasta = rules.gisaid_exclude_uk_seqs.output.fasta,
         metadata = rules.gisaid_add_del_finder_result_to_metadata.output.metadata
     output:
-        published_fasta = config["publish_path"] + "/GISAID/gisaid.trimmed_alignment.fasta",
-        published_metadata = config["publish_path"] + "/GISAID/gisaid.metadata.csv",
+        fasta = temp(config["output_path"] + "/0/gisaid.global.temp.fasta"),
+        metadata = config["output_path"] + "/0/gisaid.global.csv"
     log:
-        config["output_path"] + "/logs/0_gisaid_output_matched_fasta_and_metadata_table.log"
+        config["output_path"] + "/logs/0_gisaid_output_global_matched_metadata.log"
+    shell:
+        """
+        fastafunk fetch \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata} \
+          --index-column sequence_name \
+          --filter-column \
+                         sequence_name \
+                         country \
+                         edin_admin_1 \
+                         edin_admin_2 \
+                         edin_travel \
+                         edin_date_stamp \
+                         sample_date \
+                         epi_week \
+                         lineage \
+                         lineages_version \
+                         lineage_support \
+                         d614g \
+                         n439k \
+                         p323l \
+                         del_1605_3 \
+                         covv_accession_id \
+                         covv_virus_name \
+                         covv_location \
+                         covv_add_host_info \
+                         covv_assembly_method \
+                         covv_gender \
+                         covv_host \
+                         covv_passage \
+                         covv_patient_age \
+                         covv_seq_technology \
+                         covv_specimen \
+                         covv_subm_date \
+          --where-column sample_date=covv_collection_date \
+                                 epi_week=edin_epi_week country=edin_admin_0 \
+          --out-fasta {output.fasta} \
+          --out-metadata {output.metadata} \
+          --log-file {log} \
+          --restrict
+        """
+
+
+rule gisaid_collapse:
+    input:
+        fasta = rules.gisaid_exclude_uk_seqs.output.fasta,
+    output:
+        fasta = config["output_path"] + "/0/gisaid.global.collapsed.fasta",
+        tip_to_redudants = config["output_path"] + "/0/tip_to_redundants.csv",
+        redundant_to_tips = config["output_path"] + "/0/redundant_to_tips.csv",
+    log:
+        config["output_path"] + "/logs/0_gisaid_collapse.log"
+    resources: mem_per_cpu=2000
+    threads: 8
+    shell:
+        """
+        /cephfs/covid/bham/climb-covid19-jacksonb/programs/julia-1.5.0/bin/julia --threads {threads} /cephfs/covid/bham/climb-covid19-jacksonb/programs/julialign/src/collapse.jl \
+        	-i {input.fasta} \
+        	-r Wuhan/WH04/2020 \
+        	-r Wuhan/WHU01/2020 \
+        	-r Italy/TE5166/2020 \
+            -r Germany/BAV-V2010837/2020 \
+	        -o {output.fasta} &> {log}
+
+            mv tip_to_redundants.csv {output.tip_to_redudants} &>> {log}
+            mv redundant_to_tips.csv {output.redundant_to_tips} &>> {log}
+        """
+
+
+rule gisaid_get_collapsed_metadata:
+    input:
+        fasta = rules.gisaid_collapse.output.fasta,
+        metadata = rules.gisaid_add_del_finder_result_to_metadata.output.metadata,
+    output:
+        fasta = temp(config["output_path"] + "/0/gisaid.global.collapsed.temp.fasta"),
+        metadata = config["output_path"] + "/0/gisaid.global.collapsed.csv",
+    log:
+        config["output_path"] + "/logs/0_gisaid_get_collapsed_metadata.log"
     shell:
         """
         fastafunk fetch \
@@ -447,12 +571,11 @@ rule gisaid_output_matched_fasta_and_metadata_table:
                          covv_subm_date \
           --where-column sample_date=covv_collection_date \
                          epi_week=edin_epi_week country=edin_admin_0 \
-          --out-fasta {output.published_fasta} \
-          --out-metadata {output.published_metadata} \
+          --out-fasta {output.fasta} \
+          --out-metadata {output.metadata} \
           --log-file {log} \
           --restrict
         """
-
 
 rule summarize_preprocess_gisaid:
     input:
@@ -462,16 +585,19 @@ rule summarize_preprocess_gisaid:
         removed_short_fasta = rules.gisaid_filter_1.output,
         removed_low_covg_fasta = rules.gisaid_filter_2.output.fasta,
         removed_distance_to_root_fasta = rules.gisaid_filter_on_distance_to_WH04.output.fasta,
-        full_metadata = rules.gisaid_add_pangolin_lineages_to_metadata.output.metadata,
-        matched_fasta = rules.gisaid_output_lineage_table.output.fasta,
-        matched_lineage_table = rules.gisaid_output_lineage_table.output.metadata,
+        all_fasta = rules.gisaid_output_all_matched_metadata.output.fasta,
+        all_metadata = rules.gisaid_output_all_matched_metadata.output.metadata,
+        global_fasta = rules.gisaid_exclude_uk_seqs.output.fasta,
+        global_metadata = rules.gisaid_output_global_matched_metadata.output.metadata,
+        collapsed_fasta = rules.gisaid_collapse.output.fasta,
+        collapsed_metadata = rules.gisaid_get_collapsed_metadata.output.metadata,
         counts = rules.gisaid_counts_by_country.output.counts,
-        published_fasta = rules.gisaid_output_matched_fasta_and_metadata_table.output.published_fasta,
-        published_metadata = rules.gisaid_output_matched_fasta_and_metadata_table.output.published_metadata,
     params:
         publish_path = config["publish_path"] + "/GISAID/",
         published_counts = config["publish_path"] + "/GISAID/gisaid_counts_by_country.csv",
-        grapevine_webhook = config["grapevine_webhook"]
+        published_all_fasta = config["publish_path"] + "/GISAID/gisaid.all.fasta",
+        published_all_metadata = config["publish_path"] + "/GISAID/gisaid.all.csv",
+        grapevine_webhook = config["grapevine_webhook"],
     log:
         config["output_path"] + "/logs/0_summarize_preprocess_gisaid.log"
     shell:
@@ -479,6 +605,8 @@ rule summarize_preprocess_gisaid:
         mkdir -p {params.publish_path}
 
         cp {input.counts} {params.published_counts}
+        cp {input.all_fasta} {params.published_all_fasta}
+        cp {input.all_metadata} {params.published_all_metadata}
 
         echo "Number of sequences in latest GISAID download: $(cat {input.latest_fasta} | grep '>' | wc -l)\\n" >> {log}
         echo "Number of sequences after unifying headers: $(cat {input.unify_headers_fasta} | grep '>' | wc -l)\\n" >> {log}
@@ -486,15 +614,29 @@ rule summarize_preprocess_gisaid:
         echo "Number of sequences after removing sequences <29000bps: $(cat {input.removed_short_fasta} | grep '>' | wc -l)\\n" >> {log}
         echo "Number of sequences after mapping and removing those with <95% coverage: $(cat {input.removed_low_covg_fasta} | grep '>' | wc -l)\\n" >> {log}
         echo "Number of sequences after removing those >4 epi-week stddevs to WH04: $(cat {input.removed_distance_to_root_fasta} | grep '>' | wc -l)\\n" >> {log}
+        echo "Number of non-UK sequences: $(cat {input.global_fasta} | grep '>' | wc -l)\\n" >> {log}
+        echo "Number of non-UK sequences after collapsing: $(cat {input.collapsed_fasta} | grep '>' | wc -l)\\n" >> {log}
         echo "> \\n" >> {log}
         echo "> Counts by country published to {params.published_counts}\\n" >> {log}
-        echo "> Trimmed alignment published to {input.published_fasta}\\n" >> {log}
-        echo "> Matched metadata published to {input.published_metadata}\\n" >> {log}
+        echo "> Full alignment published to {params.published_all_fasta}\\n" >> {log}
+        echo "> Matched metadata published to {params.published_all_metadata}\\n" >> {log}
         echo '{{"text":"' > 0_data.json
-        echo "*Step 0: GISAID preprocessing complete*\\n" >> 0_data.json
+        echo "*Step 0: GISAID processing complete*\\n" >> 0_data.json
         cat {log} >> 0_data.json
         echo '"}}' >> 0_data.json
         echo 'webhook {params.grapevine_webhook}'
+
         curl -X POST -H "Content-type: application/json" -d @0_data.json {params.grapevine_webhook}
-        # rm 0_data.json
+        """
+
+rule alert_sam:
+    input: rules.summarize_preprocess_gisaid.log,
+    params:
+        date = config["date"],
+    log: config["output_path"] + "/logs/0_alert_sam.log"
+    shell:
+        """
+        ln -sfn /cephfs/covid/bham/raccoon-dog/{params.date}_gisaid /cephfs/covid/bham/raccoon-dog/gisaid-latest 2> {log}
+
+        ~/.conda/envs/ben-ipc/bin/python /cephfs/covid/software/sam/public/mqtt-message.py -t 'COGUK/infrastructure/housekeeping/gisaid/status' --attr status finished &>> {log}
         """

@@ -594,6 +594,8 @@ rule publish_full_report:
             --latex-engine=pdflatex \
             -o {output.outdir}UK_report.pdf &>> {log}
 
+        sed -i.bak "s/(.*\/figures/(figures/g" {output.outdir}UK_report.md 2>> {log}
+
         mkdir -p {params.publish_dir} &>> {log}
         cp {output.outdir}UK_report.pdf {output.outdir}UK_report.md {params.publish_dir} &>> {log}
         cp -r {output.outdir}figures/ {params.publish_dir} &>> {log}
@@ -630,6 +632,8 @@ rule publish_full_pillar_2_report:
             --template={params.template} \
             --latex-engine=pdflatex \
             -o {output.outdir}UK_report_pillar_2.pdf &>> {log}
+
+        sed -i.bak "s/(.*\/figures/(figures/g" {output.outdir}UK_report.md 2>> {log}
 
         mkdir -p {params.publish_dir} &>> {log}
         cp {output.outdir}UK_report_pillar_2.pdf {params.publish_dir} &>> {log}
@@ -671,6 +675,8 @@ rule publish_adm1_reports:
             --latex-engine=pdflatex \
             -o {output.outdir}{wildcards.adm1}.pdf &>> {log}
 
+        sed -i.bak "s/(.*\/figures/(figures/g" {output.outdir}{wildcards.adm1}.md 2>> {log}
+
         mkdir -p {params.publish_dir}{wildcards.adm1} &>> {log}
         cp {output.outdir}{wildcards.adm1}.pdf {output.outdir}{wildcards.adm1}.md {params.publish_dir}{wildcards.adm1}/ &>> {log}
         cp -r {output.outdir}figures/ {params.publish_dir}{wildcards.adm1}/ &>> {log}
@@ -709,6 +715,8 @@ rule publish_sc_reports:
             --template={params.template} \
             --latex-engine=pdflatex \
             -o {output.outdir}report_{wildcards.sc}.pdf &>> {log}
+
+        sed -i.bak "s/(.*\/figures/(figures/g" {output.outdir}report_{wildcards.sc}.md 2>> {log}
 
         mkdir -p {params.publish_dir}results/results_{wildcards.sc} &>> {log}
         cp {output.outdir}report_{wildcards.sc}.pdf {output.outdir}report_{wildcards.sc}.md {params.publish_dir} &>> {log}
