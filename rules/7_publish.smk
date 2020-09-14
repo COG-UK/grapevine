@@ -877,7 +877,10 @@ rule summarize_postpublish:
     params:
         date = config["date"],
         phylopipe_webhook = config["phylopipe_webhook"],
+        phylopipe_token = config["phylopipe_token"],
         json_path = config["json_path"],
+        reports_path = config["export_path"] + "/reports/",
+        report_upload_log = config["output_path"] + "/logs/7_upload_report.log",
     log:
         config["output_path"] + "/logs/7_summarize_postpublish.log"
     shell:
@@ -916,6 +919,10 @@ rule summarize_postpublish:
         curl -X POST -H "Content-type: application/json" -d @{params.json_path}/publish_data_to_consortium.json {params.phylopipe_webhook}
 
         ln -sfn /cephfs/covid/bham/raccoon-dog/{params.date} /cephfs/covid/bham/raccoon-dog/previous
+
+        curl -F file=@{params.reports_path}UK_report.pdf -F "initial_comment=UK report for the latest phylogenetics pipeline run" -F channels=CVACDLCKA -H "Authorization: Bearer {params.phylopipe_token}" https://slack.com/api/files.upload &> {params.report_upload_log}
+        THREAD_TS=`grep -oh -E '\"ts\":\"[0-9]+\.[0-9]+\"' {params.report_upload_log} | sed 's/"ts":"//' | sed 's/"//'`
+        echo $THREAD_TS >> {params.report_upload_log}
         """
 
 
