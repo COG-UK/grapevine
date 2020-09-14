@@ -517,8 +517,8 @@ rule gisaid_collapse:
         	-i {input.fasta} \
         	-r Wuhan/WH04/2020 \
         	-r Wuhan/WHU01/2020 \
-        	-r Italy/TE5166/2020 \
-            -r Germany/BAV-V2010837/2020 \
+        	-r Italy/ABR-IZSGC-TE5166/2020 \
+            -r Germany/BY-MVP-V2010837/2020 \
 	        -o {output.fasta} &> {log}
 
             mv tip_to_redundants.csv {output.tip_to_redudants} &>> {log}
@@ -598,6 +598,7 @@ rule summarize_preprocess_gisaid:
         published_all_fasta = config["publish_path"] + "/GISAID/gisaid.all.fasta",
         published_all_metadata = config["publish_path"] + "/GISAID/gisaid.all.csv",
         grapevine_webhook = config["grapevine_webhook"],
+        date = config["date"],
     log:
         config["output_path"] + "/logs/0_summarize_preprocess_gisaid.log"
     shell:
@@ -631,9 +632,9 @@ rule summarize_preprocess_gisaid:
 
 rule alert_sam:
     input: rules.summarize_preprocess_gisaid.log,
+    log: config["output_path"] + "/logs/0_alert_sam.log"
     params:
         date = config["date"],
-    log: config["output_path"] + "/logs/0_alert_sam.log"
     shell:
         """
         ln -sfn /cephfs/covid/bham/raccoon-dog/{params.date}_gisaid /cephfs/covid/bham/raccoon-dog/gisaid-latest 2> {log}

@@ -229,8 +229,7 @@ rule combine_cog_gisaid:
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage lineage_support lineages_version \
                           uk_lineage microreact_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype d614g n439k p323l del_1605_3 \
-          --where-column uk_omit=is_uk sample_date=covv_collection_date epi_week=edin_epi_week \
-                         country=edin_admin_0 adm1=edin_admin_1 travel_history=edin_travel \
+          --where-column adm1=edin_admin_1 travel_history=edin_travel \
           --out-fasta {params.intermediate_gisaid_fasta} \
           --out-metadata {params.intermediate_gisaid_metadata} \
           --restrict &>> {log}
@@ -878,7 +877,10 @@ rule summarize_postpublish:
     params:
         date = config["date"],
         phylopipe_webhook = config["phylopipe_webhook"],
+        phylopipe_token = config["phylopipe_token"],
         json_path = config["json_path"],
+        reports_path = config["export_path"] + "/reports/",
+        report_upload_log = config["output_path"] + "/logs/7_upload_report.log",
     log:
         config["output_path"] + "/logs/7_summarize_postpublish.log"
     shell:
@@ -917,6 +919,10 @@ rule summarize_postpublish:
         curl -X POST -H "Content-type: application/json" -d @{params.json_path}/publish_data_to_consortium.json {params.phylopipe_webhook}
 
         ln -sfn /cephfs/covid/bham/raccoon-dog/{params.date} /cephfs/covid/bham/raccoon-dog/previous
+
+        curl -F file=@{params.reports_path}UK_report.pdf -F "initial_comment=UK report for the latest phylogenetics pipeline run" -F channels=CVACDLCKA -H "Authorization: Bearer {params.phylopipe_token}" https://slack.com/api/files.upload &> {params.report_upload_log}
+        THREAD_TS=`grep -oh -E '\"ts\":\"[0-9]+\.[0-9]+\"' {params.report_upload_log} | sed 's/"ts":"//' | sed 's/"//'`
+        echo $THREAD_TS >> {params.report_upload_log}
         """
 
 
