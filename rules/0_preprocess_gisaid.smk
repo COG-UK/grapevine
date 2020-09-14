@@ -628,14 +628,16 @@ rule summarize_preprocess_gisaid:
         echo 'webhook {params.grapevine_webhook}'
 
         curl -X POST -H "Content-type: application/json" -d @0_data.json {params.grapevine_webhook}
-
-        ln -sfn /cephfs/covid/bham/raccoon-dog/{params.date}_gisaid /cephfs/covid/bham/raccoon-dog/gisaid-latest 2> {log}
         """
 
 rule alert_sam:
     input: rules.summarize_preprocess_gisaid.log,
     log: config["output_path"] + "/logs/0_alert_sam.log"
+    params:
+        date = config["date"],
     shell:
         """
+        ln -sfn /cephfs/covid/bham/raccoon-dog/{params.date}_gisaid /cephfs/covid/bham/raccoon-dog/gisaid-latest 2> {log}
+
         ~/.conda/envs/ben-ipc/bin/python /cephfs/covid/software/sam/public/mqtt-message.py -t 'COGUK/infrastructure/housekeeping/gisaid/status' --attr status finished &>> {log}
         """
