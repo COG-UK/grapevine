@@ -264,7 +264,9 @@ rule uk_remove_insertions_and_trim_and_pad:
         insertions = config["output_path"] + "/1/uk_insertions.txt",
         deletions = config["output_path"] + "/1/uk_deletions.txt"
     output:
-        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.trimmed.fasta"
+        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.trimmed.fasta",
+        insertions = config["export_path"] + "/alignments/uk_insertions.txt",
+        deletions = config["export_path"] + "/alignments/uk_deletions.txt",
     log:
         config["output_path"] + "/logs/1_uk_remove_insertions_and_trim_and_pad.log"
     shell:
@@ -279,6 +281,8 @@ rule uk_remove_insertions_and_trim_and_pad:
           --log-deletions &> {log}
         mv insertions.txt {params.insertions}
         mv deletions.txt {params.deletions}
+        cp {params.insertions} {output.insertions}
+        cp {params.deletions} {output.deletions}
         """
 
 
