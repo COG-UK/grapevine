@@ -64,7 +64,7 @@ rule publish_COG_master_metadata:
           --filter-column sequence_name sample_date epi_week \
                           country adm1 adm2 \
                           lineage lineage_support lineages_version uk_lineage acc_lineage del_lineage phylotype acc_introduction del_introduction \
-                          sequencing_org_code \
+                          sequencing_org_code sequencing_submission_date \
           --where-column epi_week=edin_epi_week country=adm0 \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata_report} \
