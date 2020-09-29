@@ -64,7 +64,7 @@ rule publish_COG_master_metadata:
           --filter-column sequence_name sample_date epi_week \
                           country adm1 adm2 \
                           lineage lineage_support lineages_version uk_lineage acc_lineage del_lineage phylotype acc_introduction del_introduction \
-                          sequencing_org_code \
+                          sequencing_org_code sequencing_submission_date \
           --where-column epi_week=edin_epi_week country=adm0 \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata_report} \
@@ -921,9 +921,13 @@ rule summarize_postpublish:
         ln -sfn /cephfs/covid/bham/raccoon-dog/{params.date} /cephfs/covid/bham/raccoon-dog/previous
 
         curl -F file=@{params.reports_path}UK_report.pdf -F "initial_comment=UK report for the latest phylogenetics pipeline run" -F channels=CVACDLCKA -H "Authorization: Bearer {params.phylopipe_token}" https://slack.com/api/files.upload &> {params.report_upload_log}
-        THREAD_TS=`grep -oh -E '\"ts\":\"[0-9]+\.[0-9]+\"' {params.report_upload_log} | sed 's/"ts":"//' | sed 's/"//'`
-        echo $THREAD_TS >> {params.report_upload_log}
         """
+        # THREAD_TS=`grep -oh -E '\"ts\":\"[0-9]+\.[0-9]+\"' {params.report_upload_log} | sed 's/"ts":"//' | sed 's/"//'`
+        #
+        # curl -F file=@{params.reports_path}adm1_reports/England/England.pdf -F channels=CVACDLCKA thread_ts=${{THREAD_TS}} -H "Authorization: Bearer {params.phylopipe_token}" https://slack.com/api/files.upload &>> {params.report_upload_log}
+        # curl -F file=@{params.reports_path}adm1_reports/Northern_Ireland/Northern_Ireland.pdf -F channels=CVACDLCKA thread_ts=${{THREAD_TS}} -H "Authorization: Bearer {params.phylopipe_token}" https://slack.com/api/files.upload &>> {params.report_upload_log}
+        # curl -F file=@{params.reports_path}adm1_reports/Scotland/Scotland.pdf -F channels=CVACDLCKA thread_ts=${{THREAD_TS}} -H "Authorization: Bearer {params.phylopipe_token}" https://slack.com/api/files.upload &>> {params.report_upload_log}
+        # curl -F file=@{params.reports_path}adm1_reports/Wales/Wales.pdf -F channels=CVACDLCKA thread_ts=${{THREAD_TS}} -H "Authorization: Bearer {params.phylopipe_token}" https://slack.com/api/files.upload &>> {params.report_upload_log}
 
 
 
