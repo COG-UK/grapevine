@@ -356,26 +356,63 @@ rule uk_full_untrimmed_alignment:
         """
 
 
-rule uk_mask_2:
+# rule uk_mask_2:
+#     input:
+#         fasta = rules.uk_full_untrimmed_alignment.output.fasta,
+#         mask = config["uk_mask_file"]
+#     output:
+#         fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.full.masked.fasta"
+#     log:
+#         config["output_path"] + "/logs/1_uk_mask_2.log"
+#     shell:
+#         """
+#         datafunk mask \
+#           --input-fasta {input.fasta} \
+#           --output-fasta {output.fasta} \
+#           --mask-file \"{input.mask}\" 2> {log}
+#         """
+
+
+# the below two rules are to get an unmasked and untrimmed alignment with the
+# same seqs as goes forward to tree building
+rule uk_filter_low_coverage_sequences_2:
     input:
-        fasta = rules.uk_full_untrimmed_alignment.output.fasta,
-        mask = config["uk_mask_file"]
+        fasta = rules.uk_full_untrimmed_alignment.output.fasta
+    params:
+        min_covg = config["min_covg"]
     output:
-        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.full.masked.fasta"
+        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.full.low_covg_filtered.fasta"
     log:
-        config["output_path"] + "/logs/1_uk_mask_2.log"
+        config["output_path"] + "/logs/1_uk_filter_low_coverage_sequences_2.log"
     shell:
         """
-        datafunk mask \
-          --input-fasta {input.fasta} \
-          --output-fasta {output.fasta} \
-          --mask-file \"{input.mask}\" 2> {log}
+        datafunk filter_fasta_by_covg_and_length \
+          -i {input.fasta} \
+          -o {output.fasta} \
+          --min-covg {params.min_covg} &> {log}
+        """
+
+
+rule uk_filter_omitted_sequences_2:
+    input:
+        fasta = rules.uk_filter_low_coverage_sequences_2.output.fasta,
+        omissions = config["uk_omissions"]
+    output:
+        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.full.low_covg_filtered.omissions_filtered.fasta"
+    log:
+        config["output_path"] + "/logs/1_uk_filter_omitted_sequences_2.log"
+    shell:
+        """
+        datafunk remove_fasta \
+          -i {input.fasta} \
+          -f {input.omissions} \
+          -o {output.fasta}  &> {log}
         """
 
 
 rule UK_AA_finder:
     input:
-        fasta = rules.uk_mask_2.output.fasta,
+        fasta = rules.uk_full_untrimmed_alignment.output.fasta,
         AAs = config["AAs"]
     output:
         found = config["output_path"] + "/1/cog.AA_finder.csv",
@@ -411,7 +448,7 @@ rule add_AA_finder_result_to_metadata:
 
 rule uk_del_finder:
     input:
-        fasta = rules.uk_mask_2.output.fasta,
+        fasta = rules.uk_full_untrimmed_alignment.output.fasta,
         dels = config["dels"]
     output:
         metadata = config["output_path"] + "/1/cog.del_finder.csv",
@@ -518,7 +555,7 @@ rule summarize_preprocess_uk:
         unify_headers_fasta = rules.uk_unify_headers.output.fasta,
         removed_low_covg_fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
         removed_omitted_fasta = rules.uk_filter_omitted_sequences.output.fasta,
-        full_alignment = rules.uk_full_untrimmed_alignment.output.fasta,
+        full_unmasked_alignment = rules.uk_full_untrimmed_alignment.output.fasta,
         full_metadata = rules.uk_add_previous_lineages_to_metadata.output.metadata,
         lineageless_fasta = rules.uk_extract_lineageless.output.fasta
     params:
