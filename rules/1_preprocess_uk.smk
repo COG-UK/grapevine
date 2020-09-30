@@ -386,11 +386,11 @@ rule uk_get_unmasked_alignment:
         fasta_template = SeqIO.index(str(input.fasta_template), "fasta")
         fasta_in = SeqIO.index(str(input.fasta), "fasta")
 
-        with open(str(output.fasta), 'w') as fasta:
+        with open(str(output.fasta), 'w') as fasta_out:
             for record in fasta_in:
-                if record.id in fasta_template:
-                    fasta_out.write('>' + record.id + '\n')
-                    fasta_out.write(str(record.seq) + '\n')
+                if record in fasta_template:
+                    fasta_out.write('>' + fasta_in[record].id + '\n')
+                    fasta_out.write(str(fasta_in[record].seq) + '\n')
 
 
 rule UK_AA_finder:
