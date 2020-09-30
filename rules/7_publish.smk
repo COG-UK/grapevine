@@ -465,7 +465,7 @@ rule publish_public_cog_data:
         fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.unify_headers.fasta",
         metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata,
         alignment = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.omissions_filtered.fasta",
-        unmasked_alignment = rules.uk_filter_omitted_sequences_2.output.fasta,
+        unmasked_alignment = rules.uk_get_unmasked_alignment.output.fasta,
     output:
         public_tree = config["export_path"] + "/public/cog_global_" + config["date"] + "_tree.newick",
         fasta = config["export_path"] + "/public/cog_" + config["date"] + "_all.fasta",
