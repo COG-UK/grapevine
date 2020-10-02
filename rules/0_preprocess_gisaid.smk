@@ -8,6 +8,7 @@ rule gisaid_process_json:
         metadata = config["output_path"] + "/0/gisaid.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_process_json.log"
+    resources: mem_per_cpu=10000
     shell:
         """
         datafunk process_gisaid_data \
