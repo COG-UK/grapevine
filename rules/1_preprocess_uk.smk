@@ -376,8 +376,8 @@ rule uk_mask_2:
 # get the same alignment as we use for tree building but with no mask
 rule uk_get_unmasked_alignment:
     input:
-        fasta_template = rules.uk_filter_omitted_sequences.output,
-        fasta = rules.uk_full_untrimmed_alignment.output.metadata,
+        fasta_template = rules.uk_filter_omitted_sequences.output.fasta,
+        fasta = rules.uk_full_untrimmed_alignment.output.fasta,
     output:
         fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.full.unmasked.fasta",
     log:
