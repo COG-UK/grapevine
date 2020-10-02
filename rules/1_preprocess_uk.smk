@@ -373,9 +373,29 @@ rule uk_mask_2:
         """
 
 
+# get the same alignment as we use for tree building but with no mask
+rule uk_get_unmasked_alignment:
+    input:
+        fasta_template = rules.uk_filter_omitted_sequences.output.fasta,
+        fasta = rules.uk_full_untrimmed_alignment.output.fasta,
+    output:
+        fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.full.unmasked.fasta",
+    log:
+        config["output_path"] + "/logs/1_uk_get_unmasked_alignment.log"
+    run:
+        fasta_template = SeqIO.index(str(input.fasta_template), "fasta")
+        fasta_in = SeqIO.index(str(input.fasta), "fasta")
+
+        with open(str(output.fasta), 'w') as fasta_out:
+            for record in fasta_in:
+                if record in fasta_template:
+                    fasta_out.write('>' + fasta_in[record].id + '\n')
+                    fasta_out.write(str(fasta_in[record].seq) + '\n')
+
+
 rule UK_AA_finder:
     input:
-        fasta = rules.uk_mask_2.output.fasta,
+        fasta = rules.uk_full_untrimmed_alignment.output.fasta,
         AAs = config["AAs"]
     output:
         found = config["output_path"] + "/1/cog.AA_finder.csv",
@@ -411,7 +431,7 @@ rule add_AA_finder_result_to_metadata:
 
 rule uk_del_finder:
     input:
-        fasta = rules.uk_mask_2.output.fasta,
+        fasta = rules.uk_full_untrimmed_alignment.output.fasta,
         dels = config["dels"]
     output:
         metadata = config["output_path"] + "/1/cog.del_finder.csv",
@@ -518,7 +538,7 @@ rule summarize_preprocess_uk:
         unify_headers_fasta = rules.uk_unify_headers.output.fasta,
         removed_low_covg_fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
         removed_omitted_fasta = rules.uk_filter_omitted_sequences.output.fasta,
-        full_alignment = rules.uk_full_untrimmed_alignment.output.fasta,
+        full_unmasked_alignment = rules.uk_full_untrimmed_alignment.output.fasta,
         full_metadata = rules.uk_add_previous_lineages_to_metadata.output.metadata,
         lineageless_fasta = rules.uk_extract_lineageless.output.fasta
     params:
