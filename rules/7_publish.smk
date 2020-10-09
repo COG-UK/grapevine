@@ -316,18 +316,26 @@ rule publish_civet_data:
         combined_fasta = rules.combine_cog_gisaid.output.fasta,
         tree = config["output_path"] + "/5/cog_gisaid_full.tree.nexus",
     output:
-        cog_all_fasta = config["export_path"] + "/civet/cog_" + config["date"] + '_alignment_all.fasta',
-        cog_all_metadata = config["export_path"] + "/civet/cog_" + config["date"] + '_metadata_all.csv',
-        cog_fasta = config["export_path"] + "/civet/cog_" + config["date"] + '_alignment.fasta',
-        cog_metadata = config["export_path"] + "/civet/cog_" + config["date"] + '_metadata.csv',
-        combined_metadata = config["export_path"] + "/civet/cog_global_" + config["date"] + '_metadata.csv',
-        combined_fasta = config["export_path"] + "/civet/cog_global_" + config["date"] + '_alignment.fasta',
+        cog_all_fasta = config["publish_path"] + "/civet/cog/cog_" + config["date"] + '_alignment_all.fasta',
+        cog_all_fasta_public = config["publish_path"] + "/civet/cog_" + config["date"] + '_alignment_all.fasta',
+        cog_all_metadata = config["publish_path"] + "/civet/cog/cog_" + config["date"] + '_metadata_all.csv',
+        cog_all_metadata_public = config["publish_path"] + "/civet/cog_" + config["date"] + '_metadata_all.csv',
+        cog_fasta = config["publish_path"] + "/civet/cog/cog_" + config["date"] + '_alignment.fasta',
+        cog_fasta_public = config["publish_path"] + "/civet/cog_" + config["date"] + '_alignment.fasta',
+        cog_metadata = config["publish_path"] + "/civet/cog/cog_" + config["date"] + '_metadata.csv',
+        cog_metadata_public = config["publish_path"] + "/civet/cog_" + config["date"] + '_metadata.csv',
+        combined_metadata = config["export_path"] + "/civet/cog/cog_global_" + config["date"] + '_metadata.csv',
+        combined_metadata_public = config["export_path"] + "/civet/cog_global_" + config["date"] + '_metadata.csv',
+        combined_fasta = config["export_path"] + "/civet/cog/cog_global_" + config["date"] + '_alignment.fasta',
+        combined_fasta_public = config["export_path"] + "/civet/cog_global_" + config["date"] + '_alignment.fasta',
         tree = config["export_path"] + "/civet/cog_global_"  + config["date"] +  "_tree.nexus",
+        tree_public = config["export_path"] + "/civet/cog/cog_global_"  + config["date"] +  "_tree.nexus",
     log:
         config["output_path"] + "/logs/7_publish_civet_data.log"
     shell:
         """
         cp {input.tree} {output.tree} &>> {log}
+        cp {input.tree} {output.tree_public} &>> {log}
 
         fastafunk fetch \
           --in-fasta {input.cog_all_fasta} \
@@ -342,6 +350,21 @@ rule publish_civet_data:
           --where-column epi_week=edin_epi_week country=adm0 \
           --out-fasta {output.cog_all_fasta} \
           --out-metadata {output.cog_all_metadata} \
+          --restrict &>> {log}
+
+        fastafunk fetch \
+          --in-fasta {input.cog_all_fasta} \
+          --in-metadata {input.cog_metadata} \
+          --index-column sequence_name \
+          --filter-column central_sample_id biosample_source_id sequence_name secondary_identifier \
+                          sample_date epi_week \
+                          country adm1 \
+                          is_surveillance is_community is_hcw \
+                          is_travel_history travel_history lineage \
+                          lineage_support uk_lineage acc_lineage del_lineage phylotype \
+          --where-column epi_week=edin_epi_week country=adm0 \
+          --out-fasta {output.cog_all_fasta_public} \
+          --out-metadata {output.cog_all_metadata_public} \
           --restrict &>> {log}
 
         fastafunk fetch \
@@ -360,6 +383,21 @@ rule publish_civet_data:
           --restrict &>> {log}
 
         fastafunk fetch \
+          --in-fasta {input.cog_fasta} \
+          --in-metadata {input.cog_metadata} \
+          --index-column sequence_name \
+          --filter-column central_sample_id biosample_source_id sequence_name secondary_identifier \
+                          sample_date epi_week \
+                          country adm1 \
+                          is_surveillance is_community is_hcw \
+                          is_travel_history travel_history lineage \
+                          lineage_support uk_lineage acc_lineage del_lineage phylotype \
+          --where-column epi_week=edin_epi_week country=adm0 \
+          --out-fasta {output.cog_fasta_public} \
+          --out-metadata {output.cog_metadata_public} \
+          --restrict &>> {log}
+
+        fastafunk fetch \
           --in-fasta {input.combined_fasta} \
           --in-metadata {input.combined_metadata} \
           --index-column sequence_name \
@@ -373,7 +411,22 @@ rule publish_civet_data:
           --out-fasta {output.combined_fasta} \
           --out-metadata {output.combined_metadata} \
           --restrict &>> {log}
-        """
+
+        fastafunk fetch \
+          --in-fasta {input.combined_fasta} \
+          --in-metadata {input.combined_metadata} \
+          --index-column sequence_name \
+          --filter-column central_sample_id biosample_source_id sequence_name secondary_identifier \
+                          sample_date epi_week \
+                          country adm1  \
+                          is_surveillance is_community is_hcw \
+                          is_travel_history travel_history lineage \
+                          lineage_support uk_lineage acc_lineage del_lineage phylotype \
+          --where-column epi_week=edin_epi_week country=adm0 \
+          --out-fasta {output.combined_fasta_public} \
+          --out-metadata {output.combined_metadata_public} \
+          --restrict &>> {log}
+         """
 
 
 rule publish_uk_lineage_specific_fasta_and_metadata_files:
@@ -525,7 +578,7 @@ rule publish_microreact_specific_output:
           --out-metadata {output.temp_public_metadata} \
           --restrict &>> {log}
 
-        datafunk anonymize_microreact \
+        python /cephfs/covid/bham/raccoon-dog/phylopipe/anonymize_microreact.py \
           --input-tree {input.newick_tree} \
           --input-metadata {output.temp_public_metadata} \
           --output-tree {output.public_tree} \
@@ -830,33 +883,49 @@ rule summarize_publish:
 
 rule postpublish_cp_civet_data:
     input:
-        cog_all_fasta = rules.publish_civet_data.output.cog_all_fasta,
-        cog_all_metadata = rules.publish_civet_data.output.cog_all_metadata,
-        cog_fasta = rules.publish_civet_data.output.cog_fasta,
-        cog_metadata = rules.publish_civet_data.output.cog_metadata,
-        combined_metadata = rules.publish_civet_data.output.combined_metadata,
-        combined_fasta = rules.publish_civet_data.output.combined_fasta,
-        tree = rules.publish_civet_data.output.tree,
+        cog_all_fasta_public = rules.publish_civet_data.output.cog_all_fasta_public,
+        cog_all_metadata_public = rules.publish_civet_data.output.cog_all_metadata_public,
+        cog_fasta_public = rules.publish_civet_data.output.cog_fasta_public,
+        cog_metadata_public = rules.publish_civet_data.output.cog_metadata_public,
+        combined_metadata_public = rules.publish_civet_data.output.combined_metadata_public,
+        combined_fasta_public = rules.publish_civet_data.output.combined_fasta_public,
+        tree_public = rules.publish_civet_data.output.tree_public,
     output:
-        cog_all_fasta = "/cephfs/covid/bham/civet-cat/cog_alignment_all.fasta",
-        cog_all_metadata = "/cephfs/covid/bham/civet-cat/cog_metadata_all.csv",
-        cog_fasta = "/cephfs/covid/bham/civet-cat/cog_alignment.fasta",
-        cog_metadata = "/cephfs/covid/bham/civet-cat/cog_metadata.csv",
-        combined_metadata = "/cephfs/covid/bham/civet-cat/cog_global_metadata.csv",
-        combined_fasta = "/cephfs/covid/bham/civet-cat/cog_global_alignment.fasta",
-        tree = "/cephfs/covid/bham/civet-cat/cog_global_tree.nexus",
+        cog_all_fasta_public = "/cephfs/covid/bham/civet-cat/cog_alignment_all.fasta",
+        cog_all_metadata_public = "/cephfs/covid/bham/civet-cat/cog_metadata_all.csv",
+        cog_fasta_public = "/cephfs/covid/bham/civet-cat/cog_alignment.fasta",
+        cog_metadata_public = "/cephfs/covid/bham/civet-cat/cog_metadata.csv",
+        combined_metadata_public = "/cephfs/covid/bham/civet-cat/cog_global_metadata.csv",
+        combined_fasta_public = "/cephfs/covid/bham/civet-cat/cog_global_alignment.fasta",
+        tree_public = "/cephfs/covid/bham/civet-cat/cog_global_tree.nexus",
     log:
         config["output_path"] + "/logs/7_postpublish_cp_civet_data.log"
     shell:
         """
-        cp {input.cog_all_fasta} {output.cog_all_fasta} &> {log}
-        cp {input.cog_all_metadata} {output.cog_all_metadata} &>> {log}
-        cp {input.cog_fasta} {output.cog_fasta} &>> {log}
-        cp {input.cog_metadata} {output.cog_metadata} &>> {log}
-        cp {input.combined_metadata} {output.combined_metadata} &>> {log}
-        cp {input.combined_fasta} {output.combined_fasta} &>> {log}
-        cp {input.tree} {output.tree} &>> {log}
+        cp {input.cog_all_fasta_public} {output.cog_all_fasta_public} &> {log}
+        cp {input.cog_all_metadata_public} {output.cog_all_metadata_public} &>> {log}
+        cp {input.cog_fasta_public} {output.cog_fasta_public} &>> {log}
+        cp {input.cog_metadata_public} {output.cog_metadata_public} &>> {log}
+        cp {input.combined_metadata_public} {output.combined_metadata_public} &>> {log}
+        cp {input.combined_fasta_public} {output.combined_fasta_public} &>> {log}
+        cp {input.tree_public} {output.tree_public} &>> {log}
         """
+        # cog_all_fasta = "/cephfs/covid/bham/civet-cat/cog/cog_alignment_all.fasta",
+        # cog_all_metadata = "/cephfs/covid/bham/civet-cat/cog/cog_metadata_all.csv",
+        # cog_fasta = "/cephfs/covid/bham/civet-cat/cog/cog_alignment.fasta",
+        # cog_metadata = "/cephfs/covid/bham/civet-cat/cog/cog_metadata.csv",
+        # combined_metadata = "/cephfs/covid/bham/civet-cat/cog/cog_global_metadata.csv",
+        # combined_fasta = "/cephfs/covid/bham/civet-cat/cog/cog_global_alignment.fasta",
+        # tree = "/cephfs/covid/bham/civet-cat/cog/cog_global_tree.nexus",
+
+        # cp {input.cog_all_fasta} {output.cog_all_fasta} &> {log}
+        # cp {input.cog_all_metadata} {output.cog_all_metadata} &>> {log}
+        # cp {input.cog_fasta} {output.cog_fasta} &>> {log}
+        # cp {input.cog_metadata} {output.cog_metadata} &>> {log}
+        # cp {input.combined_metadata} {output.combined_metadata} &>> {log}
+        # cp {input.combined_fasta} {output.combined_fasta} &>> {log}
+        # cp {input.tree} {output.tree} &>> {log}
+
 
 rule postpublish_rsync_phylogenetics_data:
     input:
