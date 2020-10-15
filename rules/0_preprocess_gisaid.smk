@@ -527,6 +527,38 @@ rule gisaid_collapse:
         """
 
 
+rule gisaid_get_unique_redundants:
+    input:
+        fasta = rules.gisaid_exclude_uk_seqs.output.fasta,
+        redundant_to_tips = rules.gisaid_collapse.output.redundant_to_tips,
+    output:
+        fasta = config["output_path"] + "/0/unique_redundants.fasta",
+    log:
+        config["output_path"] + "/logs/0_gisaid_get_unique_redundants.log"
+    run:
+        from Bio import SeqIO
+
+        fasta_in = SeqIO.index(str(input.fasta), "fasta")
+
+        firstline = True
+        with open(str(input.redundant_to_tips), "r") as f_in, open(str(output.fasta), "w") as f_out:
+            for line in f_in:
+                if firstline:
+                    firstline = False
+                    continue
+
+                l = line.rstrip().split(",")
+                redundant = l[0]
+                possible_tips = l[1].split("|")
+                if len(possible_tips) > 1:
+                    continue
+
+                record = fasta_in[redundant]
+
+                f_out.write(">" + record.id + "\n")
+                f_out.write(str(record.seq) + "\n")
+
+
 rule gisaid_get_collapsed_metadata:
     input:
         fasta = rules.gisaid_collapse.output.fasta,
@@ -578,6 +610,61 @@ rule gisaid_get_collapsed_metadata:
           --restrict
         """
 
+
+rule gisaid_get_collapsed_expanded_metadata:
+    input:
+        collapsed_fasta = rules.gisaid_collapse.output.fasta,
+        unique_fasta = rules.gisaid_get_unique_redundants.output.fasta,
+        metadata = rules.gisaid_add_del_finder_result_to_metadata.output.metadata,
+    output:
+        fasta = config["output_path"] + "/0/gisaid.global.collapsed.unique_expanded.fasta",
+        metadata = config["output_path"] + "/0/gisaid.global.collapsed.unique_expanded.csv",
+    log:
+        config["output_path"] + "/logs/0_gisaid_get_collapsed_expanded_metadata.log"
+    shell:
+        """
+        cat {input.collapsed_fasta} {input.unique_fasta} > {output.fasta} 2> {log}
+
+        fastafunk fetch \
+          --in-fasta {output.fasta} \
+          --in-metadata {input.metadata} \
+          --index-column sequence_name \
+          --filter-column \
+                         sequence_name \
+                         country \
+                         edin_admin_1 \
+                         edin_admin_2 \
+                         edin_travel \
+                         edin_date_stamp \
+                         sample_date \
+                         epi_week \
+                         lineage \
+                         lineages_version \
+                         lineage_support \
+                         d614g \
+                         n439k \
+                         p323l \
+                         del_1605_3 \
+                         covv_accession_id \
+                         covv_virus_name \
+                         covv_location \
+                         covv_add_host_info \
+                         covv_assembly_method \
+                         covv_gender \
+                         covv_host \
+                         covv_passage \
+                         covv_patient_age \
+                         covv_seq_technology \
+                         covv_specimen \
+                         covv_subm_date \
+          --where-column sample_date=covv_collection_date \
+                         epi_week=edin_epi_week country=edin_admin_0 \
+          --out-fasta {output.fasta} \
+          --out-metadata {output.metadata} \
+          --restrict 2>> {log}
+        """
+
+
 rule summarize_preprocess_gisaid:
     input:
         latest_fasta = rules.gisaid_process_json.output.fasta,
@@ -592,6 +679,7 @@ rule summarize_preprocess_gisaid:
         global_metadata = rules.gisaid_output_global_matched_metadata.output.metadata,
         collapsed_fasta = rules.gisaid_collapse.output.fasta,
         collapsed_metadata = rules.gisaid_get_collapsed_metadata.output.metadata,
+        collapsed_expanded_metadata = rules.gisaid_get_collapsed_expanded_metadata.output.metadata,
         counts = rules.gisaid_counts_by_country.output.counts,
     params:
         publish_path = config["publish_path"] + "/GISAID/",

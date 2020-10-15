@@ -13,6 +13,7 @@ rule uk_add_lineage_information_back_to_master_metadata:
         metadata = config["output_path"] + "/7/uk.master.csv"
     log:
         config["output_path"] + "/logs/7_uk_add_lineage_information_back_to_master_metadata.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk add_columns \
@@ -53,6 +54,7 @@ rule publish_COG_master_metadata:
         fasta = temp(config["output_path"] + "/7/7_publish_COG_master_metadata.temp.fasta")
     log:
         config["output_path"] + "/logs/7_publish_COG_master_metadata.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         cp {input.metadata} {output.metadata_master} &> {log}
@@ -128,6 +130,7 @@ rule publish_full_aligned_cog_data:
         metadata = config["export_path"] + "/alignments/cog_" + config["date"] + '_all_metadata.csv'
     log:
         config["output_path"] + "/logs/7_publish_full_aligned_cog_data.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -167,6 +170,7 @@ rule publish_filtered_aligned_cog_data:
         metadata = config["export_path"] + "/alignments/cog_" + config["date"] + '_metadata.csv'
     log:
         config["output_path"] + "/logs/7_publish_filtered_aligned_cog_data.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -189,8 +193,8 @@ rule combine_cog_gisaid:
     input:
         cog_fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.omissions_filtered.fasta",
         cog_metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata,
-        gisaid_fasta = config["GISAID_background_fasta"],
-        gisaid_metadata = config["GISAID_background_metadata"]
+        gisaid_fasta = config["GISAID_background_expanded_fasta"],
+        gisaid_metadata = config["GISAID_background_expanded_metadata"]
     params:
         intermediate_cog_fasta = config["output_path"] + "/7/cog.combine_cog_gisaid.temp.cog.fasta",
         intermediate_cog_metadata = config["output_path"] + "/7/cog.combine_cog_gisaid.temp.cog.csv",
@@ -201,6 +205,7 @@ rule combine_cog_gisaid:
         metadata = config["output_path"] + "/7/gisaid.combine_cog_gisaid.combined.csv",
     log:
         config["output_path"] + "/logs/7_combine_cog_gisaid.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -243,6 +248,35 @@ rule combine_cog_gisaid:
           --index-column sequence_name &>> {log}
         """
 
+rule add_seq_hash_values:
+    input:
+        fasta = rules.combine_cog_gisaid.output.fasta,
+        metadata = rules.combine_cog_gisaid.output.metadata,
+    output:
+        metadata = config["output_path"] + "/7/gisaid.combine_cog_gisaid.combined.hashes.csv",
+    log:
+        config["output_path"] + "/logs/7_get_seq_hash_values.log"
+    run:
+        from Bio import SeqIO
+        import hashlib
+        import pandas as pd
+
+        df = pd.read_csv(input.metadata)
+
+        fasta = SeqIO.index(str(input.fasta), "fasta")
+
+        seq_hashes = []
+
+        for i,row in df.iterrows():
+            seq_name = row["sequence_name"]
+            record = fasta[seq_name]
+            seq = str(record.seq).encode("utf-8")
+            h = hashlib.md5(seq).hexdigest()
+            seq_hashes.append(h)
+
+        df['sequence_hash'] = seq_hashes
+        df.to_csv(output.metadata, index=False)
+
 
 rule publish_updated_global_lineages:
     input:
@@ -256,6 +290,7 @@ rule publish_updated_global_lineages:
         metadata = config["publish_path"] + "/COG_GISAID/global_lineages.csv",
     log:
         config["output_path"] + "/logs/7_publish_updated_global_lineages.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -286,6 +321,7 @@ rule publish_full_annotated_tree_and_metadata:
         fasta = config["output_path"] + "/7/cog_global.fasta",
     log:
         config["output_path"] + "/logs/7_publish_full_annotated_tree_and_metadata.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         cp {input.annotated_tree} {output.annotated_tree} &> {log}
@@ -332,6 +368,7 @@ rule publish_civet_data:
         tree_public = config["export_path"] + "/civet/cog/cog_global_"  + config["date"] +  "_tree.nexus",
     log:
         config["output_path"] + "/logs/7_publish_civet_data.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         cp {input.tree} {output.tree} &>> {log}
@@ -499,6 +536,7 @@ rule publish_cog_gisaid_data_for_lineage_release_work:
         metadata = config["publish_path"] + "/lineage_release/cog_gisaid.csv",
     log:
         config["output_path"] + "/logs/7_publish_cog_gisaid_data_for_lineage_release_work.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -527,6 +565,7 @@ rule publish_public_cog_data:
         unmasked_alignment = config["export_path"] + "/public/cog_" + config["date"] + "_unmasked_alignment.fasta",
     log:
         config["output_path"] + "/logs/7_publish_public_cog_data.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         cp {input.public_tree} {output.public_tree} &> {log}
@@ -562,6 +601,7 @@ rule publish_microreact_specific_output:
         fasta2 = temp(config["output_path"] + "/7/cog_global_microreact2.fasta")
     log:
         config["output_path"] + "/logs/7_publish_microreact_specific_output.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         cp {input.newick_tree} {output.private_tree} &>> {log}
@@ -812,6 +852,8 @@ rule summarize_publish:
         COG_GISAID_nexus_tree = rules.publish_full_annotated_tree_and_metadata.output.annotated_tree,
         COG_GISAID_meta = rules.publish_full_annotated_tree_and_metadata.output.metadata,
         updated_global_lineages = rules.publish_updated_global_lineages.output.metadata,
+
+        COG_GISAID_metadata_with_hashes = rules.add_seq_hash_values.output.metadata,
 
         public_COG_GISAID_newick_tree = rules.publish_public_cog_data.output.public_tree,
         public_COG_GISAID_seq_all = rules.publish_unaligned_cog_sequences.output.fasta,

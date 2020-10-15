@@ -137,9 +137,51 @@ rule graft:
             """)
 
 
-rule sort_collapse:
+rule insert_gisaid_seqs:
     input:
         grafted_tree = rules.graft.output.grafted_tree,
+        tip_to_redundants = config["GISAID_tip_to_redundants"],
+    output:
+        grafted_tree_expanded_gisaid = config["output_path"] + '/4/cog_gisaid_grafted.gisaid_expanded.tree',
+    log:
+        config["output_path"] + "/logs/4_replace_gisaid_seqs.log",
+    shell:
+        """
+        sed -i.bak "s/'//g" {input.grafted_tree} 2> {log}
+
+        /cephfs/covid/bham/climb-covid19-jacksonb/programs/jclusterfunk_v0.0.4pre/jclusterfunk insert \
+            -i {input.grafted_tree} \
+            --metadata {input.tip_to_redundants} \
+            --unique-only \
+            --format newick \
+            -o {output.grafted_tree_expanded_gisaid} 2>> {log}
+        """
+
+
+rule insert_cog_seqs:
+    input:
+        grafted_tree = rules.insert_gisaid_seqs.output.grafted_tree_expanded_gisaid,
+        metadata = rules.cog_hash_seqs.output.metadata,
+    output:
+        grafted_tree_expanded_cog = config["output_path"] + '/4/cog_gisaid_grafted.gisaid_expanded.cog_expanded.tree',
+    log:
+        config["output_path"] + "/logs/4_replace_cog_seqs.log",
+    shell:
+        """
+        sed -i.bak "s/'//g" {input.grafted_tree} 2> {log}
+
+        /cephfs/covid/bham/climb-covid19-jacksonb/programs/jclusterfunk_v0.0.4pre/jclusterfunk insert \
+            -i {input.grafted_tree} \
+            --metadata {input.metadata} \
+            --unique-only \
+            --format newick \
+            -o {output.grafted_tree_expanded_cog} 2>> {log}
+        """
+
+
+rule sort_collapse:
+    input:
+        expanded_tree = rules.insert_cog_seqs.output.grafted_tree_expanded_cog,
     output:
         sorted_tree = config["output_path"] + '/4/cog_gisaid_grafted.sorted.tree',
         sorted_collapsed_tree = config["output_path"] + '/4/cog_gisaid_full.tree.public.newick',
@@ -149,14 +191,14 @@ rule sort_collapse:
         config["output_path"] + "/logs/4_sort_collapse.log",
     shell:
         """
-        gotree rotate sort -i {input.grafted_tree} -o {output.sorted_tree} &> {log}
+        gotree rotate sort -i {input.expanded_tree} -o {output.sorted_tree} &> {log}
         gotree collapse length --length {params.collapse} -i {output.sorted_tree} -o {output.sorted_collapsed_tree} &>> {log}
         """
 
 rule step_4_annotate_tree:
     input:
         tree = rules.sort_collapse.output.sorted_collapsed_tree,
-        metadata = config["output_path"] + "/3/cog_gisaid.lineages.csv",
+        metadata = config["output_path"] + "/3/cog_gisaid.lineages.expanded.csv",
     output:
         tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.tree"
     log:

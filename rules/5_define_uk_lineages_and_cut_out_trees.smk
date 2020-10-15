@@ -41,7 +41,7 @@ rule step_5_generate_sankey_plot:
 
 rule five_update_global_lineage_metadata:
     input:
-        metadata = config["output_path"] + "/3/cog_gisaid.lineages.csv",
+        metadata = config["output_path"] + "/3/cog_gisaid.lineages.expanded.csv",
         global_lineages = config["global_lineages"],
         new_global_lineages = config["output_path"] + "/2/normal_pangolin/lineage_report.csv"
     output:
