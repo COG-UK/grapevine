@@ -405,6 +405,7 @@ rule gisaid_output_all_matched_metadata:
                          d614g \
                          n439k \
                          p323l \
+                         a222v \
                          del_1605_3 \
                          covv_accession_id \
                          covv_virus_name \
@@ -479,6 +480,7 @@ rule gisaid_output_global_matched_metadata:
                          d614g \
                          n439k \
                          p323l \
+                         a222v \
                          del_1605_3 \
                          covv_accession_id \
                          covv_virus_name \
@@ -516,10 +518,10 @@ rule gisaid_collapse:
         """
         /cephfs/covid/bham/climb-covid19-jacksonb/programs/julia-1.5.0/bin/julia --threads {threads} /cephfs/covid/bham/climb-covid19-jacksonb/programs/julialign/src/collapse.jl \
         	-i {input.fasta} \
-        	-r Wuhan/WH04/2020 \
-        	-r Wuhan/WHU01/2020 \
-        	-r Italy/ABR-IZSGC-TE5166/2020 \
-            -r Germany/BY-MVP-V2010837/2020 \
+        	--retain Wuhan/WH04/2020 \
+        	--retain Wuhan/WHU01/2020 \
+        	--retain Italy/ABR-IZSGC-TE5166/2020 \
+            --retain Germany/BY-MVP-V2010837/2020 \
 	        -o {output.fasta} &> {log}
 
             mv tip_to_redundants.csv {output.tip_to_redudants} &>> {log}
@@ -557,6 +559,7 @@ rule gisaid_get_collapsed_metadata:
                          d614g \
                          n439k \
                          p323l \
+                         a222v \
                          del_1605_3 \
                          covv_accession_id \
                          covv_virus_name \
