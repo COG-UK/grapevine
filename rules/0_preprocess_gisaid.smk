@@ -384,6 +384,7 @@ rule gisaid_output_all_matched_metadata:
         metadata = config["output_path"] + "/0/gisaid.all.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_output_all_matched_metadata.log"
+    resources: mem_per_cpu=10000
     shell:
         """
         fastafunk fetch \
@@ -459,6 +460,7 @@ rule gisaid_output_global_matched_metadata:
         metadata = config["output_path"] + "/0/gisaid.global.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_output_global_matched_metadata.log"
+    resources: mem_per_cpu=10000
     shell:
         """
         fastafunk fetch \
@@ -538,6 +540,7 @@ rule gisaid_get_collapsed_metadata:
         metadata = config["output_path"] + "/0/gisaid.global.collapsed.csv",
     log:
         config["output_path"] + "/logs/0_gisaid_get_collapsed_metadata.log"
+    resources: mem_per_cpu=10000
     shell:
         """
         fastafunk fetch \
