@@ -442,7 +442,7 @@ rule gisaid_exclude_uk_seqs:
             for record in SeqIO.parse(f, 'fasta'):
                 id = record.id
                 seq = str(record.seq)
-                if id.split('/')[0] in ['England', 'Wales', 'Scotland', 'Northern_Ireland']:
+                if id.split('/')[0] in ['England', 'Wales', 'Scotland', 'Northern_Ireland', 'NorthernIreland']:
                     continue
                 else:
                     out_handle.write('>' + id + '\n')
