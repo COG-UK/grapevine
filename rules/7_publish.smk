@@ -11,6 +11,7 @@ rule uk_add_lineage_information_back_to_master_metadata:
         metadata_temp1 = temp(config["output_path"] + "/7/temp1.uk.master.csv"),
         metadata_temp2 = temp(config["output_path"] + "/7/temp2.uk.master.csv"),
         metadata = config["output_path"] + "/7/uk.master.csv"
+    resources: mem_per_cpu=10000
     log:
         config["output_path"] + "/logs/7_uk_add_lineage_information_back_to_master_metadata.log"
     shell:
@@ -53,6 +54,7 @@ rule publish_COG_master_metadata:
         fasta = temp(config["output_path"] + "/7/7_publish_COG_master_metadata.temp.fasta")
     log:
         config["output_path"] + "/logs/7_publish_COG_master_metadata.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         cp {input.metadata} {output.metadata_master} &> {log}
@@ -128,6 +130,7 @@ rule publish_full_aligned_cog_data:
         metadata = config["export_path"] + "/alignments/cog_" + config["date"] + '_all_metadata.csv'
     log:
         config["output_path"] + "/logs/7_publish_full_aligned_cog_data.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -135,9 +138,9 @@ rule publish_full_aligned_cog_data:
           --in-metadata {input.metadata} \
           --index-column sequence_name \
           --filter-column \
-              adm0 adm1 adm2 adm2_private biosample_source_id \
+              adm0 adm1 adm2 outer_postcode biosample_source_id \
               central_sample_id collected_by collection_date end_time \
-              flowcell_id flowcell_type instrument_make instrument_model \
+              flowcell_id flowcell_type instrument_make instrument_model is_surveillance \
               layout_insert_length layout_read_length \
               library_adaptor_barcode library_layout_config library_name library_primers library_protocol \
               library_selection library_seq_kit library_seq_protocol library_source library_strategy \
@@ -152,6 +155,7 @@ rule publish_full_aligned_cog_data:
               source_age source_sex start_time \
               submission_org submission_org_code submission_user swab_site \
               header sequence_name length missing gaps cov_id sample_date subsample_omit edin_epi_week d614g n439k p323l a222v del_1605_3 \
+          --where-column outer_postcode=adm2_private \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --restrict &> {log}
@@ -167,6 +171,7 @@ rule publish_filtered_aligned_cog_data:
         metadata = config["export_path"] + "/alignments/cog_" + config["date"] + '_metadata.csv'
     log:
         config["output_path"] + "/logs/7_publish_filtered_aligned_cog_data.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -178,7 +183,7 @@ rule publish_filtered_aligned_cog_data:
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
                           lineage_support uk_lineage acc_lineage del_lineage phylotype \
-          --where-column epi_week=edin_epi_week country=adm0 \
+          --where-column epi_week=edin_epi_week country=adm0 outer_postcode=adm2_private \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --restrict &> {log}
@@ -201,6 +206,7 @@ rule combine_cog_gisaid:
         metadata = config["output_path"] + "/7/gisaid.combine_cog_gisaid.combined.csv",
     log:
         config["output_path"] + "/logs/7_combine_cog_gisaid.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -209,7 +215,7 @@ rule combine_cog_gisaid:
           --index-column sequence_name \
           --filter-column covv_accession_id central_sample_id biosample_source_id secondary_identifier \
                           sequence_name sample_date epi_week \
-                          country adm1 adm2 submission_org_code \
+                          country adm1 adm2 adm2_private submission_org_code \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage lineage_support lineages_version \
                           uk_lineage microreact_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype d614g n439k p323l a222v del_1605_3 \
@@ -225,7 +231,7 @@ rule combine_cog_gisaid:
           --index-column sequence_name \
           --filter-column covv_accession_id central_sample_id biosample_source_id secondary_identifier \
                           sequence_name sample_date epi_week \
-                          country adm1 adm2 submission_org_code \
+                          country adm1 adm2 adm2_private submission_org_code \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage lineage_support lineages_version \
                           uk_lineage microreact_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype d614g n439k p323l a222v del_1605_3 \
@@ -256,6 +262,7 @@ rule publish_updated_global_lineages:
         metadata = config["publish_path"] + "/COG_GISAID/global_lineages.csv",
     log:
         config["output_path"] + "/logs/7_publish_updated_global_lineages.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -286,6 +293,7 @@ rule publish_full_annotated_tree_and_metadata:
         fasta = config["output_path"] + "/7/cog_global.fasta",
     log:
         config["output_path"] + "/logs/7_publish_full_annotated_tree_and_metadata.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         cp {input.annotated_tree} {output.annotated_tree} &> {log}
@@ -301,6 +309,7 @@ rule publish_full_annotated_tree_and_metadata:
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
                           lineage_support uk_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype \
+          --where-column outer_postcode=adm2_private \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --restrict &>> {log}
@@ -332,6 +341,7 @@ rule publish_civet_data:
         tree_public = config["export_path"] + "/civet/cog/cog_global_"  + config["date"] +  "_tree.nexus",
     log:
         config["output_path"] + "/logs/7_publish_civet_data.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         cp {input.tree} {output.tree} &>> {log}
@@ -407,7 +417,7 @@ rule publish_civet_data:
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
                           lineage_support uk_lineage acc_lineage del_lineage phylotype \
-          --where-column epi_week=edin_epi_week country=adm0 \
+          --where-column epi_week=edin_epi_week country=adm0 outer_postcode=adm2_private \
           --out-fasta {output.combined_fasta} \
           --out-metadata {output.combined_metadata} \
           --restrict &>> {log}
@@ -499,6 +509,7 @@ rule publish_cog_gisaid_data_for_lineage_release_work:
         metadata = config["publish_path"] + "/lineage_release/cog_gisaid.csv",
     log:
         config["output_path"] + "/logs/7_publish_cog_gisaid_data_for_lineage_release_work.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -527,6 +538,7 @@ rule publish_public_cog_data:
         unmasked_alignment = config["export_path"] + "/public/cog_" + config["date"] + "_unmasked_alignment.fasta",
     log:
         config["output_path"] + "/logs/7_publish_public_cog_data.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         cp {input.public_tree} {output.public_tree} &> {log}
@@ -562,6 +574,7 @@ rule publish_microreact_specific_output:
         fasta2 = temp(config["output_path"] + "/7/cog_global_microreact2.fasta")
     log:
         config["output_path"] + "/logs/7_publish_microreact_specific_output.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         cp {input.newick_tree} {output.private_tree} &>> {log}
