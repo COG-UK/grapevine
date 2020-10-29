@@ -250,6 +250,37 @@ rule combine_cog_gisaid:
         """
 
 
+rule add_seq_hash_values:
+    input:
+        fasta = rules.combine_cog_gisaid.output.fasta,
+        metadata = rules.combine_cog_gisaid.output.metadata,
+    output:
+        metadata = config["output_path"] + "/7/combine_cog_gisaid.combined.hashes.csv",
+    log:
+        config["output_path"] + "/logs/7_get_seq_hash_values.log"
+    run:
+        from Bio import SeqIO
+        import hashlib
+        import base64
+        import pandas as pd
+
+        df = pd.read_csv(input.metadata)
+
+        fasta = SeqIO.index(str(input.fasta), "fasta")
+
+        seq_hashes = []
+
+        for i,row in df.iterrows():
+            seq_name = row["sequence_name"]
+            record = fasta[seq_name]
+            seq = str(record.seq).encode("utf-8")
+            h = base64.b64encode(hashlib.md5(seq).digest()).decode("ascii")
+            seq_hashes.append(h)
+
+        df['sequence_hash'] = seq_hashes
+        df.to_csv(output.metadata, index=False)
+
+
 rule publish_updated_global_lineages:
     input:
         combined_fasta = rules.combine_cog_gisaid.output.fasta,
@@ -439,65 +470,65 @@ rule publish_civet_data:
          """
 
 
-rule publish_uk_lineage_specific_fasta_and_metadata_files:
-    input:
-        step_5_done = rules.summarize_define_uk_lineages_and_cut_out_trees.log,
-        tree = config["output_path"] + "/5/trees/uk_lineage_UK{i}.tree",
-        metadata = rules.publish_full_annotated_tree_and_metadata.output.metadata,
-        fasta = rules.publish_full_annotated_tree_and_metadata.output.fasta
-    params:
-        temp_fasta = temp(config["output_path"] + "/7/uk_lineage_UK{i}.fasta")
-    output:
-        fasta = config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.fasta",
-        metadata = config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.csv",
-        tree = config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.newick"
-    log:
-        config["output_path"] + "/logs/7_publish_uk_lineage_specific_fasta_and_metadata_files_uk{i}.log"
-    shell:
-        """
-        cp {input.tree} {output.tree}
+# rule publish_uk_lineage_specific_fasta_and_metadata_files:
+#     input:
+#         step_5_done = rules.summarize_define_uk_lineages_and_cut_out_trees.log,
+#         tree = config["output_path"] + "/5/trees/uk_lineage_UK{i}.tree",
+#         metadata = rules.publish_full_annotated_tree_and_metadata.output.metadata,
+#         fasta = rules.publish_full_annotated_tree_and_metadata.output.fasta
+#     params:
+#         temp_fasta = temp(config["output_path"] + "/7/uk_lineage_UK{i}.fasta")
+#     output:
+#         fasta = config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.fasta",
+#         metadata = config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.csv",
+#         tree = config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.newick"
+#     log:
+#         config["output_path"] + "/logs/7_publish_uk_lineage_specific_fasta_and_metadata_files_uk{i}.log"
+#     shell:
+#         """
+#         cp {input.tree} {output.tree}
+#
+#         fastafunk extract \
+#           --in-fasta {input.fasta} \
+#           --in-tree {input.tree} \
+#           --out-fasta {output.fasta} &>> {log}
+#
+#           fastafunk fetch \
+#           --in-fasta {output.fasta} \
+#           --in-metadata {input.metadata} \
+#           --index-column sequence_name \
+#           --filter-column sequence_name secondary_identifier sample_date epi_week \
+#                           country adm1 adm2 outer_postcode \
+#                           is_surveillance is_community is_hcw \
+#                           is_travel_history travel_history lineage \
+#                           lineage_support uk_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype \
+#           --out-fasta {params.temp_fasta} \
+#           --out-metadata {output.metadata} \
+#           --restrict &>> {log}
+#         """
 
-        fastafunk extract \
-          --in-fasta {input.fasta} \
-          --in-tree {input.tree} \
-          --out-fasta {output.fasta} &>> {log}
-
-          fastafunk fetch \
-          --in-fasta {output.fasta} \
-          --in-metadata {input.metadata} \
-          --index-column sequence_name \
-          --filter-column sequence_name secondary_identifier sample_date epi_week \
-                          country adm1 adm2 outer_postcode \
-                          is_surveillance is_community is_hcw \
-                          is_travel_history travel_history lineage \
-                          lineage_support uk_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype \
-          --out-fasta {params.temp_fasta} \
-          --out-metadata {output.metadata} \
-          --restrict &>> {log}
-        """
 
 
-
-def aggregate_input_publish_trees_logs(wildcards):
-    checkpoint_output_directory = checkpoints.get_uk_lineage_samples.get(**wildcards).output[0]
-    print(checkpoints.get_uk_lineage_samples.get(**wildcards).output[0])
-    required_files = expand( "%s/logs/7_publish_uk_lineage_specific_fasta_and_metadata_files_uk{i}.log" %(config["output_path"]),
-                            i=glob_wildcards(os.path.join(checkpoint_output_directory, "UK{i}.samples.txt")).i)
-    return (sorted(required_files))
+# def aggregate_input_publish_trees_logs(wildcards):
+#     checkpoint_output_directory = checkpoints.get_uk_lineage_samples.get(**wildcards).output[0]
+#     print(checkpoints.get_uk_lineage_samples.get(**wildcards).output[0])
+#     required_files = expand( "%s/logs/7_publish_uk_lineage_specific_fasta_and_metadata_files_uk{i}.log" %(config["output_path"]),
+#                             i=glob_wildcards(os.path.join(checkpoint_output_directory, "UK{i}.samples.txt")).i)
+#     return (sorted(required_files))
 
 # X = glob_wildcards(config["output_path"] + "/5/trees/uk_lineage_UK{i}.tree").i
 # csvs = expand(config["export_path"] + "/trees/uk_lineages/uk_lineage_UK{i}.csv", i = X)
 
-rule summarize_publish_uk_lineage_specific_fasta_and_metadata_files:
-    input:
-        logs=aggregate_input_publish_trees_logs,
-        step_5_done = rules.summarize_define_uk_lineages_and_cut_out_trees.log,
-    log:
-        config["output_path"] + "/logs/7_summarize_publish_uk_lineage_specific_fasta_and_metadata_files.log"
-    shell:
-        """
-        echo "done" > {log}
-        """
+# rule summarize_publish_uk_lineage_specific_fasta_and_metadata_files:
+#     input:
+#         logs=aggregate_input_publish_trees_logs,
+#         step_5_done = rules.summarize_define_uk_lineages_and_cut_out_trees.log,
+#     log:
+#         config["output_path"] + "/logs/7_summarize_publish_uk_lineage_specific_fasta_and_metadata_files.log"
+#     shell:
+#         """
+#         echo "done" > {log}
+#         """
 
 
 rule publish_cog_gisaid_data_for_lineage_release_work:
@@ -826,6 +857,8 @@ rule summarize_publish:
         COG_GISAID_meta = rules.publish_full_annotated_tree_and_metadata.output.metadata,
         updated_global_lineages = rules.publish_updated_global_lineages.output.metadata,
 
+        COG_GISAID_metadata_with_hashes = rules.add_seq_hash_values.output.metadata,
+
         public_COG_GISAID_newick_tree = rules.publish_public_cog_data.output.public_tree,
         public_COG_GISAID_seq_all = rules.publish_unaligned_cog_sequences.output.fasta,
         public_COG_meta = rules.publish_public_cog_data.output.metadata,
@@ -837,10 +870,6 @@ rule summarize_publish:
 
         lineage_report_fasta = rules.publish_cog_gisaid_data_for_lineage_release_work.output.fasta,
         lineage_report_metadata = rules.publish_cog_gisaid_data_for_lineage_release_work.output.metadata,
-
-        uk_lineage_fasta_csv_summary = rules.summarize_publish_uk_lineage_specific_fasta_and_metadata_files.log,
-
-        # log_uk_lineage_timetrees = rules.publish_time_trees.log,
 
         log_civet = rules.publish_civet_data.log,
     params:
@@ -893,6 +922,8 @@ rule summarize_publish:
         """
         # echo "> Gisaid master metadata published to {input.GISAID_meta_master}\\n" >> {log}
 
+        # uk_lineage_fasta_csv_summary = rules.summarize_publish_uk_lineage_specific_fasta_and_metadata_files.log,
+        # log_uk_lineage_timetrees = rules.publish_time_trees.log,
 
 rule postpublish_cp_civet_data:
     input:
@@ -984,7 +1015,6 @@ rule summarize_postpublish:
         echo "> \\n" >> {log}
         echo "> Full, annotated tree published to \`trees/cog_{params.date}_tree.nexus\`\\n" >> {log}
         echo "> Matching metadata published to \`trees/cog_global_{params.date}_metadata.csv\`\\n" >> {log}
-        echo "> UK lineage subtrees published in \`trees/uk_lineages/\`\\n" >> {log}
         echo "> \\n" >> {log}
         echo "> Public tree published to \`public/cog_global_{params.date}_tree.newick\`\\n" >> {log}
         echo "> Associated unaligned sequences published to \`alignments/cog_{params.date}_all.fasta\`\\n" >> {log}
@@ -993,8 +1023,6 @@ rule summarize_postpublish:
         echo "> Public tree for microreact published to \`microreact/cog_global_{params.date}_tree_public.newick\`\\n" >> {log}
         echo "> Public metadata for microreact published to \`microreact/cog_global_{params.date}_metadata_public.csv\`\\n" >> {log}
         echo "> Private metadata for microreact published to \`microreact/cog_global_{params.date}_metadata_private.csv\`\\n" >> {log}
-        echo "> \\n" >> {log}
-        echo "> Data for Civet published to \`/cephfs/covid/bham/civet-cat/\`\\n" >> {log}
 
         echo '{{"text":"' > {params.json_path}/publish_data_to_consortium.json
         echo "*Phylogenetic pipeline complete*\\n" >> {params.json_path}/publish_data_to_consortium.json
