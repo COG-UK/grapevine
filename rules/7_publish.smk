@@ -590,6 +590,32 @@ rule publish_public_cog_data:
         """
 
 
+rule publish_make_s3_public_cog_data:
+    input:
+        public_tree = config["export_path"] + "/public/cog_global_" + config["date"] + "_tree.newick",
+        fasta = config["export_path"] + "/public/cog_" + config["date"] + "_all.fasta",
+        metadata = config["export_path"] + "/public/cog_" + config["date"] + "_metadata.csv",
+        alignment = config["export_path"] + "/public/cog_" + config["date"] + "_alignment.fasta",
+        unmasked_alignment = config["export_path"] + "/public/cog_" + config["date"] + "_unmasked_alignment.fasta",
+    output:
+        public_tree = config["output_path"] + "/7/s3dir/cog_global_tree.newick",
+        fasta = config["output_path"] + "/7/s3dir/cog_all.fasta",
+        metadata = config["output_path"] + "/7/s3dir/cog_metadata.csv",
+        alignment = config["output_path"] + "/7/s3dir/cog_alignment.fasta",
+        unmasked_alignment = config["output_path"] + "/7/s3dir/cog_unmasked_alignment.fasta",
+    log:
+        config["output_path"] + "/logs/7_publish_make_s3_public_cog_data.log"
+    resources: mem_per_cpu=20000
+    shell:
+        """
+        cp {input.public_tree} {output.public_tree} &> {log}
+        cp {input.fasta} {output.fasta} &>> {log}
+        cp {input.metadata} {output.metadata} &>> {log}
+        cp {input.alignment} {output.alignment} &>> {log}
+        cp {input.unmasked_alignment} {output.unmasked_alignment} &>> {log}
+        """
+
+
 rule publish_microreact_specific_output:
     input:
         newick_tree = config["output_path"] + "/4/cog_gisaid_full.tree.public.newick",
@@ -872,6 +898,7 @@ rule summarize_publish:
         lineage_report_metadata = rules.publish_cog_gisaid_data_for_lineage_release_work.output.metadata,
 
         log_civet = rules.publish_civet_data.log,
+        log_s3 = rules.publish_make_s3_public_cog_data.log,
     params:
         date = config["date"],
         grapevine_webhook = config["grapevine_webhook"],
@@ -986,10 +1013,28 @@ rule postpublish_rsync_phylogenetics_data:
         ln -sfn /cephfs/covid/bham/results/phylogenetics/{params.parsed_date} /cephfs/covid/bham/results/phylogenetics/latest
         """
 
+
+rule postpublish_upload_s3_data:
+    input:
+        publishdone = rules.summarize_publish.log
+    params:
+        date = config["date"],
+        folder = config["output_path"] + "/7/s3dir/",
+    log:
+        config["output_path"] + "/logs/7_postpublish_upload_s3_data.log"
+    shell:
+        """
+        /cephfs/covid/bham/climb-covid19-jacksonb/programs/s3cmd-2.1.0/s3cmd sync {params.folder} s3://grapevine.s3.climb.ac.uk/phylogenetics/{params.date}/ &> {log}
+        /cephfs/covid/bham/climb-covid19-jacksonb/programs/s3cmd-2.1.0/s3cmd sync {params.folder} s3://grapevine.s3.climb.ac.uk/phylogenetics/latest/ &>> {log}
+        """
+
+
+
 rule summarize_postpublish:
     input:
         civet_log = config["output_path"] + "/logs/7_postpublish_cp_civet_data.log",
         rsync_log = config["output_path"] + "/logs/7_postpublish_rsync_phylogenetics_data.log",
+        s3_log = config["output_path"] + "/logs/7_postpublish_upload_s3_data.log",
     params:
         date = config["date"],
         phylopipe_webhook = config["phylopipe_webhook"],
