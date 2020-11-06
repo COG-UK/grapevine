@@ -178,7 +178,7 @@ rule sort_collapse:
 rule step_4_annotate_tree:
     input:
         tree = rules.sort_collapse.output.sorted_collapsed_tree,
-        metadata = config["output_path"] + "/3/cog_gisaid.lineages.csv",
+        metadata = config["output_path"] + "/3/cog_gisaid.lineages.expanded.csv",
     output:
         tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.tree"
     log:

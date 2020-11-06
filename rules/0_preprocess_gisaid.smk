@@ -30,16 +30,30 @@ rule gisaid_unify_headers:
         metadata = config["output_path"] + "/0/gisaid.UH.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_unify_headers.log"
-    shell:
-        """
-        datafunk set_uniform_header \
-          --input-fasta {input.fasta} \
-          --input-metadata {input.metadata} \
-          --output-fasta {output.fasta} \
-          --output-metadata {output.metadata} \
-          --log {log} \
-          --gisaid
-        """
+    run:
+        import pandas as pd
+        from Bio import SeqIO
+
+        fasta_in = SeqIO.index(str(input.fasta), "fasta")
+        df = pd.read_csv(input.metadata, sep=',')
+
+        sequence_name = []
+
+        with open(str(output.fasta), 'w') as fasta_out:
+            for i,row in df.iterrows():
+                edin_header = row["edin_header"]
+                new_header = edin_header.split("|")[0]
+                sequence_name.append(new_header)
+
+                try:
+                    record = fasta_in[edin_header]
+                    fasta_out.write(">" + new_header + "\n")
+                    fasta_out.write(str(record.seq) + "\n")
+                except:
+                    continue
+
+        df['sequence_name'] = sequence_name
+        df.to_csv(output.metadata, index=False, sep = ",")
 
 
 rule gisaid_remove_duplicates:
@@ -108,9 +122,10 @@ rule gisaid_minimap2_to_reference:
         sam = config["output_path"] + "/0/gisaid.mapped.sam"
     log:
         config["output_path"] + "/logs/0_gisaid_minimap2_to_reference.log"
+    threads: 3
     shell:
         """
-        minimap2 -a -x asm5 {input.reference} {input.fasta} -o {output} &> {log}
+        minimap2 -t3 -a -x asm5 {input.reference} {input.fasta} -o {output} &> {log}
         """
 
 
@@ -407,6 +422,7 @@ rule gisaid_output_all_matched_metadata:
                          n439k \
                          p323l \
                          a222v \
+                         y453f \
                          del_1605_3 \
                          covv_accession_id \
                          covv_virus_name \
@@ -483,6 +499,7 @@ rule gisaid_output_global_matched_metadata:
                          n439k \
                          p323l \
                          a222v \
+                         y453f \
                          del_1605_3 \
                          covv_accession_id \
                          covv_virus_name \
@@ -563,6 +580,7 @@ rule gisaid_get_collapsed_metadata:
                          n439k \
                          p323l \
                          a222v \
+                         y453f \
                          del_1605_3 \
                          covv_accession_id \
                          covv_virus_name \
