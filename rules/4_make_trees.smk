@@ -197,6 +197,7 @@ rule step_4_annotate_tree:
           --output {output.tree} &> {log}
         """
 
+
 rule acctran_ancestral_reconstruction:
     input:
         tree = rules.step_4_annotate_tree.output.tree

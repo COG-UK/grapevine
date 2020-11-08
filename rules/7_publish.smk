@@ -10,7 +10,7 @@ rule uk_add_lineage_information_back_to_master_metadata:
     output:
         metadata_temp1 = temp(config["output_path"] + "/7/temp1.uk.master.csv"),
         metadata_temp2 = temp(config["output_path"] + "/7/temp2.uk.master.csv"),
-        metadata = config["output_path"] + "/7/uk.master.csv"
+        metadata = config["output_path"] + "/7/uk.master.csv",
     resources: mem_per_cpu=10000
     log:
         config["output_path"] + "/logs/7_uk_add_lineage_information_back_to_master_metadata.log"
@@ -44,20 +44,21 @@ rule uk_add_lineage_information_back_to_master_metadata:
         """
 
 
-rule clean_cog_geography_and_add_to_metadata:
+# rule clean_cog_geography_and_add_to_metadata:
+rule clean_cog_geography:
     input:
         metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata,
     params:
         outdir = config["output_path"] + "/7/geography",
     output:
-        geography_meta = config["output_path"] + "/7/geography/geography.csv",
+        geography_metadata = config["output_path"] + "/7/geography/geography.csv",
         geography_log = config["output_path"] + "/7/geography/log_file.txt",
         locations = config["output_path"] + "/7/geography/new_unclean_locations.csv",
         postcodes = config["output_path"] + "/7/geography/new_unclean_postcodes.csv",
         bad_seqs = config["output_path"] + "/7/geography/sequences_with_incompatible_locs.csv",
-        metadata = config["output_path"] + "/7/uk.master.geography.csv",
+        # metadata = config["output_path"] + "/7/uk.master.geography.csv",
     log:
-        config["output_path"] + "/logs/7_clean_cog_geography_and_add_to_metadata.log",
+        config["output_path"] + "/logs/7_clean_cog_geography.log",
     shell:
         """
         mkdir -p {params.outdir}
@@ -68,26 +69,27 @@ rule clean_cog_geography_and_add_to_metadata:
           --adm1-col adm1 \
           --adm2-col adm2 \
           --outer-postcode-col adm2_private \
-          --mapping-utils-dir /cephfs/covid/bham/raccoon-dog/grapevine/utilities/geography_cleaning/geography_utils \
+          --mapping-utils-dir /cephfs/covid/bham/raccoon-dog/grapevine/utilities/geography_utils \
           --outdir {params.outdir} 2> {log}
-
-        fastafunk add_columns \
-          --in-metadata {input.metadata} \
-          --in-data {output.geography_meta} \
-          --index-column central_sample_id \
-          --join-on id \
-          --new-columns adm1 adm2 adm2_raw adm2_source outer_postcode NUTS1 region latitude longitude location \
-          --out-metadata {output.metadata} &> {log}
         """
+# fastafunk add_columns \
+#   --in-metadata {input.metadata} \
+#   --in-data {output.geography_meta} \
+#   --index-column central_sample_id \
+#   --join-on id \
+#   --new-columns adm1 adm2 adm2_raw adm2_source outer_postcode NUTS1 region latitude longitude location \
+#   --out-metadata {output.metadata} &> {log}
 
 
 rule publish_COG_master_metadata:
     input:
         fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.omissions_filtered.fasta",
-        metadata = rules.clean_cog_geography_and_add_to_metadata.output.metadata
+        metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata,
+        geography_metadata = rules.clean_cog_geography.output.geography_metadata,
     output:
         metadata_master = config["publish_path"] + "/COG/master.csv",
         metadata_report = config["publish_path"] + "/COG/report_metadata.csv",
+        metadata_report_temp = config["output_path"] + "/7/report_metadata_temp.csv",
         fasta = temp(config["output_path"] + "/7/7_publish_COG_master_metadata.temp.fasta")
     log:
         config["output_path"] + "/logs/7_publish_COG_master_metadata.log"
@@ -100,14 +102,22 @@ rule publish_COG_master_metadata:
           --in-fasta {input.fasta} \
           --in-metadata {input.metadata} \
           --index-column sequence_name \
-          --filter-column sequence_name sample_date epi_week \
+          --filter-column central_sample_id sequence_name sample_date epi_week \
                           country adm1 adm2 \
                           lineage lineage_support lineages_version uk_lineage acc_lineage del_lineage phylotype acc_introduction del_introduction \
                           sequencing_org_code sequencing_submission_date \
           --where-column epi_week=edin_epi_week country=adm0 \
           --out-fasta {output.fasta} \
-          --out-metadata {output.metadata_report} \
+          --out-metadata {output.metadata_report_temp} \
           --restrict &>> {log}
+
+        fastafunk add_columns \
+          --in-metadata {output.metadata_report_temp} \
+          --in-data {input.geography_metadata} \
+          --index-column central_sample_id \
+          --join-on id \
+          --new-columns adm2 \
+          --out-metadata {output.metadata_report} &>> {log}
         """
 
 
@@ -161,7 +171,7 @@ rule publish_unaligned_cog_sequences:
 rule publish_full_aligned_cog_data:
     input:
         fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.full.masked.fasta",
-        metadata = rules.clean_cog_geography_and_add_to_metadata.output.metadata
+        metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata
     output:
         fasta = config["export_path"] + "/alignments/cog_" + config["date"] + '_all_alignment.fasta',
         metadata = config["export_path"] + "/alignments/cog_" + config["date"] + '_all_metadata.csv'
@@ -201,7 +211,7 @@ rule publish_full_aligned_cog_data:
 rule publish_filtered_aligned_cog_data:
     input:
         fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.omissions_filtered.fasta",
-        metadata = rules.clean_cog_geography_and_add_to_metadata.output.metadata
+        metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata
     output:
         fasta = config["export_path"] + "/alignments/cog_" + config["date"] + '_alignment.fasta',
         metadata = config["export_path"] + "/alignments/cog_" + config["date"] + '_metadata.csv'
@@ -229,7 +239,7 @@ rule publish_filtered_aligned_cog_data:
 rule combine_cog_gisaid:
     input:
         cog_fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.omissions_filtered.fasta",
-        cog_metadata = rules.clean_cog_geography_and_add_to_metadata.output.metadata,
+        cog_metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata,
         gisaid_fasta = config["GISAID_background_fasta"],
         gisaid_metadata = config["GISAID_background_metadata"]
     params:
@@ -251,8 +261,8 @@ rule combine_cog_gisaid:
           --index-column sequence_name \
           --filter-column covv_accession_id central_sample_id biosample_source_id secondary_identifier \
                           sequence_name sample_date epi_week \
-                          country adm1 adm2 outer_postcode submission_org_code \
-                          is_surveillance is_community is_hcw \
+                          country adm1 adm2 outer_postcode adm2_raw adm2_source nuts1 region latitude longitude location \
+                          submission_org_code is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage lineage_support lineages_version \
                           uk_lineage microreact_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype d614g n439k p323l a222v y453f del_1605_3 \
           --where-column epi_week=edin_epi_week country=adm0 \
@@ -267,8 +277,8 @@ rule combine_cog_gisaid:
           --index-column sequence_name \
           --filter-column covv_accession_id central_sample_id biosample_source_id secondary_identifier \
                           sequence_name sample_date epi_week \
-                          country adm1 adm2 outer_postcode submission_org_code \
-                          is_surveillance is_community is_hcw \
+                          country adm1 adm2 outer_postcode adm2_raw adm2_source nuts1 region latitude longitude location \
+                          submission_org_code is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage lineage_support lineages_version \
                           uk_lineage microreact_lineage acc_lineage del_lineage acc_introduction del_introduction phylotype d614g n439k p323l a222v y453f del_1605_3 \
           --where-column adm1=edin_admin_1 travel_history=edin_travel \
@@ -387,9 +397,10 @@ rule publish_civet_data:
     input:
         cog_all_fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.full.masked.fasta",
         cog_fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.omissions_filtered.fasta",
-        cog_metadata = rules.clean_cog_geography_and_add_to_metadata.output.metadata,
+        cog_metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata,
         combined_metadata = rules.combine_cog_gisaid.output.metadata,
         combined_fasta = rules.combine_cog_gisaid.output.fasta,
+        geography_metadata = rules.clean_cog_geography.output.geography_metadata,
         tree = config["output_path"] + "/5/cog_gisaid_full.tree.nexus",
     output:
         cog_all_fasta = config["publish_path"] + "/civet/cog/cog_" + config["date"] + '_alignment_all.fasta',
@@ -401,6 +412,8 @@ rule publish_civet_data:
         cog_metadata = config["publish_path"] + "/civet/cog/cog_" + config["date"] + '_metadata.csv',
         cog_metadata_public = config["publish_path"] + "/civet/cog_" + config["date"] + '_metadata.csv',
 
+        temp_combined_metadata = config["output_path"] + "/7/civet_cog_global_" + config["date"] + '_temp_metadata.csv',
+        temp_combined_metadata_2 = config["output_path"] + "/7/civet_cog_global_" + config["date"] + '_temp_metadata_2.csv',
         combined_metadata = config["export_path"] + "/civet/cog/cog_global_" + config["date"] + '_metadata.csv',
         combined_fasta = config["export_path"] + "/civet/cog/cog_global_" + config["date"] + '_alignment.fasta',
         tree = config["export_path"] + "/civet/cog_global_"  + config["date"] +  "_tree.nexus",
@@ -482,14 +495,24 @@ rule publish_civet_data:
           --index-column sequence_name \
           --filter-column central_sample_id biosample_source_id sequence_name secondary_identifier \
                           sample_date epi_week \
-                          country adm1 adm2 adm2_raw adm2_source NUTS1 outer_postcode region latitude longitude location \
+                          country adm1 adm2 adm2_raw adm2_source nuts1 outer_postcode region latitude longitude location \
                           is_surveillance is_community is_hcw \
                           is_travel_history travel_history lineage \
                           lineage_support uk_lineage acc_lineage del_lineage phylotype \
           --where-column epi_week=edin_epi_week country=adm0 \
           --out-fasta {output.combined_fasta} \
-          --out-metadata {output.combined_metadata} \
+          --out-metadata {output.temp_combined_metadata} \
           --restrict &>> {log}
+
+        fastafunk add_columns \
+          --in-metadata {output.temp_combined_metadata} \
+          --in-data {input.geography_metadata} \
+          --index-column central_sample_id \
+          --join-on id \
+          --new-columns adm1 adm2 adm2_raw adm2_source nuts1 outer_postcode region latitude longitude location \
+          --out-metadata {output.temp_combined_metadata_2} &>> {log}
+
+        sed '1s/nuts1/NUTS1/' {output.temp_combined_metadata_2} > {output.combined_metadata} 2>> {log}
 
         fastafunk fetch \
           --in-fasta {input.combined_fasta} \
@@ -596,7 +619,7 @@ rule publish_public_cog_data:
     input:
         public_tree = config["output_path"] + "/4/cog_gisaid_full.tree.public.newick",
         fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.unify_headers.fasta",
-        metadata = rules.clean_cog_geography_and_add_to_metadata.output.metadata,
+        metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata,
         alignment = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.omissions_filtered.fasta",
         unmasked_alignment = rules.uk_get_unmasked_alignment.output.fasta,
     output:
@@ -1062,10 +1085,9 @@ rule postpublish_upload_s3_data:
         config["output_path"] + "/logs/7_postpublish_upload_s3_data.log"
     shell:
         """
-        /cephfs/covid/bham/climb-covid19-jacksonb/programs/s3cmd-2.1.0/s3cmd sync {params.folder} s3://grapevine.s3.climb.ac.uk/phylogenetics/{params.date}/ &> {log}
-        /cephfs/covid/bham/climb-covid19-jacksonb/programs/s3cmd-2.1.0/s3cmd sync {params.folder} s3://grapevine.s3.climb.ac.uk/phylogenetics/latest/ &>> {log}
+        /cephfs/covid/bham/climb-covid19-jacksonb/programs/s3cmd-2.1.0/s3cmd sync {params.folder} s3://cog-uk/phylogenetics/{params.date}/ --acl-public &> {log}
+        /cephfs/covid/bham/climb-covid19-jacksonb/programs/s3cmd-2.1.0/s3cmd sync {params.folder} s3://cog-uk/phylogenetics/latest/ --acl-public &>> {log}
         """
-
 
 
 rule summarize_postpublish:
@@ -1115,7 +1137,6 @@ rule summarize_postpublish:
         curl -X POST -H "Content-type: application/json" -d @{params.json_path}/publish_data_to_consortium.json {params.phylopipe_webhook}
 
         ln -sfn /cephfs/covid/bham/raccoon-dog/{params.date} /cephfs/covid/bham/raccoon-dog/previous
-
         curl -F file=@{params.reports_path}UK_report.pdf -F "initial_comment=UK report for the latest phylogenetics pipeline run" -F channels=CVACDLCKA -H "Authorization: Bearer {params.phylopipe_token}" https://slack.com/api/files.upload &> {params.report_upload_log}
         """
         # THREAD_TS=`grep -oh -E '\"ts\":\"[0-9]+\.[0-9]+\"' {params.report_upload_log} | sed 's/"ts":"//' | sed 's/"//'`
