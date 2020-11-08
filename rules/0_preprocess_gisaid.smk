@@ -13,7 +13,7 @@ rule gisaid_process_json:
         """
         datafunk process_gisaid_data \
           --input-json {input.json} \
-          --input-metadata {input.metadata} \
+          --input-metadata False \
           --exclude-file {input.omitted} \
           --output-fasta {output.fasta} \
           --output-metadata {output.metadata} \
@@ -30,16 +30,30 @@ rule gisaid_unify_headers:
         metadata = config["output_path"] + "/0/gisaid.UH.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_unify_headers.log"
-    shell:
-        """
-        datafunk set_uniform_header \
-          --input-fasta {input.fasta} \
-          --input-metadata {input.metadata} \
-          --output-fasta {output.fasta} \
-          --output-metadata {output.metadata} \
-          --log {log} \
-          --gisaid
-        """
+    run:
+        import pandas as pd
+        from Bio import SeqIO
+
+        fasta_in = SeqIO.index(str(input.fasta), "fasta")
+        df = pd.read_csv(input.metadata, sep=',')
+
+        sequence_name = []
+
+        with open(str(output.fasta), 'w') as fasta_out:
+            for i,row in df.iterrows():
+                edin_header = row["edin_header"]
+                new_header = edin_header.split("|")[0]
+                sequence_name.append(new_header)
+
+                try:
+                    record = fasta_in[edin_header]
+                    fasta_out.write(">" + new_header + "\n")
+                    fasta_out.write(str(record.seq) + "\n")
+                except:
+                    continue
+
+        df['sequence_name'] = sequence_name
+        df.to_csv(output.metadata, index=False, sep = ",")
 
 
 rule gisaid_remove_duplicates:
@@ -108,9 +122,10 @@ rule gisaid_minimap2_to_reference:
         sam = config["output_path"] + "/0/gisaid.mapped.sam"
     log:
         config["output_path"] + "/logs/0_gisaid_minimap2_to_reference.log"
+    threads: 3
     shell:
         """
-        minimap2 -a -x asm5 {input.reference} {input.fasta} -o {output} &> {log}
+        minimap2 -t3 -a -x asm5 {input.reference} {input.fasta} -o {output} &> {log}
         """
 
 
@@ -384,6 +399,7 @@ rule gisaid_output_all_matched_metadata:
         metadata = config["output_path"] + "/0/gisaid.all.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_output_all_matched_metadata.log"
+    resources: mem_per_cpu=10000
     shell:
         """
         fastafunk fetch \
@@ -405,6 +421,8 @@ rule gisaid_output_all_matched_metadata:
                          d614g \
                          n439k \
                          p323l \
+                         a222v \
+                         y453f \
                          del_1605_3 \
                          covv_accession_id \
                          covv_virus_name \
@@ -440,7 +458,7 @@ rule gisaid_exclude_uk_seqs:
             for record in SeqIO.parse(f, 'fasta'):
                 id = record.id
                 seq = str(record.seq)
-                if id.split('/')[0] in ['England', 'Wales', 'Scotland', 'Northern_Ireland']:
+                if id.split('/')[0] in ['England', 'Wales', 'Scotland', 'Northern_Ireland', 'NorthernIreland']:
                     continue
                 else:
                     out_handle.write('>' + id + '\n')
@@ -458,6 +476,7 @@ rule gisaid_output_global_matched_metadata:
         metadata = config["output_path"] + "/0/gisaid.global.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_output_global_matched_metadata.log"
+    resources: mem_per_cpu=10000
     shell:
         """
         fastafunk fetch \
@@ -479,6 +498,8 @@ rule gisaid_output_global_matched_metadata:
                          d614g \
                          n439k \
                          p323l \
+                         a222v \
+                         y453f \
                          del_1605_3 \
                          covv_accession_id \
                          covv_virus_name \
@@ -516,10 +537,10 @@ rule gisaid_collapse:
         """
         /cephfs/covid/bham/climb-covid19-jacksonb/programs/julia-1.5.0/bin/julia --threads {threads} /cephfs/covid/bham/climb-covid19-jacksonb/programs/julialign/src/collapse.jl \
         	-i {input.fasta} \
-        	-r Wuhan/WH04/2020 \
-        	-r Wuhan/WHU01/2020 \
-        	-r Italy/ABR-IZSGC-TE5166/2020 \
-            -r Germany/BY-MVP-V2010837/2020 \
+        	--retain Wuhan/WH04/2020 \
+        	--retain Wuhan/WHU01/2020 \
+        	--retain Italy/ABR-IZSGC-TE5166/2020 \
+            --retain Germany/BY-MVP-V2010837/2020 \
 	        -o {output.fasta} &> {log}
 
             mv tip_to_redundants.csv {output.tip_to_redudants} &>> {log}
@@ -568,6 +589,7 @@ rule gisaid_get_collapsed_metadata:
         metadata = config["output_path"] + "/0/gisaid.global.collapsed.csv",
     log:
         config["output_path"] + "/logs/0_gisaid_get_collapsed_metadata.log"
+    resources: mem_per_cpu=10000
     shell:
         """
         fastafunk fetch \
@@ -589,6 +611,8 @@ rule gisaid_get_collapsed_metadata:
                          d614g \
                          n439k \
                          p323l \
+                         a222v \
+                         y453f \
                          del_1605_3 \
                          covv_accession_id \
                          covv_virus_name \

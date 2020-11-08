@@ -137,33 +137,12 @@ rule graft:
             """)
 
 
-rule insert_gisaid_seqs:
-    input:
-        grafted_tree = rules.graft.output.grafted_tree,
-        tip_to_redundants = config["GISAID_tip_to_redundants"],
-    output:
-        grafted_tree_expanded_gisaid = config["output_path"] + '/4/cog_gisaid_grafted.gisaid_expanded.tree',
-    log:
-        config["output_path"] + "/logs/4_replace_gisaid_seqs.log",
-    shell:
-        """
-        sed -i.bak "s/'//g" {input.grafted_tree} 2> {log}
-
-        /cephfs/covid/bham/climb-covid19-jacksonb/programs/jclusterfunk_v0.0.4pre/jclusterfunk insert \
-            -i {input.grafted_tree} \
-            --metadata {input.tip_to_redundants} \
-            --unique-only \
-            --format newick \
-            -o {output.grafted_tree_expanded_gisaid} 2>> {log}
-        """
-
-
 rule insert_cog_seqs:
     input:
-        grafted_tree = rules.insert_gisaid_seqs.output.grafted_tree_expanded_gisaid,
+        grafted_tree = rules.graft.output.grafted_tree,
         metadata = rules.cog_hash_seqs.output.metadata,
     output:
-        grafted_tree_expanded_cog = config["output_path"] + '/4/cog_gisaid_grafted.gisaid_expanded.cog_expanded.tree',
+        grafted_tree_expanded_cog = config["output_path"] + '/4/cog_gisaid_grafted.cog_expanded.tree',
     log:
         config["output_path"] + "/logs/4_replace_cog_seqs.log",
     shell:
@@ -195,6 +174,7 @@ rule sort_collapse:
         gotree collapse length --length {params.collapse} -i {output.sorted_tree} -o {output.sorted_collapsed_tree} &>> {log}
         """
 
+
 rule step_4_annotate_tree:
     input:
         tree = rules.sort_collapse.output.sorted_collapsed_tree,
@@ -216,6 +196,7 @@ rule step_4_annotate_tree:
           --input {input.tree} \
           --output {output.tree} &> {log}
         """
+
 
 rule acctran_ancestral_reconstruction:
     input:
@@ -349,14 +330,22 @@ rule summarize_make_trees:
     input:
         traits = rules.output_annotations.output.traits,
         public_tree = rules.sort_collapse.output.sorted_collapsed_tree,
+        grafted_tree = rules.graft.output.grafted_tree,
+        expanded_tree = rules.insert_cog_seqs.output.grafted_tree_expanded_cog,
     params:
         grapevine_webhook = config["grapevine_webhook"],
     log:
         config["output_path"] + "/logs/4_summarize_make_trees.log"
     shell:
         """
+        echo "> Total number of sequences in tree before expanding: $(gotree stats tips -i {input.grafted_tree} | tail -n+2 | wc -l)\\n" > {log}
+        echo "> Number of UK sequences in tree before expanding: $(gotree stats tips -i {input.grafted_tree} | tail -n+2 | grep -E "England|Wales|Scotland|Northern_Ireland" | wc -l)\\n" >> {log}
+        echo "> Total number of sequences in tree after expanding: $(gotree stats tips -i {input.expanded_tree} | tail -n+2 | wc -l)\\n" >> {log}
+        echo "> Number of UK sequences in tree after expanding: $(gotree stats tips -i {input.expanded_tree} | tail -n+2 | grep -E "England|Wales|Scotland|Northern_Ireland" | wc -l)\\n" >> {log}
+
         echo '{{"text":"' > 4b_data.json
         echo "*Step 4: Construct and annotate lineage trees completed*\\n" >> 4b_data.json
+        cat {log} >> 4b_data.json
         echo '"}}' >> 4b_data.json
         echo "webhook {params.grapevine_webhook}"
         curl -X POST -H "Content-type: application/json" -d @4b_data.json {params.grapevine_webhook}

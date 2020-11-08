@@ -1,3 +1,74 @@
+rule cog_hash_seqs:
+    input:
+        fasta = rules.uk_output_lineage_table.output.fasta,
+    output:
+        fasta = config["output_path"] + "/3/uk.hashed.fasta",
+        metadata = config["output_path"] + "/3/uk.hashmap.csv",
+    log:
+        config["output_path"] + "/logs/3_cog_hash_seqs.log",
+    run:
+        from Bio import SeqIO
+
+        input_fasta = SeqIO.index(str(input.fasta), "fasta")
+
+        hash_dict = {}
+
+        with open(str(input.fasta), "r") as f:
+            for record in SeqIO.parse(f, "fasta"):
+                id = record.id
+                seq = str(record.seq)
+
+                if seq in hash_dict:
+                    hash_dict[seq] = hash_dict[seq] + [id]
+                else:
+                    hash_dict[seq] = [id]
+
+        with open(str(output.fasta), "w") as fasta, open(str(output.metadata), "w") as metadata:
+            metadata.write("tip,redundant\n")
+
+            for key, value in hash_dict.items():
+                if len(value) == 1:
+
+                    r = input_fasta[value[0]]
+
+                    fasta.write(">" + r.id + "\n")
+                    fasta.write(str(r.seq) + "\n")
+
+                elif len(value) > 1:
+
+                    r = input_fasta[value[0]]
+
+                    fasta.write(">" + r.id + "\n")
+                    fasta.write(str(r.seq) + "\n")
+
+                    metadata.write(r.id + ",")
+                    metadata.write("|".join(value[1:]) + "\n")
+
+
+rule uk_output_hashed_lineage_table:
+    input:
+        fasta = rules.cog_hash_seqs.output.fasta,
+        metadata = rules.uk_output_lineage_table.output.metadata,
+    output:
+        fasta = temp(config["output_path"] + "/3/uk.hashed.temp.fasta"),
+        metadata = config["output_path"] + "/3/uk.hashed.lineages.csv"
+    log:
+        config["output_path"] + "/logs/3_uk_output_hashed_lineage_table.log"
+    shell:
+        """
+        fastafunk fetch \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata} \
+          --index-column sequence_name \
+          --filter-column sequence_name country adm1 adm2 \
+                          sample_date epi_week \
+                          lineage uk_lineage \
+          --out-fasta {output.fasta} \
+          --out-metadata {output.metadata} \
+          --log-file {log} \
+          --restrict
+        """
+
 
 rule cog_hash_seqs:
     input:
@@ -152,10 +223,10 @@ rule combine_gisaid_and_cog:
 rule combine_gisaid_and_cog_expanded:
     input:
         previous_stage = config["output_path"] + "/logs/2_summarize_pangolin_lineage_typing.log",
-        gisaid_fasta = rules.gisaid_output_full_lineage_table.output.fasta,
-        gisaid_metadata = rules.gisaid_output_full_lineage_table.output.metadata,
-        uk_fasta = rules.uk_output_full_lineage_table.output.fasta,
-        uk_metadata = rules.uk_output_full_lineage_table.output.metadata
+        gisaid_fasta = rules.gisaid_output_lineage_table.output.fasta,
+        gisaid_metadata = rules.gisaid_output_lineage_table.output.metadata,
+        uk_fasta = rules.uk_output_lineage_table.output.fasta,
+        uk_metadata = rules.uk_output_lineage_table.output.metadata
     output:
         fasta = config["output_path"] + "/3/cog_gisaid.expanded.fasta",
         metadata = config["output_path"] + "/3/cog_gisaid.lineages.expanded.csv"
@@ -192,7 +263,6 @@ rule summarize_combine_gisaid_and_cog:
         echo "> Number of sequences in reduced COG fasta: $(cat {input.cog_hashed_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences in collapsed COG and GISAID matched files for tree building: $(cat {input.fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo "> \\n" &>> {log}
-
         echo '{{"text":"' > {params.json_path}/3_data.json
         echo "*Step 3: Combine COG-UK and GISAID data complete*\\n" >> {params.json_path}/3_data.json
         cat {log} >> {params.json_path}/3_data.json

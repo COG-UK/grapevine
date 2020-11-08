@@ -1,4 +1,4 @@
-import csv, sys
+import csv, sys, math
 from collections import defaultdict
 
 all_traits = sys.argv[1]
@@ -16,6 +16,8 @@ with open(updated_traits) as csvfile:
     reader = csv.DictReader(csvfile)
     for row in reader:
         new_data.append(row)
+
+threshold = math.floor(len(new_data) / 180)
 
 taxa_to_lineage_old = {x['taxon']: x['uk_lineage'] for x in old_data if x['uk_lineage'][0:2] == 'UK'}
 taxa_to_lineage_new = {x['taxon']: x['uk_lineage'] for x in new_data if x['uk_lineage'][0:2] == 'UK'}
@@ -55,7 +57,7 @@ for target, source_dictionary in target_dict.items():
         if source == 'new':
             continue
         value = source_dictionary[source]
-        if value > 100:
+        if value > threshold:
             links.append({'source': source, 'target': target, 'value': value})
 
 # get a list of the impactful targets for later
@@ -84,7 +86,7 @@ for target, source_dictionary in target_dict.items():
 for target, source_dictionary in target_dict.items():
     for source in source_dictionary:
         value = source_dictionary[source]
-        if value <= 100:
+        if value <= threshold:
             if target == 'lost' and source in sources_in_links:
                 links.append({'source': source, 'target': target, 'value': value})
 
@@ -139,7 +141,7 @@ for target, source_dictionary in target_dict.items():
             continue
         value = source_dictionary[source]
         if source in sources_in_links:
-            if value <= 100:
+            if value <= threshold:
                 total_value+=value
         else:
             total_value+=value
@@ -159,7 +161,7 @@ for x in links_sorted:
 
 print("The input file has " + str(len(taxa_to_lineage_new)) + " lines in it")
 print("The sum of all sankey links is: " + str(check_count))
-print("The number of lost lineages is: " + str(sum([x for x in target_dict['lost']])))
+# print("The number of lost lineages is: " + str(sum([x for x in target_dict['lost']])))
 
 with open(out_file, 'w') as f:
     f.write("source\ttarget\tvalue\n")
