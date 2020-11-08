@@ -14,6 +14,7 @@ rule uk_add_lineage_information_back_to_master_metadata:
     resources: mem_per_cpu=10000
     log:
         config["output_path"] + "/logs/7_uk_add_lineage_information_back_to_master_metadata.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk add_columns \
@@ -240,8 +241,8 @@ rule combine_cog_gisaid:
     input:
         cog_fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.omissions_filtered.fasta",
         cog_metadata = rules.uk_add_lineage_information_back_to_master_metadata.output.metadata,
-        gisaid_fasta = config["GISAID_background_fasta"],
-        gisaid_metadata = config["GISAID_background_metadata"]
+        gisaid_fasta = config["GISAID_background_expanded_fasta"],
+        gisaid_metadata = config["GISAID_background_expanded_metadata"]
     params:
         intermediate_cog_fasta = config["output_path"] + "/7/cog.combine_cog_gisaid.temp.cog.fasta",
         intermediate_cog_metadata = config["output_path"] + "/7/cog.combine_cog_gisaid.temp.cog.csv",
@@ -294,6 +295,35 @@ rule combine_cog_gisaid:
           --out-metadata {output.metadata} \
           --index-column sequence_name &>> {log}
         """
+
+rule add_seq_hash_values:
+    input:
+        fasta = rules.combine_cog_gisaid.output.fasta,
+        metadata = rules.combine_cog_gisaid.output.metadata,
+    output:
+        metadata = config["output_path"] + "/7/gisaid.combine_cog_gisaid.combined.hashes.csv",
+    log:
+        config["output_path"] + "/logs/7_get_seq_hash_values.log"
+    run:
+        from Bio import SeqIO
+        import hashlib
+        import pandas as pd
+
+        df = pd.read_csv(input.metadata)
+
+        fasta = SeqIO.index(str(input.fasta), "fasta")
+
+        seq_hashes = []
+
+        for i,row in df.iterrows():
+            seq_name = row["sequence_name"]
+            record = fasta[seq_name]
+            seq = str(record.seq).encode("utf-8")
+            h = hashlib.md5(seq).hexdigest()
+            seq_hashes.append(h)
+
+        df['sequence_hash'] = seq_hashes
+        df.to_csv(output.metadata, index=False)
 
 
 rule add_seq_hash_values:

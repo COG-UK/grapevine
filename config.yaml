@@ -1,6 +1,8 @@
 ##### Where is the data? #####
 GISAID_background_fasta:
 GISAID_background_metadata:
+GISAID_background_expanded_metadata:
+GISAID_background_expanded_fasta: 
 
 previous_uk_metadata:  # NEEDED IN STEP 1
 
