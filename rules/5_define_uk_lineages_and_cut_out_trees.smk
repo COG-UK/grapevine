@@ -146,19 +146,14 @@ rule step_5_annotate_tree:
           --output {output.tree} &> {log}
         """
 
-"""
-This is a checkpoint so the dag will get remade after this run. At that point aggregate_input_csv (below) will
-ask for trait files with wildcards that match the number of uk lineage (i). These were made in this step and everything
-should flow from there
-"""
-checkpoint get_uk_lineage_samples:
+
+rule get_uk_lineage_samples:
     input:
         metadata = rules.merge_and_create_new_uk_lineages.output
     output:
         outdir = directory(config["output_path"] + "/5/samples/")
     log:
         config["output_path"] + "/logs/5_get_uk_lineage_samples.log"
-    threads: 40
     shell:
         """
         mkdir -p {output.outdir} &> {log}
@@ -186,70 +181,84 @@ rule dequote_tree:
         sed "s/'//g" {input.full_newick_tree} > {output.tree} 2> {log}
         """
 
-"""
-It would probably be faster for the step below to loop through the whole
-directory, cutting out trees, and
-"""
+
 rule cut_out_trees:
     input:
         full_tree = rules.dequote_tree.output.tree,
-        samples=config["output_path"] + "/5/samples/UK{i}.samples.txt",
+        indir = config["output_path"] + "/5/samples/"
     output:
-        tree=config["output_path"] + "/5/trees/uk_lineage_UK{i}.tree",
+        outdir = directory(config["output_path"] + "/5/trees/")
     log:
-        config["output_path"] + "/logs/5_cut_out_trees_UK{i}.log"
+        config["output_path"] + "/logs/5_cut_out_trees.log"
     shell:
         """
-        gotree prune -r \
-            -i {input.full_tree} \
-            --tipfile {input.samples} \
-            -o {output.tree} &>> {log}
+        mkdir -p {output.outdir} 2> {log}
+
+        for FILE in {input.indir}UK*.samples.txt
+        do
+            UKLIN=`echo ${{FILE}} | rev | cut -d"/" -f1 | rev | cut -d"." -f1`
+            gotree prune -r \
+                -i {input.full_tree} \
+                --tipfile ${{FILE}} \
+                -o {output.outdir}${{UKLIN}}.tree
+        done 2>> {log}
         """
 
 
 rule phylotype_cut_trees:
     input:
-        tree=config["output_path"] + "/5/trees/uk_lineage_UK{i}.tree"
+        treedir = config["output_path"] + "/5/trees/"
     output:
-        tree=config["output_path"] + "/5/phylotyped_trees/uk_lineage_UK{i}.tree"
+        phylotypedir = directory(config["output_path"] + "/5/phylotyped_trees/")
     params:
         collapse=5E-6,
         threshold=2E-5,
-        i="{i}"
     log:
-        config["output_path"] + "/logs/5_phylotype_UK{i}.log"
+        config["output_path"] + "/logs/5_phylotype_cut_trees.log"
     shell:
         """
-        clusterfunk phylotype \
-        --threshold {params.threshold} \
-        --prefix UK{params.i}_1 \
-        --input {input.tree} \
-        --in-format newick \
-        --output {output.tree} &> {log}
+        mkdir -p {output.phylotypedir} 2> {log}
+
+        for FILE in {input.treedir}*.tree
+        do
+            UKLIN=`echo ${{FILE}} | rev | cut -d"/" -f1 | rev | cut -d"." -f1`
+            clusterfunk phylotype \
+                --threshold {params.threshold} \
+                --prefix ${{UKLIN}}_1 \
+                --input ${{FILE}} \
+                --in-format newick \
+                --output {output.phylotypedir}${{UKLIN}}.tree
+        done 2>> {log}
         """
 
 
 rule get_uk_phylotypes_csv:
     input:
-        tree=config["output_path"] + "/5/phylotyped_trees/uk_lineage_UK{i}.tree"
+        phylotypedir = config["output_path"] + "/5/phylotyped_trees/"
     output:
-        traits=config["output_path"] + "/5/phylotyped_trees/uk_lineage_UK{i}.csv"
+        csvdir = directory(config["output_path"] + "/5/phylotype_csvs/")
     log:
-        config["output_path"] + "/logs/5_traits_UK{i}.log"
+        config["output_path"] + "/logs/5_get_uk_phylotypes_csv.log"
     shell:
         """
-        clusterfunk extract_tip_annotations \
-          --traits country phylotype \
-          --input {input.tree} \
-          --output {output.traits} &> {log}
+        mkdir -p {output.csvdir} 2> {log}
+
+        for FILE in {input.phylotypedir}*.tree
+        do
+            UKLIN=`echo ${{FILE}} | rev | cut -d"/" -f1 | rev | cut -d"." -f1`
+            clusterfunk extract_tip_annotations \
+              --traits country phylotype \
+              --input ${{FILE}} \
+              --output {output.csvdir}${{UKLIN}}.csv
+        done 2>> {log}
         """
 
 
-def aggregate_input_csv(wildcards):
-    checkpoint_output_directory = checkpoints.get_uk_lineage_samples.get(**wildcards).output[0]
-    required_files = expand( "%s/5/phylotyped_trees/uk_lineage_UK{i}.csv" %(config["output_path"]),
-                            i=glob_wildcards(os.path.join(checkpoint_output_directory, "UK{i}.samples.txt")).i)
-    return (required_files)
+# def aggregate_input_csv(wildcards):
+#     checkpoint_output_directory = checkpoints.get_uk_lineage_samples.get(**wildcards).output[0]
+#     required_files = expand( "%s/5/phylotyped_trees/uk_lineage_UK{i}.csv" %(config["output_path"]),
+#                             i=glob_wildcards(os.path.join(checkpoint_output_directory, "UK{i}.samples.txt")).i)
+#     return (required_files)
 #
 # def aggregate_input_trees(wildcards):
 #     checkpoint_output_directory = checkpoints.cut_out_trees.get(**wildcards).output[0]
@@ -268,13 +277,21 @@ def aggregate_input_csv(wildcards):
 
 rule combine_phylotypes_csv:
     input:
-        files=aggregate_input_csv
+        csvdir = config["output_path"] + "/5/phylotype_csvs/"
     output:
-        phylotype_csv=config["output_path"] + "/5/UK_phylotypes.csv"
+        phylotype_csv = config["output_path"] + "/5/UK_phylotypes.csv"
     log:
         config["output_path"] + "/logs/5_traits_combine_phylotype_csv.log"
     run:
-        dfs = [pd.read_csv(x) for x in input.files]
+        import pandas as pd
+        import glob
+        import os
+
+        mypath = str(input.csvdir)
+
+        files = glob.glob(os.path.join(mypath, "*csv"))
+
+        dfs = [pd.read_csv(x) for x in files]
         result = pd.concat(dfs)
         result.to_csv(output[0], index=False)
 
@@ -297,6 +314,7 @@ rule merge_with_metadata:
           --new-columns phylotype \
           --out-metadata {output.metadata} &> {log}
         """
+
 
 rule annotate_phylotypes:
     input:
