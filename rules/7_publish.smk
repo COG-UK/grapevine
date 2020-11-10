@@ -90,7 +90,7 @@ rule publish_COG_master_metadata:
     output:
         metadata_master = config["publish_path"] + "/COG/master.csv",
         metadata_report = config["publish_path"] + "/COG/report_metadata.csv",
-        metadata_report_temp = config["output_path"] + "/7/report_metadata_temp.csv",
+        # metadata_report_temp = config["output_path"] + "/7/report_metadata_temp.csv",
         fasta = temp(config["output_path"] + "/7/7_publish_COG_master_metadata.temp.fasta")
     log:
         config["output_path"] + "/logs/7_publish_COG_master_metadata.log"
@@ -109,18 +109,18 @@ rule publish_COG_master_metadata:
                           sequencing_org_code sequencing_submission_date \
           --where-column epi_week=edin_epi_week country=adm0 \
           --out-fasta {output.fasta} \
-          --out-metadata {output.metadata_report_temp} \
+          --out-metadata {output.metadata_report} \
           --restrict &>> {log}
-
-        fastafunk add_columns \
-          --in-metadata {output.metadata_report_temp} \
-          --in-data {input.geography_metadata} \
-          --index-column central_sample_id \
-          --join-on id \
-          --new-columns adm2 \
-          --out-metadata {output.metadata_report} &>> {log}
         """
-
+        #  --out-metadata {output.metadata_report_temp} \
+        #
+        # fastafunk add_columns \
+        #   --in-metadata {output.metadata_report_temp} \
+        #   --in-data {input.geography_metadata} \
+        #   --index-column central_sample_id \
+        #   --join-on id \
+        #   --new-columns adm2 \
+        #   --out-metadata {output.metadata_report} &>> {log}
 
 # rule gisaid_add_lineage_information_back_to_master_metadata:
 #     input:
@@ -285,7 +285,7 @@ rule combine_cog_gisaid:
           --out-fasta {params.intermediate_gisaid_fasta} \
           --out-metadata {params.intermediate_gisaid_metadata} \
           --restrict &>> {log}
-          
+
         fastafunk merge \
           --in-fasta {params.intermediate_gisaid_fasta} {params.intermediate_cog_fasta} \
           --in-metadata {params.intermediate_gisaid_metadata} {params.intermediate_cog_metadata} \
@@ -411,8 +411,8 @@ rule publish_civet_data:
         cog_metadata = config["publish_path"] + "/civet/cog/cog_" + config["date"] + '_metadata.csv',
         cog_metadata_public = config["publish_path"] + "/civet/cog_" + config["date"] + '_metadata.csv',
 
-        temp_combined_metadata = config["output_path"] + "/7/civet_cog_global_" + config["date"] + '_temp_metadata.csv',
-        temp_combined_metadata_2 = config["output_path"] + "/7/civet_cog_global_" + config["date"] + '_temp_metadata_2.csv',
+        # temp_combined_metadata = config["output_path"] + "/7/civet_cog_global_" + config["date"] + '_temp_metadata.csv',
+        # temp_combined_metadata_2 = config["output_path"] + "/7/civet_cog_global_" + config["date"] + '_temp_metadata_2.csv',
         combined_metadata = config["export_path"] + "/civet/cog/cog_global_" + config["date"] + '_metadata.csv',
         combined_fasta = config["export_path"] + "/civet/cog/cog_global_" + config["date"] + '_alignment.fasta',
         tree = config["export_path"] + "/civet/cog_global_"  + config["date"] +  "_tree.nexus",
@@ -500,18 +500,8 @@ rule publish_civet_data:
                           lineage_support uk_lineage acc_lineage del_lineage phylotype \
           --where-column epi_week=edin_epi_week country=adm0 \
           --out-fasta {output.combined_fasta} \
-          --out-metadata {output.temp_combined_metadata} \
+          --out-metadata {output.combined_metadata} \
           --restrict &>> {log}
-
-        fastafunk add_columns \
-          --in-metadata {output.temp_combined_metadata} \
-          --in-data {input.geography_metadata} \
-          --index-column central_sample_id \
-          --join-on id \
-          --new-columns adm1 adm2 adm2_raw adm2_source nuts1 outer_postcode region latitude longitude location \
-          --out-metadata {output.temp_combined_metadata_2} &>> {log}
-
-        sed '1s/nuts1/NUTS1/' {output.temp_combined_metadata_2} > {output.combined_metadata} 2>> {log}
 
         fastafunk fetch \
           --in-fasta {input.combined_fasta} \
@@ -528,6 +518,19 @@ rule publish_civet_data:
           --out-metadata {output.combined_metadata_public} \
           --restrict &>> {log}
          """
+        # --out-metadata {output.temp_combined_metadata} \
+
+        # fastafunk add_columns \
+        #   --in-metadata {output.temp_combined_metadata} \
+        #   --in-data {input.geography_metadata} \
+        #   --index-column central_sample_id \
+        #   --join-on id \
+        #   --new-columns adm1 adm2 adm2_raw adm2_source nuts1 outer_postcode region latitude longitude location \
+        #   --out-metadata {output.temp_combined_metadata_2} &>> {log}
+        #
+        # sed '1s/nuts1/NUTS1/' {output.temp_combined_metadata_2} > {output.combined_metadata} 2>> {log}
+
+
 
 
 # rule publish_uk_lineage_specific_fasta_and_metadata_files:
@@ -931,6 +934,7 @@ rule summarize_publish:
 
         # GISAID_meta_master = rules.publish_gisaid_master_metadata.output.metadata,
         COG_meta_master = rules.publish_COG_master_metadata.output.metadata_master,
+        COG_meta_report = rules.publish_COG_master_metadata.output.metadata_report,
 
         COG_seq_all = rules.publish_unaligned_cog_sequences.output.fasta,
         COG_seq_all_aligned = rules.publish_full_aligned_cog_data.output.fasta,
