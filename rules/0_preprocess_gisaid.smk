@@ -24,10 +24,10 @@ rule gisaid_process_json:
 rule gisaid_unify_headers:
     input:
         fasta = rules.gisaid_process_json.output.fasta,
-        metadata = rules.gisaid_process_json.output.metadata
+        metadata = rules.gisaid_process_json.output.metadata,
     output:
         fasta = config["output_path"] + "/0/gisaid.UH.fasta",
-        metadata = config["output_path"] + "/0/gisaid.UH.csv"
+        metadata = config["output_path"] + "/0/gisaid.UH.csv",
     log:
         config["output_path"] + "/logs/0_gisaid_unify_headers.log"
     run:
@@ -56,10 +56,31 @@ rule gisaid_unify_headers:
         df.to_csv(output.metadata, index=False, sep = ",")
 
 
+rule gisaid_add_previous_lineages:
+    input:
+        metadata = rules.gisaid_unify_headers.output.metadata,
+        previous_metadata = config["previous_gisaid_metadata"],
+    output:
+        metadata = config["output_path"] + "/0/gisaid.lineages.csv"
+    log:
+        config["output_path"] + "/logs/0_gisaid_add_previous_lineages.log"
+    resources: mem_per_cpu=10000
+    shell:
+        """
+        fastafunk add_columns \
+          --in-metadata {input.metadata} \
+          --in-data {input.previous_metadata} \
+          --index-column sequence_name \
+          --join-on sequence_name \
+          --new-columns lineage lineage_support lineages_version \
+          --out-metadata {output.metadata} &> {log}
+        """
+
+
 rule gisaid_remove_duplicates:
     input:
         fasta = rules.gisaid_unify_headers.output.fasta,
-        metadata = rules.gisaid_unify_headers.output.metadata
+        metadata = rules.gisaid_add_previous_lineages.output.metadata
     output:
         fasta = config["output_path"] + "/0/gisaid.UH.RD.fasta",
         metadata = config["output_path"] + "/0/gisaid.UH.RD.csv"
@@ -122,10 +143,10 @@ rule gisaid_minimap2_to_reference:
         sam = config["output_path"] + "/0/gisaid.mapped.sam"
     log:
         config["output_path"] + "/logs/0_gisaid_minimap2_to_reference.log"
-    threads: 3
+    threads: 8
     shell:
         """
-        minimap2 -t3 -a -x asm5 {input.reference} {input.fasta} -o {output} &> {log}
+        minimap2 -t8 -a -x asm5 {input.reference} {input.fasta} -o {output} &> {log}
         """
 
 
@@ -164,21 +185,12 @@ rule gisaid_remove_insertions_and_pad:
         deletions = config["output_path"] + "/0/gisaid_deletions.txt",
     output:
         fasta = config["output_path"] + "/0/gisaid.RD.UH.filt1.mapped.fasta"
+    threads: 8
     log:
         config["output_path"] + "/logs/0_gisaid_remove_insertions_and_pad.log"
     shell:
         """
-        datafunk sam_2_fasta \
-          -s {input.sam} \
-          -r {input.reference} \
-          -o {output} \
-          -t [{params.trim_start}:{params.trim_end}] \
-          --pad \
-          --log-inserts \
-          --log-deletions &> {log}
-
-        mv insertions.txt {params.insertions}
-        mv deletions.txt {params.deletions}
+        /cephfs/covid/bham/climb-covid19-jacksonb/programs/gofasta/gofasta sam toMultiAlign -t {threads} -s {input.sam} -o {output.fasta} --trim --trimstart 265 --trimend 29674 --pad &> {log}
         """
 
 
