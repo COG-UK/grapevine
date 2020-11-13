@@ -35,7 +35,7 @@ def process_adm2(outer_postcode, adm2, metadata_multi_loc, straight_map, not_map
         else:
             processed_adm2 = ""
             source = ""
-        
+
     elif adm2 != "":
         if adm2 in acceptable_adm2s:
             processed_adm2 = adm2
@@ -50,6 +50,7 @@ def process_adm2(outer_postcode, adm2, metadata_multi_loc, straight_map, not_map
             else:
                 source = ""
 
+
     #Check if the adm2 is vague but the postcode can narrow it down
     if type(processed_adm2) != bool:
         if "|" in processed_adm2 and outer_postcode != "" and outer_postcode in postcode_to_adm2:
@@ -62,7 +63,7 @@ def process_adm2(outer_postcode, adm2, metadata_multi_loc, straight_map, not_map
         if "|" in processed_adm2 and adm1 != "":
             for place in processed_adm2.split("|"):
                 country_list.add(adm2_to_country[place])
-        
+
         if len(country_list) > 1:
             new_adm2 = []
             acceptables = country_to_adm2[adm1]
@@ -93,7 +94,7 @@ def process_adm2(outer_postcode, adm2, metadata_multi_loc, straight_map, not_map
 
 
 def do_adm1(country):
-    
+
     adm1 = ""
 
     contract_dict = {"SCT":"Scotland", "WLS": "Wales", "ENG":"England", "NIR": "Northern_Ireland"}
@@ -147,7 +148,7 @@ def prep_adm2_data(clean_locs_file):
             toks = l.strip("\n").split("\t")
             toks [:] = [x for x in toks if x]
             metadata_loc = toks[0].replace(" ","_")
-            real_locs = toks[1:]   
+            real_locs = toks[1:]
 
             if len(real_locs) == 1:
                 straight_map[metadata_loc] = real_locs[0].upper()
@@ -161,23 +162,23 @@ def get_acceptable_adm2():
 
     country_to_adm2 = {
     "England":['BARNSLEY', 'BATH_AND_NORTH_EAST_SOMERSET', 'BEDFORDSHIRE', 'BIRMINGHAM', 'BLACKBURN_WITH_DARWEN', 'BLACKPOOL', 'BOLTON', 'BOURNEMOUTH', 'BRACKNELL_FOREST', 'BRADFORD', 'BRIGHTON_AND_HOVE', 'BRISTOL', 'BUCKINGHAMSHIRE', 'BURY',
-    'CALDERDALE', 'CAMBRIDGESHIRE', 'CENTRAL_BEDFORDSHIRE', 'CHESHIRE_EAST', 'CHESHIRE_WEST_AND_CHESTER', 'CORNWALL', 'COVENTRY', 'CUMBRIA', 
-    'DARLINGTON', 'DERBY', 'DERBYSHIRE', 'DEVON', 'DONCASTER', 'DORSET', 'DUDLEY', 'DURHAM', 
-    'EAST_RIDING_OF_YORKSHIRE', 'EAST_SUSSEX', 'ESSEX', 
-    'GATESHEAD', 'GLOUCESTERSHIRE', 'GREATER_LONDON', 
-    'HALTON', 'HAMPSHIRE', 'HARTLEPOOL', 'HEREFORDSHIRE', 'HERTFORDSHIRE', 
-    'ISLE_OF_WIGHT', 'ISLES_OF_SCILLY', 
-    'KENT', 'KINGSTON_UPON_HULL', 'KIRKLEES', 'KNOWSLEY', 
-    'LANCASHIRE', 'LEEDS', 'LEICESTER', 'LEICESTERSHIRE', 'LINCOLNSHIRE', 'LUTON', 
-    'MANCHESTER', 'MEDWAY', 'MIDDLESBROUGH', 'MILTON_KEYNES', 
-    'NEWCASTLE_UPON_TYNE', 'NORFOLK', 'NORTH_LINCOLNSHIRE', 'NORTH_SOMERSET', 'NORTH_TYNESIDE', 'NORTH_YORKSHIRE', 'NORTHAMPTONSHIRE', 'NORTHUMBERLAND', 'NOTTINGHAM', 'NOTTINGHAMSHIRE', 
-    'OLDHAM', 'OXFORDSHIRE', 
-    'PETERBOROUGH', 'PLYMOUTH', 'POOLE', 'PORTSMOUTH', 
-    'READING', 'REDCAR_AND_CLEVELAND', 'ROCHDALE', 'ROTHERHAM', 'RUTLAND', 
-    'SAINT_HELENS', 'SALFORD', 'SANDWELL', 'SEFTON', 'SHEFFIELD', 'SHROPSHIRE', 'SLOUGH', 'SOLIHULL', 'SOMERSET', 'SOUTH_GLOUCESTERSHIRE', 'SOUTH_TYNESIDE', 'SOUTHAMPTON', 'SOUTHEND-ON-SEA', 'STAFFORDSHIRE', 'STOCKPORT', 'STOCKTON-ON-TEES', 'STOKE-ON-TRENT', 'SUFFOLK', 'SUNDERLAND', 'SURREY', 'SWINDON', 
+    'CALDERDALE', 'CAMBRIDGESHIRE', 'CENTRAL_BEDFORDSHIRE', 'CHESHIRE_EAST', 'CHESHIRE_WEST_AND_CHESTER', 'CORNWALL', 'COVENTRY', 'CUMBRIA',
+    'DARLINGTON', 'DERBY', 'DERBYSHIRE', 'DEVON', 'DONCASTER', 'DORSET', 'DUDLEY', 'DURHAM',
+    'EAST_RIDING_OF_YORKSHIRE', 'EAST_SUSSEX', 'ESSEX',
+    'GATESHEAD', 'GLOUCESTERSHIRE', 'GREATER_LONDON',
+    'HALTON', 'HAMPSHIRE', 'HARTLEPOOL', 'HEREFORDSHIRE', 'HERTFORDSHIRE',
+    'ISLE_OF_WIGHT', 'ISLES_OF_SCILLY',
+    'KENT', 'KINGSTON_UPON_HULL', 'KIRKLEES', 'KNOWSLEY',
+    'LANCASHIRE', 'LEEDS', 'LEICESTER', 'LEICESTERSHIRE', 'LINCOLNSHIRE', 'LUTON',
+    'MANCHESTER', 'MEDWAY', 'MIDDLESBROUGH', 'MILTON_KEYNES',
+    'NEWCASTLE_UPON_TYNE', 'NORFOLK', 'NORTH_LINCOLNSHIRE', 'NORTH_SOMERSET', 'NORTH_TYNESIDE', 'NORTH_YORKSHIRE', 'NORTHAMPTONSHIRE', 'NORTHUMBERLAND', 'NOTTINGHAM', 'NOTTINGHAMSHIRE',
+    'OLDHAM', 'OXFORDSHIRE',
+    'PETERBOROUGH', 'PLYMOUTH', 'POOLE', 'PORTSMOUTH',
+    'READING', 'REDCAR_AND_CLEVELAND', 'ROCHDALE', 'ROTHERHAM', 'RUTLAND',
+    'SAINT_HELENS', 'SALFORD', 'SANDWELL', 'SEFTON', 'SHEFFIELD', 'SHROPSHIRE', 'SLOUGH', 'SOLIHULL', 'SOMERSET', 'SOUTH_GLOUCESTERSHIRE', 'SOUTH_TYNESIDE', 'SOUTHAMPTON', 'SOUTHEND-ON-SEA', 'STAFFORDSHIRE', 'STOCKPORT', 'STOCKTON-ON-TEES', 'STOKE-ON-TRENT', 'SUFFOLK', 'SUNDERLAND', 'SURREY', 'SWINDON',
     'TAMESIDE', 'TELFORD_AND_WREKIN', 'THURROCK', 'TORBAY', 'TRAFFORD', 'WAKEFIELD', 'WALSALL', 'WARRINGTON', 'WARWICKSHIRE', 'WEST_BERKSHIRE', 'WEST_SUSSEX', 'WIGAN', 'WILTSHIRE', 'WINDSOR_AND_MAIDENHEAD', 'WIRRAL', 'WOKINGHAM', 'WOLVERHAMPTON', 'WORCESTERSHIRE', 'YORK'],
     "Northern_Ireland":['ANTRIM_AND_NEWTOWNABBEY', 'ARMAGH_BANBRIDGE_AND_CRAIGAVON', 'BELFAST', 'CAUSEWAY_COAST_AND_GLENS', 'DERRY_AND_STRABANE', 'FERMANAGH_AND_OMAGH', 'LISBURN_AND_CASTLEREAGH', 'MID_AND_EAST_ANTRIM', 'MID_ULSTER', 'NEWRY_MOURNE_AND_DOWN', 'NORTH_DOWN_AND_ARDS', 'TYRONE', 'ANTRIM', 'ARMAGH', 'FERMANAGH', 'LONDONDERRY', 'DOWN'],
-    "Scotland":['ABERDEEN', 'ABERDEENSHIRE', 'ANGUS', 'ARGYLL_AND_BUTE', 'CLACKMANNANSHIRE', 'DUMFRIES_AND_GALLOWAY', 'DUNDEE', 'EAST_AYRSHIRE', 'EAST_DUNBARTONSHIRE', 'EAST_LOTHIAN', 'EAST_RENFREWSHIRE', 'EDINBURGH', 'EILEAN_SIAR', 'FALKIRK', 'FIFE', 
+    "Scotland":['ABERDEEN', 'ABERDEENSHIRE', 'ANGUS', 'ARGYLL_AND_BUTE', 'CLACKMANNANSHIRE', 'DUMFRIES_AND_GALLOWAY', 'DUNDEE', 'EAST_AYRSHIRE', 'EAST_DUNBARTONSHIRE', 'EAST_LOTHIAN', 'EAST_RENFREWSHIRE', 'EDINBURGH', 'EILEAN_SIAR', 'FALKIRK', 'FIFE',
     'GLASGOW', 'HIGHLAND', 'INVERCLYDE', 'MIDLOTHIAN', 'MORAY', 'NORTH_AYRSHIRE', 'NORTH_LANARKSHIRE', 'ORKNEY_ISLANDS', 'PERTHSHIRE_AND_KINROSS', 'RENFREWSHIRE', 'SCOTTISH_BORDERS', 'SHETLAND_ISLANDS', 'SOUTH_AYRSHIRE', 'SOUTH_LANARKSHIRE', 'STIRLING', 'WEST_DUNBARTONSHIRE', 'WEST_LOTHIAN'],
     "Wales":['ANGLESEY', 'BLAENAU_GWENT', 'BRIDGEND', 'CAERPHILLY', 'CARDIFF', 'CARMARTHENSHIRE', 'CEREDIGION', 'CONWY', 'DENBIGHSHIRE', 'FLINTSHIRE', 'GWYNEDD', 'MERTHYR_TYDFIL', 'MONMOUTHSHIRE', 'NEATH_PORT_TALBOT', 'NEWPORT', 'PEMBROKESHIRE', 'POWYS', 'RHONDDA_CYNON_TAFF', 'SWANSEA', 'TORFAEN', 'VALE_OF_GLAMORGAN', 'WREXHAM'],
     "Channel_Islands":['GUERNSEY', "JERSEY"]
@@ -242,8 +243,9 @@ def get_nuts_list(nuts_file):
             toks = l.strip("\n").split("\t")
             toks [:] = [x for x in toks if x]
             nuts = toks[0]
-            constituents = toks[1:]   
-            
+            constituents = toks[1:]
+
+
             nuts_to_constituents[nuts] = constituents
 
     return nuts_to_constituents
@@ -258,6 +260,7 @@ def make_geography_csv(metadata_file, country_col, outer_postcode_col, adm1_col,
 
     new_unclean_locations = open(os.path.join(outdir, "new_unclean_locations.csv"), 'w')
     new_unclean_postcodes = open(os.path.join(outdir, "new_unclean_postcodes.csv"), 'w')
+    postcodes_with_no_adm2 = open(os.path.join(outdir, "postcodes_without_adm2.csv"), 'w')
     incompatible_locations = open(os.path.join(outdir,"sequences_with_incompatible_locs.csv"), 'w')
     log_file = open(os.path.join(outdir, "log_file.txt"), 'w')
 
@@ -266,7 +269,7 @@ def make_geography_csv(metadata_file, country_col, outer_postcode_col, adm1_col,
 
     already_found = []
     done_postcodes = []
-    
+
     missing_adm1 = 0
     missing_adm2 = 0
     missing_op = 0
@@ -279,7 +282,7 @@ def make_geography_csv(metadata_file, country_col, outer_postcode_col, adm1_col,
     missing_postcodes = ["ZZ9", "UNKNOWN", "FIQQ"]
 
     with open(os.path.join(outdir,"geography.csv"), 'w') as fw:
-        fieldnames = ["id","adm2_raw","adm2","adm2_source","NUTS1","adm1","outer_postcode","region","latitude","longitude", "location"]
+        fieldnames = ["sequence_name","id","adm2_raw","adm2","adm2_source","NUTS1","adm1","outer_postcode","region","latitude","longitude", "location"]
         writer = csv.DictWriter(fw, fieldnames=fieldnames)
         writer.writeheader()
 
@@ -292,15 +295,16 @@ def make_geography_csv(metadata_file, country_col, outer_postcode_col, adm1_col,
                 adm1 = sequence[adm1_col]
                 outer_postcode = sequence[outer_postcode_col].upper()
                 adm2 = sequence[adm2_col]
-                
+
                 geog_dict = {}
+                geog_dict["sequence_name"] = sequence["sequence_name"]
                 geog_dict["id"] = sequence["central_sample_id"]
                 geog_dict["adm2_raw"] = adm2
                 geog_dict["outer_postcode"] = outer_postcode
 
-                
-                adm2 = adm2.replace(" ","_") 
-                
+
+                adm2 = adm2.replace(" ","_")
+
                 if country == "UK":
 
                     processed_adm1 = do_adm1(adm1)
@@ -312,6 +316,10 @@ def make_geography_csv(metadata_file, country_col, outer_postcode_col, adm1_col,
                         output = do_outer_postcode_region_latlong(geog_dict, outer_postcode, outer_to_latlongs_region)
                         if type(output) != bool:
                             geog_dict = output
+                            if outer_postcode not in postcode_to_adm2:
+                                if outer_postcode not in done_postcodes:
+                                    postcodes_with_no_adm2.write(outer_postcode + "\n")
+                                    done_postcodes.append(outer_postcode)
                         else:
                             geog_dict["region"] = ""
                             geog_dict["latitude"] = ""
@@ -323,19 +331,20 @@ def make_geography_csv(metadata_file, country_col, outer_postcode_col, adm1_col,
                         missing_op += 1
 
                     if adm2 != "" or outer_postcode != "":
+
                         processed_adm2,source, conflict = process_adm2(outer_postcode, adm2, metadata_multi_loc, straight_map, not_mappable, postcode_to_adm2, processed_adm1)
-                        
+
                         geog_dict["adm2_source"] = source
 
-                        if type(processed_adm2) != bool: 
-                            
+                        if type(processed_adm2) != bool:
+
                             geog_dict["adm2"] = processed_adm2
-                            
+
                             if "|" in processed_adm2:
                                 nuts_adm2 = processed_adm2.split("|")[0]
                             else:
                                 nuts_adm2 = processed_adm2
-                            
+
                             NUTS1 = ""
                             for region, lst in nuts_dict.items():
                                 if nuts_adm2 in lst:
@@ -352,14 +361,15 @@ def make_geography_csv(metadata_file, country_col, outer_postcode_col, adm1_col,
                                 already_found.append(adm2)
 
                     else:
+                        processed_adm2 = ""
                         geog_dict["adm2"] = ""
                         missing_adm2 += 1
                         geog_dict["adm2_source"] = ""
                         geog_dict["NUTS1"] = ""
 
 
-                    
-                    if type(processed_adm2) != bool: 
+
+                    if type(processed_adm2) != bool and processed_adm2 != "":
                         if "|" in processed_adm2:
                             if processed_adm2 in nice_names:
                                 location = nice_names[processed_adm2]
@@ -382,11 +392,12 @@ def make_geography_csv(metadata_file, country_col, outer_postcode_col, adm1_col,
                     if conflict:
                         incompatible_locations.write(f'{sequence["central_sample_id"]},{outer_postcode},{adm2},{postcode_to_adm2[outer_postcode]},{processed_adm2}\n')
                         conflict_count += 1
-                        
-                    writer.writerow(geog_dict)    
+
+                    writer.writerow(geog_dict)
 
     new_unclean_locations.close()
     incompatible_locations.close()
+    postcodes_with_no_adm2.close()
 
     write_log_file(missing_adm1, missing_adm2, missing_op, curation, conflict_count, log_file)
     log_file.close()
@@ -397,7 +408,7 @@ def write_log_file(missing_adm1, missing_adm2, missing_op, curation, conflict, l
 
     log_file.write(f'{missing_adm1} sequences are missing adm1 information\n')
     log_file.write(f'{missing_op} sequences are missing outer postcodes\n')
-    
+
     log_file.write(f'Of these, an additional {missing_adm2} sequences are also missing any other sub-national geographic information, and so cannot be accurately mapped to an adm2 region. \n')
     log_file.write(f'{curation} sequences need additional manual curation to accurately match their adm2 to a real adm2.\n')
 
@@ -435,7 +446,7 @@ def main():
     parser.add_argument("--adm1-col", dest="adm1_col")
     parser.add_argument("--mapping-utils-dir", dest="map_utils_dir", help="path to map utils eg outer postcode")
     parser.add_argument("--outdir")
-    
+
 
     args = parser.parse_args()
 
@@ -444,4 +455,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

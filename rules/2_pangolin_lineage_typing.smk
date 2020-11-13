@@ -42,7 +42,7 @@ rule uk_add_pangolin_lineages_to_metadata:
         """
 
 
-rule uk_output_full_lineage_table:
+rule uk_output_lineage_table:
     input:
         fasta = rules.uk_filter_omitted_sequences.output.fasta,
         metadata = rules.uk_add_pangolin_lineages_to_metadata.output.metadata
@@ -70,8 +70,8 @@ rule uk_output_full_lineage_table:
 
 rule summarize_pangolin_lineage_typing:
     input:
-        fasta = rules.uk_output_full_lineage_table.output.fasta,
-        metadata = rules.uk_output_full_lineage_table.output.metadata,
+        fasta = rules.uk_output_lineage_table.output.fasta,
+        metadata = rules.uk_output_lineage_table.output.metadata,
     params:
         grapevine_webhook = config["grapevine_webhook"],
         json_path = config["json_path"],
