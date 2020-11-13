@@ -129,6 +129,30 @@ rule gisaid_minimap2_to_reference:
         """
 
 
+rule gisaid_get_variants:
+    input:
+        sam = rules.gisaid_minimap2_to_reference.output.sam,
+        reference = config["reference_fasta"],
+        genbank_anno = config["reference_genbank_annotation"],
+    output:
+        variants = config["output_path"] + "/0/gisaid.variants.csv",
+        global_variants = config["output_path"] + "/0/gisaid.global.variants.csv",
+    log:
+        config["output_path"] + "/logs/0_gisaid_get_variants.log"
+    threads: 8
+    shell:
+        """
+        /cephfs/covid/bham/climb-covid19-jacksonb/programs/gofasta sam variants -t {threads} \
+            --samfile {input.sam} \
+            --reference {input.reference} \
+            --genbank {input.genbank_anno} \
+            --outfile {output.variants} &>> {log}
+
+        head -n1 {output.variants} > {output.global_variants}
+        tail -n+2 {output.variants} | grep -v -E "^England|^Northern_Ireland|^Wales|^Scotland" >> {output.global_variants}
+        """
+
+
 rule gisaid_remove_insertions_and_pad:
     input:
         sam = rules.gisaid_minimap2_to_reference.output.sam,
@@ -705,6 +729,7 @@ rule summarize_preprocess_gisaid:
         collapsed_metadata = rules.gisaid_get_collapsed_metadata.output.metadata,
         collapsed_expanded_metadata = rules.gisaid_get_collapsed_expanded_metadata.output.metadata,
         counts = rules.gisaid_counts_by_country.output.counts,
+        variants = rules.gisaid_get_variants.output.variants,
     params:
         publish_path = config["publish_path"] + "/GISAID/",
         published_counts = config["publish_path"] + "/GISAID/gisaid_counts_by_country.csv",

@@ -189,8 +189,8 @@ rule step_4_annotate_tree:
           --in-metadata {input.metadata} \
           --trait-columns country lineage uk_lineage \
           --index-column sequence_name \
-          --boolean-for-trait country='UK' country='UK' country='UK' \
-          --boolean-trait-names country_uk country_uk_acctran country_uk_deltran \
+          --boolean-for-trait country='UK' country='UK' \
+          --boolean-trait-names country_uk country_uk_deltran \
           --in-format newick \
           --out-format nexus \
           --input {input.tree} \
@@ -198,28 +198,28 @@ rule step_4_annotate_tree:
         """
 
 
-rule acctran_ancestral_reconstruction:
-    input:
-        tree = rules.step_4_annotate_tree.output.tree
-    output:
-        tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.acc.tree"
-    log:
-        config["output_path"] + "/logs/4_acctran_ancestral_reconstruction.log"
-    shell:
-        """
-        clusterfunk ancestral_reconstruction \
-        --traits country_uk_acctran \
-        --acctran \
-        --ancestral-state False \
-        --input {input.tree} \
-        --output {output.tree} &> {log}
-        """
+# rule acctran_ancestral_reconstruction:
+#     input:
+#         tree = rules.step_4_annotate_tree.output.tree
+#     output:
+#         tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.acc.tree"
+#     log:
+#         config["output_path"] + "/logs/4_acctran_ancestral_reconstruction.log"
+#     shell:
+#         """
+#         clusterfunk ancestral_reconstruction \
+#         --traits country_uk_acctran \
+#         --acctran \
+#         --ancestral-state False \
+#         --input {input.tree} \
+#         --output {output.tree} &> {log}
+#         """
 
 rule deltran_ancestral_reconstruction:
     input:
-        tree = rules.acctran_ancestral_reconstruction.output.tree
+        tree = rules.step_4_annotate_tree.output.tree
     output:
-        tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.acc.del.tree"
+        tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.del.tree"
     log:
         config["output_path"] + "/logs/4_deltran_ancestral_reconstruction.log"
     shell:
@@ -232,31 +232,31 @@ rule deltran_ancestral_reconstruction:
         --output {output.tree} &> {log}
         """
 
-rule label_acctran_introductions:
-    input:
-        tree = rules.deltran_ancestral_reconstruction.output.tree
-    output:
-        tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.acc.del.acc_labelled.tree"
-    log:
-        config["output_path"] + "/logs/4_label_acctran_introductions.log"
-    shell:
-        """
-        clusterfunk label_transitions \
-          --trait country_uk_acctran \
-          --to True \
-          --transition-name acc_introduction \
-          --transition-prefix acc_trans_ \
-          --include_root \
-          --stubborn \
-          --input {input.tree} \
-          --output {output.tree} &> {log}
-        """
+# rule label_acctran_introductions:
+#     input:
+#         tree = rules.deltran_ancestral_reconstruction.output.tree
+#     output:
+#         tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.acc.del.acc_labelled.tree"
+#     log:
+#         config["output_path"] + "/logs/4_label_acctran_introductions.log"
+#     shell:
+#         """
+#         clusterfunk label_transitions \
+#           --trait country_uk_acctran \
+#           --to True \
+#           --transition-name acc_introduction \
+#           --transition-prefix acc_trans_ \
+#           --include_root \
+#           --stubborn \
+#           --input {input.tree} \
+#           --output {output.tree} &> {log}
+#         """
 
 rule label_deltran_introductions:
     input:
-        tree = rules.label_acctran_introductions.output.tree
+        tree = rules.deltran_ancestral_reconstruction.output.tree
     output:
-        tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.acc.del.acc_labelled.del_labelled.tree"
+        tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.del.del_labelled.tree"
     log:
         config["output_path"] + "/logs/4_label_deltran_introductions.log"
     shell:
@@ -271,30 +271,30 @@ rule label_deltran_introductions:
           --output {output.tree} &> {log}
         """
 
-rule merge_sibling_acc_introduction:
-    input:
-        tree = rules.label_deltran_introductions.output.tree
-    output:
-        tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.acc.del.acc_labelled.del_labelled.acc_merged.tree"
-    log:
-        config["output_path"] + "/logs/4_merge_acctran_introductions.log"
-    shell:
-        """
-        clusterfunk merge_transitions \
-          --trait-to-merge acc_introduction \
-          --merged-trait-name acc_lineage \
-          --merge-siblings \
-          --input {input.tree} \
-          --output {output.tree} &> {log}
-        """
+# rule merge_sibling_acc_introduction:
+#     input:
+#         tree = rules.label_deltran_introductions.output.tree
+#     output:
+#         tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.acc.del.acc_labelled.del_labelled.acc_merged.tree"
+#     log:
+#         config["output_path"] + "/logs/4_merge_acctran_introductions.log"
+#     shell:
+#         """
+#         clusterfunk merge_transitions \
+#           --trait-to-merge acc_introduction \
+#           --merged-trait-name acc_lineage \
+#           --merge-siblings \
+#           --input {input.tree} \
+#           --output {output.tree} &> {log}
+#         """
 
 rule merge_sibling_del_introduction:
     input:
-        tree = rules.merge_sibling_acc_introduction.output.tree
+        tree = rules.label_deltran_introductions.output.tree
     params:
         outdir = config["publish_path"] + "/COG_GISAID",
     output:
-        tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.acc.del.acc_labelled.del_labelled.acc_merged.del_merged.tree"
+        tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.del.del_labelled.del_merged.tree"
     log:
         config["output_path"] + "/logs/4_merge_deltran_introductions.log"
     shell:
@@ -320,7 +320,7 @@ rule output_annotations:
     shell:
         """
         clusterfunk extract_tip_annotations \
-          --traits country uk_lineage acc_introduction acc_lineage del_introduction del_lineage \
+          --traits country uk_lineage del_introduction del_lineage \
           --input {input.tree} \
           --output {output.traits} &> {log}
         """

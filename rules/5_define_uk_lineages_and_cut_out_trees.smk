@@ -10,13 +10,15 @@ for i,row in LINEAGES_df.iterrows():
 rule merge_and_create_new_uk_lineages:
     input:
         config["output_path"] + "/4/all_traits.csv"
+    params:
+        script = os.path.join(workflow.current_basedir, "../utilities/curate_linages.py")
     output:
         config["output_path"] + "/5/updated_traits.csv"
     log:
         config["output_path"] + "/logs/5_merge_and_create_new_uk_lineages.log"
     shell:
         """
-        datafunk curate_lineages -i {input} -o {output} &> {log}
+        python {params.script} {input} {output} &> {log}
         """
 
 
@@ -88,7 +90,7 @@ rule update_lineage_metadata:
           --in-data {input.traits} \
           --index-column sequence_name \
           --join-on taxon \
-          --new-columns acc_lineage del_lineage acc_introduction del_introduction \
+          --new-columns del_lineage del_introduction \
           --out-metadata {output.traits_metadata} &> {log} ;
 
         fastafunk add_columns \

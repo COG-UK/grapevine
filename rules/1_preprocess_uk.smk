@@ -68,18 +68,56 @@ rule uk_make_sequence_name:
 
             sequence_name.append(name)
 
-
         df['sequence_name'] = sequence_name
         df.to_csv(output.metadata, index=False)
 
+
+rule uk_add_gisaid_accession:
+    input:
+        metadata = rules.uk_make_sequence_name.output.metadata,
+        accessions_table = config["latest_uk_accessions"],
+    output:
+        metadata = config["output_path"] + "/1/uk_latest.add_sample_date.add_sequence_name.accessions.csv"
+    log:
+        config["output_path"] + "/logs/1_uk_add_gisaid_accession.log"
+    run:
+        logfile = open(str(log), "w")
+        df_acc = pd.read_csv(input.accessions_table, sep='\t')
+        accessions_dict = {}
+        for i,row in df_acc.iterrows():
+            central_sample_id = row["central_sample_id"]
+            run_name = row["run_name"]
+            gisaid_accession = row["gisaid.accession"]
+
+            if central_sample_id in accessions_dict:
+                if run_name in accessions_dict[central_sample_id]:
+                    logfile.write(f'duplicate central_sample_id * run_name in accessions list: {central_sample_id} {run_name}\n')
+                    continue
+                accessions_dict[central_sample_id][run_name] = gisaid_accession
+            else:
+                accessions_dict[central_sample_id] = {run_name: gisaid_accession}
+
+        df = pd.read_csv(input.metadata)
+        covv_accession_id = []
+        for i,row in df.iterrows():
+            acc = ""
+            if row["central_sample_id"] in accessions_dict:
+                if row["run_name"] in accessions_dict[row["central_sample_id"]]:
+                    acc = accessions_dict[row["central_sample_id"]][row["run_name"]]
+
+            covv_accession_id.append(acc)
+
+        df['covv_accession_id'] = covv_accession_id
+        df.to_csv(output.metadata, index=False)
+        logfile.close()
 
 
 rule uk_annotate_to_remove_duplicates:
     input:
         fasta = rules.uk_strip_header_digits.output.fasta,
-        metadata = rules.uk_make_sequence_name.output.metadata,
+        metadata = rules.uk_add_gisaid_accession.output.metadata,
     output:
-        metadata = config["output_path"] + "/1/uk_latest.add_sample_date.add_sequence_name.annotated.csv"
+        metadata = config["output_path"] + "/1/uk_latest.add_sample_date.add_sequence_name.accessions.annotated.csv"
     log:
         config["output_path"] + "/logs/1_uk_annotate_to_remove_duplicates.log"
     shell:
@@ -166,6 +204,7 @@ rule uk_annotate_to_remove_duplicates_by_biosample:
         df = pd.read_csv(input.metadata)
 
         edin_biosample = []
+        edin_biosample_root = []
 
         for i,row in df.iterrows():
             if pd.isnull(row['biosample_source_id']):
@@ -173,9 +212,14 @@ rule uk_annotate_to_remove_duplicates_by_biosample:
             else:
                 edin_biosample.append(row['biosample_source_id'])
 
-        df['edin_biosample'] = edin_biosample
-        df.to_csv(output.metadata, index=False)
+            if pd.isnull(row['root_biosample_source_id']):
+                edin_biosample_root.append(row['central_sample_id'])
+            else:
+                edin_biosample_root.append(row['root_biosample_source_id'])
 
+        df['edin_biosample'] = edin_biosample
+        df['edin_biosample_root'] = edin_biosample_root
+        df.to_csv(output.metadata, index=False)
 
 
 rule uk_remove_duplicates_biosamplesourceid_by_date:
@@ -199,6 +243,30 @@ rule uk_remove_duplicates_biosamplesourceid_by_date:
           --sample-size 1 \
           --select-by-min-column edin_epi_day &> {log}
         """
+
+
+
+# rule uk_remove_duplicates_root_biosample_by_gaps:
+#     input:
+#         fasta = rules.uk_remove_duplicates_biosamplesourceid_by_date.output.fasta,
+#         metadata = rules.uk_remove_duplicates_biosamplesourceid_by_date.output.metadata
+#     output:
+#         fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_rootbiosample.fasta",
+#         metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_rootbiosample.csv"
+#     log:
+#         config["output_path"] + "/logs/1_uk_remove_duplicates_root_biosample_by_gaps.log"
+#     shell:
+#         """
+#         fastafunk subsample \
+#           --in-fasta {input.fasta} \
+#           --in-metadata {input.metadata} \
+#           --group-column edin_biosample_root \
+#           --index-column fasta_header \
+#           --out-fasta {output.fasta} \
+#           --out-metadata {output.metadata} \
+#           --sample-size 1 \
+#           --select-by-min-column gaps &> {log}
+#         """
 
 
 rule uk_unify_headers:
@@ -248,9 +316,30 @@ rule uk_minimap2_to_reference:
         sam = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.mapped.sam"
     log:
         config["output_path"] + "/logs/1_uk_minimap2_to_reference.log"
+    threads: 16
     shell:
         """
-        minimap2 -a -x asm5 {input.reference} {input.fasta} > {output.sam} 2> {log}
+        minimap2 -t {threads} -a -x asm5 {input.reference} {input.fasta} > {output.sam} 2> {log}
+        """
+
+
+rule uk_get_variants:
+    input:
+        sam = rules.uk_minimap2_to_reference.output.sam,
+        reference = config["reference_fasta"],
+        genbank_anno = config["reference_genbank_annotation"],
+    output:
+        variants = config["output_path"] + "/1/uk.variants.csv",
+    log:
+        config["output_path"] + "/logs/1_uk_get_variants.log"
+    threads: 12
+    shell:
+        """
+        /cephfs/covid/bham/climb-covid19-jacksonb/programs/gofasta/gofasta sam variants -t {threads} \
+            --samfile {input.sam} \
+            --reference {input.reference} \
+            --genbank {input.genbank_anno} \
+            --outfile {output.variants} &>> {log}
         """
 
 
@@ -265,8 +354,8 @@ rule uk_remove_insertions_and_trim_and_pad:
         deletions = config["output_path"] + "/1/uk_deletions.txt"
     output:
         fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.alignment.trimmed.fasta",
-        insertions = config["export_path"] + "/alignments/uk_insertions.txt",
-        deletions = config["export_path"] + "/alignments/uk_deletions.txt",
+        insertions = config["export_path"] + "/metadata/uk_insertions.txt",
+        deletions = config["export_path"] + "/metadata/uk_deletions.txt",
     log:
         config["output_path"] + "/logs/1_uk_remove_insertions_and_trim_and_pad.log"
     shell:
@@ -535,12 +624,14 @@ rule summarize_preprocess_uk:
         raw_fasta = config["latest_uk_fasta"],
         deduplicated_fasta_by_covid = rules.uk_remove_duplicates_COGID_by_gaps.output.fasta,
         deduplicated_fasta_by_biosampleid = rules.uk_remove_duplicates_biosamplesourceid_by_date.output.fasta,
+        # deduplicated_fasta_by_rootbiosample = rules.uk_remove_duplicates_root_biosample_by_gaps.output.fasta,
         unify_headers_fasta = rules.uk_unify_headers.output.fasta,
         removed_low_covg_fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
         removed_omitted_fasta = rules.uk_filter_omitted_sequences.output.fasta,
         full_unmasked_alignment = rules.uk_full_untrimmed_alignment.output.fasta,
         full_metadata = rules.uk_add_previous_lineages_to_metadata.output.metadata,
-        lineageless_fasta = rules.uk_extract_lineageless.output.fasta
+        lineageless_fasta = rules.uk_extract_lineageless.output.fasta,
+        variants = rules.uk_get_variants.output.variants,
     params:
         grapevine_webhook = config["grapevine_webhook"],
         json_path = config["json_path"],
@@ -564,3 +655,4 @@ rule summarize_preprocess_uk:
         echo "webhook {params.grapevine_webhook}"
         curl -X POST -H "Content-type: application/json" -d @{params.json_path}/1_data.json {params.grapevine_webhook}
         """
+        # echo "> Number of sequences after deduplication by root_source_biosample_id: $(cat {input.deduplicated_fasta_by_rootbiosample} | grep ">" | wc -l)\\n" &>> {log}
