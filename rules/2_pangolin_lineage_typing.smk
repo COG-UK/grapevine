@@ -3,7 +3,7 @@
 rule uk_normal_pangolin:
     input:
         previous_stage = config["output_path"] + "/logs/1_summarize_preprocess_uk.log",
-        fasta = rules.uk_extract_lineageless.output.fasta,
+        fasta = rules.uk_add_dups_to_lineageless.output.fasta,
     params:
         outdir = config["output_path"] + "/2/normal_pangolin",
         tmpdir = config["output_path"] + "/2/normal_pangolin/tmp"
@@ -11,12 +11,10 @@ rule uk_normal_pangolin:
         lineages = config["output_path"] + "/2/normal_pangolin/lineage_report.csv"
     log:
         config["output_path"] + "/logs/2_uk_normal_pangolin.log"
-    threads: 40
     shell:
         """
         pangolin {input.fasta} \
         -p \
-        --threads {threads} \
         --outdir {params.outdir} \
         --tempdir {params.tmpdir}  >> {log} 2>&1
         """

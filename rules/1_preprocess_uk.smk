@@ -245,34 +245,33 @@ rule uk_remove_duplicates_biosamplesourceid_by_date:
         """
 
 
-
-# rule uk_remove_duplicates_root_biosample_by_gaps:
-#     input:
-#         fasta = rules.uk_remove_duplicates_biosamplesourceid_by_date.output.fasta,
-#         metadata = rules.uk_remove_duplicates_biosamplesourceid_by_date.output.metadata
-#     output:
-#         fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_rootbiosample.fasta",
-#         metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_rootbiosample.csv"
-#     log:
-#         config["output_path"] + "/logs/1_uk_remove_duplicates_root_biosample_by_gaps.log"
-#     shell:
-#         """
-#         fastafunk subsample \
-#           --in-fasta {input.fasta} \
-#           --in-metadata {input.metadata} \
-#           --group-column edin_biosample_root \
-#           --index-column fasta_header \
-#           --out-fasta {output.fasta} \
-#           --out-metadata {output.metadata} \
-#           --sample-size 1 \
-#           --select-by-min-column gaps &> {log}
-#         """
+rule uk_remove_duplicates_root_biosample_by_gaps:
+    input:
+        fasta = rules.uk_remove_duplicates_biosamplesourceid_by_date.output.fasta,
+        metadata = rules.uk_remove_duplicates_biosamplesourceid_by_date.output.metadata
+    output:
+        fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_rootbiosample.fasta",
+        metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_rootbiosample.csv"
+    log:
+        config["output_path"] + "/logs/1_uk_filter_duplicates_root_biosample_by_gaps.log"
+    shell:
+        """
+        fastafunk subsample \
+          --in-fasta {input.fasta} \
+          --in-metadata {input.metadata} \
+          --group-column edin_biosample_root \
+          --index-column fasta_header \
+          --out-fasta {output.fasta} \
+          --out-metadata {output.metadata} \
+          --sample-size 1 \
+          --select-by-min-column gaps &> {log}
+        """
 
 
 rule uk_unify_headers:
     input:
-        fasta = rules.uk_remove_duplicates_biosamplesourceid_by_date.output.fasta,
-        metadata = rules.uk_remove_duplicates_biosamplesourceid_by_date.output.metadata
+        fasta = rules.uk_remove_duplicates_root_biosample_by_gaps.output.fasta,
+        metadata = rules.uk_remove_duplicates_root_biosample_by_gaps.output.metadata
     output:
         fasta = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.unify_headers.fasta",
         metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.unify_headers.csv"
@@ -619,18 +618,78 @@ rule uk_extract_lineageless:
                             sequence_record.append(sequence_name)
 
 
+rule uk_add_dups_to_lineageless:
+    input:
+        master_fasta = rules.uk_filter_omitted_sequences.output.fasta,
+        lineageless_fasta = rules.uk_extract_lineageless.output.fasta,
+        metadata = rules.uk_add_previous_lineages_to_metadata.output.metadata,
+        dup_cogid_log = rules.uk_remove_duplicates_COGID_by_gaps.log,
+        # dup_biosample_log = rules.uk_remove_duplicates_biosamplesourceid_by_date.log,
+        # dup_rootbio_log = rules.uk_remove_duplicates_root_biosample_by_gaps.log,
+    output:
+        fasta = config["output_path"] + "/1/uk.new.dedupes.pangolin_lineages.fasta",
+    log:
+        config["output_path"] + "/logs/1_uk_add_dups_to_lineageless.log"
+    run:
+        master_fasta_in = SeqIO.index(str(input.master_fasta), "fasta")
+
+        df = pd.read_csv(input.metadata)
+
+        lineageless_sequence_record = set()
+        dup_record = set()
+
+        lineageless_fasta_in = open(str(input.lineageless_fasta), "r")
+        pangolin_fasta_out = open(str(output.fasta), "w")
+
+        for record in SeqIO.parse(lineageless_fasta_in, "fasta"):
+            pangolin_fasta_out.write(">" + record.id + "\n")
+            pangolin_fasta_out.write(str(record.seq) + "\n")
+            lineageless_sequence_record.add(record.id)
+
+        with open(str(input.dup_cogid_log), "r") as cogid_log:
+            for line in cogid_log:
+                l = line.rstrip()
+                if l.startswith("COGUK/"):
+                    dup_record.add(l)
+
+        # # can uncomment these if necessary, but it shouldn't be
+        # with open(str(input.dup_biosample_log), "r") as biosample_log:
+        #     for line in dup_biosample_log:
+        #         l = line.rstrip()
+        #         if l.startswith("COGUK/"):
+        #             dup_record.add(l)
+        #
+        # with open(str(input.dup_rootbio_log), "r") as rootbio_log:
+        #     for line in rootbio_log:
+        #         l = line.rstrip()
+        #         if l.startswith("COGUK/"):
+        #             dup_record.add(l)
+
+        for i,row in df.iterrows():
+            if row["fasta_header"] in dup_record:
+                if row["sequence_name"] in lineageless_sequence_record:
+                    continue
+                if row["sequence_name"] in master_fasta_in:
+                    record = master_fasta_in[row["sequence_name"]]
+                    pangolin_fasta_out.write(">" + record.id + "\n")
+                    pangolin_fasta_out.write(str(record.seq) + "\n")
+
+        lineageless_fasta_in.close()
+        pangolin_fasta_out.close()
+
+
 rule summarize_preprocess_uk:
     input:
         raw_fasta = config["latest_uk_fasta"],
         deduplicated_fasta_by_covid = rules.uk_remove_duplicates_COGID_by_gaps.output.fasta,
         deduplicated_fasta_by_biosampleid = rules.uk_remove_duplicates_biosamplesourceid_by_date.output.fasta,
-        # deduplicated_fasta_by_rootbiosample = rules.uk_remove_duplicates_root_biosample_by_gaps.output.fasta,
+        deduplicated_fasta_by_rootbiosample = rules.uk_remove_duplicates_root_biosample_by_gaps.output.fasta,
         unify_headers_fasta = rules.uk_unify_headers.output.fasta,
         removed_low_covg_fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
         removed_omitted_fasta = rules.uk_filter_omitted_sequences.output.fasta,
         full_unmasked_alignment = rules.uk_full_untrimmed_alignment.output.fasta,
         full_metadata = rules.uk_add_previous_lineages_to_metadata.output.metadata,
-        lineageless_fasta = rules.uk_extract_lineageless.output.fasta,
+        pangolin_fasta = rules.uk_add_dups_to_lineageless.output.fasta,
         variants = rules.uk_get_variants.output.variants,
     params:
         grapevine_webhook = config["grapevine_webhook"],
@@ -642,10 +701,11 @@ rule summarize_preprocess_uk:
         echo "> Number of sequences in raw UK fasta: $(cat {input.raw_fasta} | grep ">" | wc -l)\\n" &> {log}
         echo "> Number of sequences after deduplication by central_sample_id: $(cat {input.deduplicated_fasta_by_covid} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after deduplication by bio_sample_id: $(cat {input.deduplicated_fasta_by_biosampleid} | grep ">" | wc -l)\\n" &>> {log}
+        echo "> Number of sequences after deduplication by root_source_biosample_id: $(cat {input.deduplicated_fasta_by_rootbiosample} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after unifying headers: $(cat {input.unify_headers_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after mapping: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo "> Number of sequences after removing those in omissions file: $(cat {input.removed_omitted_fasta} | grep ">" | wc -l)\\n" &>> {log}
-        echo "> Number of new sequences passed to Pangolin for typing: $(cat {input.lineageless_fasta} | grep ">" | wc -l)\\n" &>> {log}
+        echo "> Number of new/deduped sequences passed to Pangolin for typing: $(cat {input.pangolin_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo ">\\n" >> {log}
 
         echo '{{"text":"' > {params.json_path}/1_data.json
@@ -655,4 +715,3 @@ rule summarize_preprocess_uk:
         echo "webhook {params.grapevine_webhook}"
         curl -X POST -H "Content-type: application/json" -d @{params.json_path}/1_data.json {params.grapevine_webhook}
         """
-        # echo "> Number of sequences after deduplication by root_source_biosample_id: $(cat {input.deduplicated_fasta_by_rootbiosample} | grep ">" | wc -l)\\n" &>> {log}

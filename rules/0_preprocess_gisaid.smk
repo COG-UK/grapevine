@@ -163,7 +163,7 @@ rule gisaid_get_variants:
     threads: 8
     shell:
         """
-        /cephfs/covid/bham/climb-covid19-jacksonb/programs/gofasta sam variants -t {threads} \
+        /cephfs/covid/bham/climb-covid19-jacksonb/programs/gofasta/gofasta sam variants -t {threads} \
             --samfile {input.sam} \
             --reference {input.reference} \
             --genbank {input.genbank_anno} \
