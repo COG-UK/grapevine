@@ -16,6 +16,7 @@ rule merge_and_create_new_uk_lineages:
         config["output_path"] + "/5/updated_traits.csv"
     log:
         config["output_path"] + "/logs/5_merge_and_create_new_uk_lineages.log"
+    resources: mem_per_cpu=10000
     shell:
         """
         python {params.script} {input} {output} &> {log}
@@ -34,6 +35,7 @@ rule step_5_generate_sankey_plot:
         R_script = os.path.join(workflow.current_basedir, "../utilities/plot_sankey.R")
     log:
         config["output_path"] + "/logs/5_generate_sankey_plot.log"
+    resources: mem_per_cpu=10000
     shell:
         """
         python {params.python_script} {input.old_traits} {input.new_traits} {output.links} &> {log}
@@ -51,6 +53,7 @@ rule five_update_global_lineage_metadata:
         metadata = config["output_path"] + "/5/cog_gisaid.global.lineages.with_all_traits.csv"
     log:
         config["output_path"] + "/logs/5_five_update_global_lineage_metadata.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk add_columns \
@@ -83,6 +86,7 @@ rule update_lineage_metadata:
         all_metadata = config["output_path"] + "/5/cog_gisaid.lineages.with_all_traits.csv"
     log:
         config["output_path"] + "/logs/5_update_metadata.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk add_columns \
@@ -138,6 +142,7 @@ rule step_5_annotate_tree:
         tree=config["output_path"] + "/5/cog_gisaid_grafted.annotated.tree",
     log:
         config["output_path"] + "/logs/5_annotate.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         clusterfunk annotate_tips \
@@ -178,6 +183,7 @@ rule dequote_tree:
         tree = config["output_path"] + "/5/cog_gisaid_full.tree.noquotes.newick"
     log:
         config["output_path"] + "/logs/5_dequote_tree.log"
+    resources: mem_per_cpu=10000
     shell:
         """
         sed "s/'//g" {input.full_newick_tree} > {output.tree} 2> {log}
@@ -192,6 +198,7 @@ rule cut_out_trees:
         outdir = directory(config["output_path"] + "/5/trees/")
     log:
         config["output_path"] + "/logs/5_cut_out_trees.log"
+    resources: mem_per_cpu=10000
     shell:
         """
         mkdir -p {output.outdir} 2> {log}
@@ -217,6 +224,7 @@ rule phylotype_cut_trees:
         threshold=2E-5,
     log:
         config["output_path"] + "/logs/5_phylotype_cut_trees.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         mkdir -p {output.phylotypedir} 2> {log}
@@ -241,6 +249,7 @@ rule get_uk_phylotypes_csv:
         csvdir = directory(config["output_path"] + "/5/phylotype_csvs/")
     log:
         config["output_path"] + "/logs/5_get_uk_phylotypes_csv.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         mkdir -p {output.csvdir} 2> {log}
@@ -284,6 +293,7 @@ rule combine_phylotypes_csv:
         phylotype_csv = config["output_path"] + "/5/UK_phylotypes.csv"
     log:
         config["output_path"] + "/logs/5_traits_combine_phylotype_csv.log"
+    resources: mem_per_cpu=20000
     run:
         import pandas as pd
         import glob
@@ -306,6 +316,7 @@ rule merge_with_metadata:
         metadata = config["output_path"] + "/5/cog_gisaid.lineages.with_all_traits.with_phylotype_traits.csv"
     log:
         config["output_path"] + "/logs/5_merge_with_metadata.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk add_columns \
@@ -326,6 +337,7 @@ rule annotate_phylotypes:
         annotated_tree = config["output_path"] + "/5/cog_gisaid_full.tree.nexus",
     log:
         config["output_path"] + "/logs/5_annotate_phylotypes.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         clusterfunk annotate_tips \

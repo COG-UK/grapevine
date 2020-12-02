@@ -25,6 +25,7 @@ rule uk_add_sample_date:
         metadata = config["output_path"] + "/1/uk_latest.add_sample_date.csv",
     log:
         config["output_path"] + "/logs/1_uk_add_sample_date.log"
+    resources: mem_per_cpu=20000
     run:
         df = pd.read_csv(input.metadata, sep = "\t")
 
@@ -50,6 +51,7 @@ rule uk_make_sequence_name:
         metadata = config["output_path"] + "/1/uk_latest.add_sample_date.add_sequence_name.csv",
     log:
         config["output_path"] + "/logs/1_uk_make_sequence_name.log"
+    resources: mem_per_cpu=20000
     run:
         df = pd.read_csv(input.metadata)
 
@@ -80,6 +82,7 @@ rule uk_add_gisaid_accession:
         metadata = config["output_path"] + "/1/uk_latest.add_sample_date.add_sequence_name.accessions.csv"
     log:
         config["output_path"] + "/logs/1_uk_add_gisaid_accession.log"
+    resources: mem_per_cpu=20000
     run:
         logfile = open(str(log), "w")
         df_acc = pd.read_csv(input.accessions_table, sep='\t')
@@ -120,6 +123,7 @@ rule uk_annotate_to_remove_duplicates:
         metadata = config["output_path"] + "/1/uk_latest.add_sample_date.add_sequence_name.accessions.annotated.csv"
     log:
         config["output_path"] + "/logs/1_uk_annotate_to_remove_duplicates.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk annotate \
@@ -141,6 +145,7 @@ rule uk_remove_duplicates_COGID_by_gaps:
         metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id.csv"
     log:
         config["output_path"] + "/logs/1_uk_filter_duplicates_bycovid.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk subsample \
@@ -163,6 +168,7 @@ rule uk_update_sample_dates:
         metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id.sample_date.updated_sample_date.csv",
     log:
         config["output_path"] + "/logs/1_uk_update_sample_dates.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk add_columns \
@@ -182,6 +188,7 @@ rule uk_add_epi_week:
         metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id.sample_date.updated_sample_date.epi_week.csv",
     log:
         config["output_path"] + "/logs/1_uk_add_epi_week.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         datafunk add_epi_week \
@@ -200,6 +207,7 @@ rule uk_annotate_to_remove_duplicates_by_biosample:
         metadata = config["output_path"] + "/1/uk_latest.epi_week.annotated2.csv",
     log:
         config["output_path"] + "/logs/1_uk_annotate_to_remove_duplicates_by_biosample.log",
+    resources: mem_per_cpu=20000
     run:
         df = pd.read_csv(input.metadata)
 
@@ -231,6 +239,7 @@ rule uk_remove_duplicates_biosamplesourceid_by_date:
         metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_cov_id_biosample_source_id.csv"
     log:
         config["output_path"] + "/logs/1_uk_filter_duplicates_by_biosample.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk subsample \
@@ -254,6 +263,7 @@ rule uk_remove_duplicates_root_biosample_by_gaps:
         metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated_rootbiosample.csv"
     log:
         config["output_path"] + "/logs/1_uk_filter_duplicates_root_biosample_by_gaps.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk subsample \
@@ -277,6 +287,7 @@ rule uk_unify_headers:
         metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.unify_headers.csv"
     log:
         config["output_path"] + "/logs/1_uk_unify_headers.log"
+    resources: mem_per_cpu=20000
     run:
         df = pd.read_csv(input.metadata)
         header_dict = {}
@@ -301,6 +312,7 @@ rule uk_sed_United_Kingdom_to_UK:
         metadata = config["output_path"] + "/1/uk_latest.add_header.annotated.deduplicated.unify_headers.uk_sedded.csv"
     log:
         config["output_path"] + "/logs/1_uk_sed_United_Kingdom_to_UK.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         sed 's/United Kingdom/UK/g' {input.metadata} > {output.metadata}
@@ -316,6 +328,7 @@ rule uk_minimap2_to_reference:
     log:
         config["output_path"] + "/logs/1_uk_minimap2_to_reference.log"
     threads: 16
+    resources: mem_per_cpu=20000
     shell:
         """
         minimap2 -t {threads} -a -x asm5 {input.reference} {input.fasta} > {output.sam} 2> {log}
@@ -400,6 +413,7 @@ rule uk_filter_low_coverage_sequences:
         fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.fasta"
     log:
         config["output_path"] + "/logs/1_uk_filter_low_coverage_sequences.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         datafunk filter_fasta_by_covg_and_length \
@@ -417,6 +431,7 @@ rule uk_filter_omitted_sequences:
         fasta = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.trimmed.low_covg_filtered.omissions_filtered.fasta"
     log:
         config["output_path"] + "/logs/1_uk_filter_omitted_sequences.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         datafunk remove_fasta \
@@ -504,6 +519,7 @@ rule add_AA_finder_result_to_metadata:
         metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.with_AA_finder.csv"
     log:
         config["output_path"] + "/logs/1_add_AA_finder_result_to_metadata.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         columns=$(head -n1 {input.new_data} | cut -d',' -f2- | tr ',' ' ')
@@ -543,6 +559,7 @@ rule uk_add_del_finder_result_to_metadata:
         metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.with_AA_finder.with_del_finder.csv"
     log:
         config["output_path"] + "/logs/1_add_del_finder_result_to_metadata.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         columns=$(head -n1 {input.new_data} | cut -d',' -f2- | tr ',' ' ')
@@ -571,6 +588,7 @@ rule uk_add_previous_lineages_to_metadata:
         metadata = config["output_path"] + "/1/uk.with_previous_lineages.csv",
     log:
         config["output_path"] + "/logs/1_uk_add_previous_lineages_to_metadata.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk add_columns \
@@ -600,6 +618,7 @@ rule uk_extract_lineageless:
         fasta = config["output_path"] + "/1/uk.new.pangolin_lineages.fasta",
     log:
         config["output_path"] + "/logs/1_extract_lineageless.log"
+    resources: mem_per_cpu=20000
     run:
         fasta_in = SeqIO.index(str(input.fasta), "fasta")
         df = pd.read_csv(input.metadata)
@@ -630,6 +649,7 @@ rule uk_add_dups_to_lineageless:
         fasta = config["output_path"] + "/1/uk.new.dedupes.pangolin_lineages.fasta",
     log:
         config["output_path"] + "/logs/1_uk_add_dups_to_lineageless.log"
+    resources: mem_per_cpu=20000
     run:
         master_fasta_in = SeqIO.index(str(input.master_fasta), "fasta")
 

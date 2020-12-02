@@ -172,6 +172,7 @@ rule sort_collapse:
         collapse=0.000005,
     log:
         config["output_path"] + "/logs/4_sort_collapse.log",
+    resources: mem_per_cpu=20000
     shell:
         """
         gotree rotate sort -i {input.expanded_tree} -o {output.sorted_tree} &> {log}
