@@ -328,7 +328,7 @@ rule uk_minimap2_to_reference:
     log:
         config["output_path"] + "/logs/1_uk_minimap2_to_reference.log"
     threads: 16
-    resources: mem_per_cpu=20000
+    resources: mem_per_cpu=2000
     shell:
         """
         minimap2 -t {threads} -a -x asm5 {input.reference} {input.fasta} > {output.sam} 2> {log}

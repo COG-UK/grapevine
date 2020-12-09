@@ -567,7 +567,7 @@ rule gisaid_collapse:
         redundant_to_tips = config["output_path"] + "/0/redundant_to_tips.csv",
     log:
         config["output_path"] + "/logs/0_gisaid_collapse.log"
-    resources: mem_per_cpu=2000
+    resources: mem_per_cpu=8000
     threads: 8
     shell:
         """
