@@ -6,6 +6,7 @@ rule cog_hash_seqs:
         metadata = config["output_path"] + "/3/uk.hashmap.csv",
     log:
         config["output_path"] + "/logs/3_cog_hash_seqs.log",
+    resources: mem_per_cpu=20000
     run:
         from Bio import SeqIO
 
@@ -54,6 +55,7 @@ rule uk_output_hashed_lineage_table:
         metadata = config["output_path"] + "/3/uk.hashed.lineages.csv"
     log:
         config["output_path"] + "/logs/3_uk_output_hashed_lineage_table.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -79,6 +81,7 @@ rule gisaid_output_lineage_table:
         metadata = config["output_path"] + "/3/gisaid.matched.lineages.csv",
     log:
         config["output_path"] + "/logs/3_gisaid_output_lineage_table.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \

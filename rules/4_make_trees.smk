@@ -29,6 +29,7 @@ rule split_based_on_lineages:
     output:
         done=temp(config["output_path"] + "/4/split_done"),
         lineage_fastas = [config["output_path"] + "/4/lineage_%s.fasta" % l for l in LINEAGES],
+    resources: mem_per_cpu=20000
     log:
         config["output_path"] + "/logs/4_split_based_on_lineages.log"
     shell:
@@ -68,8 +69,8 @@ rule fasttree:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.unrooted.tree",
     log:
         config["output_path"] + "/logs/4_fasttree_{lineage}.log"
-    resources: mem_per_cpu=10000 # 10gb * 4 threads * 4 lineages = 160gb < 192gb
-    threads: 4
+    resources: mem_per_cpu=20000 # 10gb * 4 threads * 4 lineages = 160gb < 192gb
+    threads: 3
     shell:
         """
         echo "{input.lineage_fasta} {params.lineage}"
@@ -90,6 +91,7 @@ rule root_tree:
         tree = config["output_path"] + "/4/{lineage}/cog_gisaid_{lineage}.tree",
     log:
         config["output_path"] + "/logs/4_root_tree_{lineage}.log",
+    resources: mem_per_cpu=20000
     shell:
         """
         echo "{params.lineage} {params.outgroup}"
@@ -114,6 +116,7 @@ rule graft:
         grafted_tree = config["output_path"] + '/4/cog_gisaid_grafted.tree',
     log:
         config["output_path"] + "/logs/4_graft.log",
+    resources: mem_per_cpu=20000
     run:
         if len(input.scions) > 1:
             shell("""
@@ -145,6 +148,7 @@ rule insert_cog_seqs:
         grafted_tree_expanded_cog = config["output_path"] + '/4/cog_gisaid_grafted.cog_expanded.tree',
     log:
         config["output_path"] + "/logs/4_replace_cog_seqs.log",
+    resources: mem_per_cpu=20000
     shell:
         """
         sed -i.bak "s/'//g" {input.grafted_tree} 2> {log}
@@ -168,6 +172,7 @@ rule sort_collapse:
         collapse=0.000005,
     log:
         config["output_path"] + "/logs/4_sort_collapse.log",
+    resources: mem_per_cpu=20000
     shell:
         """
         gotree rotate sort -i {input.expanded_tree} -o {output.sorted_tree} &> {log}
@@ -183,6 +188,7 @@ rule step_4_annotate_tree:
         tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.tree"
     log:
         config["output_path"] + "/logs/4_annotate_tree.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         clusterfunk annotate_tips \
@@ -222,6 +228,7 @@ rule deltran_ancestral_reconstruction:
         tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.del.tree"
     log:
         config["output_path"] + "/logs/4_deltran_ancestral_reconstruction.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         clusterfunk ancestral_reconstruction \
@@ -259,6 +266,7 @@ rule label_deltran_introductions:
         tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.del.del_labelled.tree"
     log:
         config["output_path"] + "/logs/4_label_deltran_introductions.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         clusterfunk label_transitions \
@@ -297,6 +305,7 @@ rule merge_sibling_del_introduction:
         tree = config["output_path"] + "/4/cog_gisaid_grafted.annotated.del.del_labelled.del_merged.tree"
     log:
         config["output_path"] + "/logs/4_merge_deltran_introductions.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         clusterfunk merge_transitions \
@@ -317,6 +326,7 @@ rule output_annotations:
         traits = config["output_path"] + "/4/all_traits.csv"
     log:
         config["output_path"] + "/logs/4_output_annotations.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         clusterfunk extract_tip_annotations \

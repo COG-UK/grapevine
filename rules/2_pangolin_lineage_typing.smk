@@ -3,7 +3,7 @@
 rule uk_normal_pangolin:
     input:
         previous_stage = config["output_path"] + "/logs/1_summarize_preprocess_uk.log",
-        fasta = rules.uk_extract_lineageless.output.fasta,
+        fasta = rules.uk_add_dups_to_lineageless.output.fasta,
     params:
         outdir = config["output_path"] + "/2/normal_pangolin",
         tmpdir = config["output_path"] + "/2/normal_pangolin/tmp"
@@ -11,12 +11,10 @@ rule uk_normal_pangolin:
         lineages = config["output_path"] + "/2/normal_pangolin/lineage_report.csv"
     log:
         config["output_path"] + "/logs/2_uk_normal_pangolin.log"
-    threads: 40
     shell:
         """
         pangolin {input.fasta} \
         -p \
-        --threads {threads} \
         --outdir {params.outdir} \
         --tempdir {params.tmpdir}  >> {log} 2>&1
         """
@@ -30,6 +28,7 @@ rule uk_add_pangolin_lineages_to_metadata:
         metadata = config["output_path"] + "/2/uk.with_new_lineages.csv",
     log:
         config["output_path"] + "/logs/2_uk_add_normal_pangolin_lineages_to_metadata.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk add_columns \
@@ -51,6 +50,7 @@ rule uk_output_lineage_table:
         metadata = config["output_path"] + "/2/uk.matched.lineages.csv"
     log:
         config["output_path"] + "/logs/2_uk_output_full_lineage_table.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \

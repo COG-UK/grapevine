@@ -2,13 +2,12 @@ rule gisaid_process_json:
     input:
         json = config["latest_gisaid_json"],
         omitted = config["previous_omitted_file"],
-        metadata = config["previous_gisaid_metadata"]
     output:
         fasta = config["output_path"] + "/0/gisaid.fasta",
         metadata = config["output_path"] + "/0/gisaid.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_process_json.log"
-    resources: mem_per_cpu=10000
+    resources: mem_per_cpu=20000
     shell:
         """
         datafunk process_gisaid_data \
@@ -59,17 +58,17 @@ rule gisaid_unify_headers:
 rule gisaid_add_previous_lineages:
     input:
         metadata = rules.gisaid_unify_headers.output.metadata,
-        previous_metadata = config["previous_gisaid_metadata"],
+        previous_lineages = config["previous_gisaid_lineages"],
     output:
         metadata = config["output_path"] + "/0/gisaid.lineages.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_add_previous_lineages.log"
-    resources: mem_per_cpu=10000
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk add_columns \
           --in-metadata {input.metadata} \
-          --in-data {input.previous_metadata} \
+          --in-data {input.previous_lineages} \
           --index-column sequence_name \
           --join-on sequence_name \
           --new-columns lineage lineage_support lineages_version \
@@ -86,6 +85,7 @@ rule gisaid_remove_duplicates:
         metadata = config["output_path"] + "/0/gisaid.UH.RD.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_filter_duplicates.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk subsample \
@@ -107,6 +107,7 @@ rule gisaid_counts_by_country:
         counts = config["output_path"] + "/0/gisaid_counts_by_country.csv",
     log:
         config["output_path"] + "/logs/0_gisaid_counts_by_country.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk count \
@@ -163,7 +164,7 @@ rule gisaid_get_variants:
     threads: 8
     shell:
         """
-        /cephfs/covid/bham/climb-covid19-jacksonb/programs/gofasta sam variants -t {threads} \
+        /cephfs/covid/bham/climb-covid19-jacksonb/programs/gofasta/gofasta sam variants -t {threads} \
             --samfile {input.sam} \
             --reference {input.reference} \
             --genbank {input.genbank_anno} \
@@ -235,6 +236,7 @@ rule gisaid_distance_QC:
         config["output_path"] + "/logs/0_gisaid_distance_QC.log"
     output:
         table = config["output_path"] + "/0/QC_distances.tsv",
+    resources: mem_per_cpu=20000
     shell:
         """
         datafunk distance_to_root \
@@ -253,6 +255,7 @@ rule gisaid_filter_on_distance_to_WH04:
         fasta = config["output_path"] + "/0/gisaid.RD.UH.filt.mapped.filt2.masked.filt3.fasta",
     log:
         config["output_path"] + "/logs/0_gisaid_filter_on_distance_to_WH04.log"
+    resources: mem_per_cpu=20000
     run:
         from Bio import SeqIO
         import pandas as pd
@@ -297,6 +300,7 @@ rule gisaid_add_AA_finder_result_to_metadata:
         metadata = config["output_path"] + "/0/gisaid.RD.UH.AAfinder.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_add_AA_finder_result_to_metadata.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         columns=$(head -n1 {input.new_data} | cut -d',' -f2- | tr ',' ' ')
@@ -318,6 +322,7 @@ rule gisaid_extract_lineageless:
         fasta = config["output_path"] + "/0/gisaid.new.pangolin_lineages.fasta",
     log:
         config["output_path"] + "/logs/0_extract_lineageless.log"
+    resources: mem_per_cpu=20000
     run:
         from Bio import SeqIO
         import pandas as pd
@@ -359,10 +364,10 @@ rule gisaid_normal_pangolin:
         lineages = config["output_path"] + "/0/normal_pangolin/lineage_report.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_normal_pangolin.log"
-    threads: 40
+    resources: mem_per_cpu=20000
     shell:
         """
-        pangolin {input.fasta} -p -t{threads} --tempdir {params.tmpdir} --outdir {params.outdir} --verbose > {log} 2>&1
+        pangolin {input.fasta} --tempdir {params.tmpdir} --outdir {params.outdir} --verbose > {log} 2>&1
         """
 
 
@@ -374,6 +379,7 @@ rule gisaid_add_pangolin_lineages_to_metadata:
         metadata = config["output_path"] + "/0/gisaid.RD.UH.SNPfinder.lineages.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_add_pangolin_lineages_to_metadata.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk add_columns \
@@ -413,6 +419,7 @@ rule gisaid_add_del_finder_result_to_metadata:
         metadata = config["output_path"] + "/0/gisaid.RD.UH.SNPfinder.lineages.del_finder.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_add_del_finder_result_to_metadata.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         columns=$(head -n1 {input.new_data} | cut -d',' -f2- | tr ',' ' ')
@@ -435,7 +442,7 @@ rule gisaid_output_all_matched_metadata:
         metadata = config["output_path"] + "/0/gisaid.all.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_output_all_matched_metadata.log"
-    resources: mem_per_cpu=10000
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -459,6 +466,11 @@ rule gisaid_output_all_matched_metadata:
                          p323l \
                          a222v \
                          y453f \
+                         n501y \
+                         t1001i \
+                         p681h \
+                         q27stop \
+                         del_21765_6 \
                          del_1605_3 \
                          covv_accession_id \
                          covv_virus_name \
@@ -512,7 +524,7 @@ rule gisaid_output_global_matched_metadata:
         metadata = config["output_path"] + "/0/gisaid.global.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_output_global_matched_metadata.log"
-    resources: mem_per_cpu=10000
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -536,6 +548,11 @@ rule gisaid_output_global_matched_metadata:
                          p323l \
                          a222v \
                          y453f \
+                         n501y \
+                         t1001i \
+                         p681h \
+                         q27stop \
+                         del_21765_6 \
                          del_1605_3 \
                          covv_accession_id \
                          covv_virus_name \
@@ -567,7 +584,7 @@ rule gisaid_collapse:
         redundant_to_tips = config["output_path"] + "/0/redundant_to_tips.csv",
     log:
         config["output_path"] + "/logs/0_gisaid_collapse.log"
-    resources: mem_per_cpu=2000
+    resources: mem_per_cpu=8000
     threads: 8
     shell:
         """
@@ -577,6 +594,7 @@ rule gisaid_collapse:
         	--retain Wuhan/WHU01/2020 \
         	--retain Italy/ABR-IZSGC-TE5166/2020 \
             --retain Germany/BY-MVP-V2010837/2020 \
+            --retain Spain/VC-IBV-98006461/2020 \
 	        -o {output.fasta} &> {log}
 
             mv tip_to_redundants.csv {output.tip_to_redudants} &>> {log}
@@ -625,7 +643,7 @@ rule gisaid_get_collapsed_metadata:
         metadata = config["output_path"] + "/0/gisaid.global.collapsed.csv",
     log:
         config["output_path"] + "/logs/0_gisaid_get_collapsed_metadata.log"
-    resources: mem_per_cpu=10000
+    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -649,6 +667,11 @@ rule gisaid_get_collapsed_metadata:
                          p323l \
                          a222v \
                          y453f \
+                         n501y \
+                         t1001i \
+                         p681h \
+                         q27stop \
+                         del_21765_6 \
                          del_1605_3 \
                          covv_accession_id \
                          covv_virus_name \
@@ -681,6 +704,7 @@ rule gisaid_get_collapsed_expanded_metadata:
         metadata = config["output_path"] + "/0/gisaid.global.collapsed.unique_expanded.csv",
     log:
         config["output_path"] + "/logs/0_gisaid_get_collapsed_expanded_metadata.log"
+    resources: mem_per_cpu=20000
     shell:
         """
         cat {input.collapsed_fasta} {input.unique_fasta} > {output.fasta} 2> {log}
@@ -704,6 +728,13 @@ rule gisaid_get_collapsed_expanded_metadata:
                          d614g \
                          n439k \
                          p323l \
+                         a222v \
+                         y453f \
+                         n501y \
+                         t1001i \
+                         p681h \
+                         q27stop \
+                         del_21765_6 \
                          del_1605_3 \
                          covv_accession_id \
                          covv_virus_name \
