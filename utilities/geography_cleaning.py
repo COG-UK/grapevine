@@ -279,7 +279,11 @@ def make_geography_csv(metadata_file, country_col, outer_postcode_col, adm1_col,
     nice_names = commonly_used_names()
 
     not_mappable = ["NA","WALES", "YORKSHIRE", "OTHER", "UNKNOWN", "UNKNOWN_SOURCE", "NOT_FOUND", "GIBRALTAR", "FALKLAND_ISLANDS", "CITY_CENTRE"]
-    missing_postcodes = ["ZZ9", "UNKNOWN", "FIQQ"]
+    missing_postcodes = ["ZZ9", "UNKNOWN", "FIQQ", "ZZ99", "99ZZ", "BF1", "BF10"]
+
+    already_checked_discreps = ["LOND-12508C8", "LOND-1263D3C", "LOND-1263622", "NORT-29A8E3", "PORT-2D7668"]
+
+    fixed_seqs = {"NORT-289270": "DL12"}
 
     with open(os.path.join(outdir,"geography.csv"), 'w') as fw:
         fieldnames = ["sequence_name","id","adm2_raw","adm2","adm2_source","NUTS1","adm1","outer_postcode","region","latitude","longitude", "location"]
@@ -293,12 +297,16 @@ def make_geography_csv(metadata_file, country_col, outer_postcode_col, adm1_col,
                 conflict = False
                 country = sequence[country_col]
                 adm1 = sequence[adm1_col]
-                outer_postcode = sequence[outer_postcode_col].upper()
+                outer_postcode = sequence[outer_postcode_col].upper().strip(" ")
                 adm2 = sequence[adm2_col]
+                name = sequence["central_sample_id"]
+
+                if name in fixed_seqs:
+                    outer_postcode = fixed_seqs[name]
 
                 geog_dict = {}
                 geog_dict["sequence_name"] = sequence["sequence_name"]
-                geog_dict["id"] = sequence["central_sample_id"]
+                geog_dict["id"] = name
                 geog_dict["adm2_raw"] = adm2
                 geog_dict["outer_postcode"] = outer_postcode
 
@@ -324,7 +332,7 @@ def make_geography_csv(metadata_file, country_col, outer_postcode_col, adm1_col,
                             geog_dict["region"] = ""
                             geog_dict["latitude"] = ""
                             geog_dict["longitude"] = ""
-                            if outer_postcode not in done_postcodes:
+                            if outer_postcode not in done_postcodes and outer_postcode not in missing_postcodes:
                                 new_unclean_postcodes.write(outer_postcode + "\n")
                                 done_postcodes.append(outer_postcode)
                     else:
@@ -389,7 +397,7 @@ def make_geography_csv(metadata_file, country_col, outer_postcode_col, adm1_col,
                     else:
                         geog_dict["location"] = ""
 
-                    if conflict:
+                    if conflict and name not in already_checked_discreps:
                         incompatible_locations.write(f'{sequence["central_sample_id"]},{outer_postcode},{adm2},{postcode_to_adm2[outer_postcode]},{processed_adm2}\n')
                         conflict_count += 1
 

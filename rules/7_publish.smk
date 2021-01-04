@@ -127,7 +127,6 @@ rule publish_COG_master_metadata:
          --out-metadata {output.metadata_report_temp} \
           --restrict &>> {log}
 
-
         fastafunk add_columns \
           --in-metadata {output.metadata_report_temp} \
           --in-data {input.geography_metadata} \
@@ -218,7 +217,8 @@ rule publish_full_aligned_cog_data:
               sequencing_org sequencing_org_code sequencing_submission_date sequencing_uuid \
               source_age source_sex start_time \
               submission_org submission_org_code submission_user swab_site \
-              header sequence_name length missing gaps cov_id sample_date subsample_omit epi_week d614g n439k p323l a222v y453f del_1605_3 \
+              header sequence_name length missing gaps cov_id sample_date subsample_omit epi_week \
+              d614g n439k p323l a222v y453f n501y t1001i p681h q27stop del_21765_6 del_1605_3 \
           --where-column epi_week=edin_epi_week country=adm0 outer_postcode=adm2_private \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
@@ -264,7 +264,7 @@ rule combine_variants:
     output:
         variants = config["output_path"] + "/7/combined_variants.csv",
     log:
-        config["output_path"] + "/logs/7_publish_variants.log"
+        config["output_path"] + "/logs/7_combine_variants.log"
     run:
         from Bio import SeqIO
 
@@ -327,7 +327,8 @@ rule combine_cog_gisaid:
                           submission_org_code is_surveillance is_community is_hcw \
                           is_travel_history travel_history \
                           lineage lineage_support lineages_version \
-                          uk_lineage microreact_lineage del_lineage del_introduction phylotype d614g n439k p323l a222v y453f del_1605_3 \
+                          uk_lineage microreact_lineage del_lineage del_introduction phylotype \
+                          d614g n439k p323l a222v y453f n501y t1001i p681h q27stop del_21765_6 del_1605_3 \
                           source_age source_sex sample_type_collected sample_type_received swab_site \
                           ct_n_ct_value ct_n_test_kit ct_n_test_platform ct_n_test_target \
           --where-column epi_week=edin_epi_week country=adm0 outer_postcode=adm2_private \
@@ -345,7 +346,8 @@ rule combine_cog_gisaid:
                           submission_org_code is_surveillance is_community is_hcw \
                           is_travel_history travel_history \
                           lineage lineage_support lineages_version \
-                          uk_lineage microreact_lineage del_lineage del_introduction phylotype d614g n439k p323l a222v y453f del_1605_3 \
+                          uk_lineage microreact_lineage del_lineage del_introduction phylotype \
+                          d614g n439k p323l a222v y453f n501y t1001i p681h q27stop del_21765_6 del_1605_3 \
                           source_age source_sex sample_type_collected sample_type_received swab_site \
                           ct_n_ct_value ct_n_test_kit ct_n_test_platform ct_n_test_target \
           --where-column adm1=edin_admin_1 travel_history=edin_travel \
@@ -452,6 +454,7 @@ rule make_metadata_dir_outputs:
                           is_travel_history travel_history \
                           lineage lineage_support \
                           uk_lineage del_lineage del_introduction phylotype \
+                          d614g n439k p323l a222v y453f n501y t1001i p681h q27stop del_21765_6 \
           --where-column gisaid_id=covv_accession_id \
           --out-fasta {output.junkfasta2} \
           --out-metadata {output.consortium_metadata_temp} \
@@ -466,6 +469,46 @@ rule make_metadata_dir_outputs:
           --out-metadata {output.consortium_metadata_temp2} &>> {log}
 
         sed '1s/nuts1/NUTS1/' {output.consortium_metadata_temp2} > {output.consortium_metadata} 2>> {log}
+        """
+
+
+rule MINK:
+    input:
+        combined_variants = rules.make_metadata_dir_outputs.output.variants_metadata,
+        report_metadata = rules.publish_COG_master_metadata.output.metadata_report,
+    params:
+        date = config["date"],
+        variant_list = config["MINK_variants"],
+        AA_filter_script = os.path.join(workflow.current_basedir, "../utilities/get_AA_mutations_only.py"),
+    output:
+        COG_AAs_only = config["output_path"] + "/7/COG_AA_variants.csv",
+        MINK_results_dir = directory(config["output_path"] + "/7/MINK_report/"),
+        MINK_report = config["output_path"] + "/7/MINK_report/MINK_variant_report.pdf",
+    log:
+        config["output_path"] + "/logs/7_MINK.log"
+    shell:
+        """
+        python {params.AA_filter_script} {input.combined_variants} {output.COG_AAs_only} 2> {log}
+
+        mink \
+          --metadata-file {input.report_metadata} \
+          --snp-file {output.COG_AAs_only} \
+          --date-data {params.date} \
+          --snp-list $(cat {params.variant_list} | tr "\n" "," | sed "s/,$//") \
+          --flag-fastest \
+          --outdir {output.MINK_results_dir} 2>> {log}
+
+        sed "s|figures/|{output.MINK_results_dir}figures/|g" {output.MINK_results_dir}/mutation_report.md > {output.MINK_results_dir}/mutation_report_abspaths.md 2>> {log}
+
+        pandoc {output.MINK_results_dir}/mutation_report_abspaths.md \
+            -V linkcolor:blue \
+            -V geometry:a4paper \
+            -V geometry:margin=2cm \
+            -V mainfont="Helvetica Neue" \
+            -V monofont="Helvetica Neue" \
+            -V fontsize=10pt \
+            --latex-engine=pdflatex \
+            -o {output.MINK_report} 2>> {log}
         """
 
 
@@ -812,8 +855,8 @@ rule publish_public_cog_data:
           --in-metadata {input.metadata} \
           --index-column sequence_name \
           --filter-column sequence_name country adm1 \
-                          sample_date epi_week lineage \
-                          lineage_support d614g n439k p323l a222v y453f \
+                          sample_date epi_week lineage lineage_support \
+                          d614g n439k p323l a222v y453f n501y t1001i p681h q27stop del_21765_6  \
           --where-column epi_week=edin_epi_week country=adm0 \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
@@ -873,7 +916,8 @@ rule publish_microreact_specific_output:
           --index-column sequence_name \
           --filter-column sequence_name sample_date epi_week \
                           country adm1 adm2 submission_org_code lineage \
-                          lineage_support uk_lineage primary_uk_lineage d614g n439k p323l a222v y453f \
+                          lineage_support uk_lineage primary_uk_lineage \
+                          d614g n439k p323l a222v y453f n501y t1001i p681h q27stop del_21765_6 \
           --where-column primary_uk_lineage=microreact_lineage \
           --out-fasta {output.fasta1} \
           --out-metadata {output.temp_public_metadata} \
@@ -892,7 +936,8 @@ rule publish_microreact_specific_output:
           --filter-column sequence_name sample_date epi_week \
                           country adm1 adm2 submission_org_code \
                           is_hcw travel_history \
-                          lineage lineage_support uk_lineage primary_uk_lineage d614g n439k p323l a222v y453f \
+                          lineage lineage_support uk_lineage primary_uk_lineage \
+                          d614g n439k p323l a222v y453f n501y t1001i p681h q27stop del_21765_6 \
           --where-column primary_uk_lineage=microreact_lineage \
           --out-fasta {output.fasta2} \
           --out-metadata {output.private_metadata} \
@@ -1132,6 +1177,8 @@ rule summarize_publish:
         lineage_report_fasta = rules.publish_cog_gisaid_data_for_lineage_release_work.output.fasta,
         lineage_report_metadata = rules.publish_cog_gisaid_data_for_lineage_release_work.output.metadata,
 
+        # MINK_report = rules.MINK.output.MINK_report,
+
         log_civet = rules.publish_civet_data.log,
         log_s3 = rules.publish_make_s3_public_cog_data.log,
     params:
@@ -1181,6 +1228,8 @@ rule summarize_publish:
         echo 'webhook {params.grapevine_webhook}'
         curl -X POST -H "Content-type: application/json" -d @{params.json_path}/7_data.json {params.grapevine_webhook}
         """
+        # echo "> \\n" >> {log}
+        # echo "> MINK report published to {input.MINK_report}\\n" >> {log}
         # echo "> Gisaid master metadata published to {input.GISAID_meta_master}\\n" >> {log}
 
         # uk_lineage_fasta_csv_summary = rules.summarize_publish_uk_lineage_specific_fasta_and_metadata_files.log,
