@@ -599,7 +599,7 @@ rule publish_civet_data:
         combined_metadata = rules.combine_cog_gisaid.output.metadata,
         combined_fasta = rules.combine_cog_gisaid.output.fasta,
         published_geog_metadata = rules.clean_and_publish_cog_geography.output.geography_metadata,
-        tree = config["output_path"] + "/5/cog_gisaid_full.tree.nexus",
+        tree = config["output_path"] + "/4/cog_gisaid_full.tree.public.newick",
     output:
         cog_all_fasta = config["publish_path"] + "/civet/cog/cog_" + config["date"] + '_alignment_all.fasta',
         cog_all_fasta_public = config["publish_path"] + "/civet/cog_" + config["date"] + '_alignment_all.fasta',
@@ -614,11 +614,11 @@ rule publish_civet_data:
         temp_combined_metadata_2 = config["output_path"] + "/7/civet_cog_global_" + config["date"] + '_temp_metadata_2.csv',
         combined_metadata = config["export_path"] + "/civet/cog/cog_global_" + config["date"] + '_metadata.csv',
         combined_fasta = config["export_path"] + "/civet/cog/cog_global_" + config["date"] + '_alignment.fasta',
-        tree = config["export_path"] + "/civet/cog_global_"  + config["date"] +  "_tree.nexus",
+        tree = config["export_path"] + "/civet/cog_global_"  + config["date"] +  "_tree.newick",
 
         combined_metadata_public = config["export_path"] + "/civet/cog_global_" + config["date"] + '_metadata.csv',
         combined_fasta_public = config["export_path"] + "/civet/cog_global_" + config["date"] + '_alignment.fasta',
-        tree_public = config["export_path"] + "/civet/cog/cog_global_"  + config["date"] +  "_tree.nexus",
+        tree_public = config["export_path"] + "/civet/cog/cog_global_"  + config["date"] +  "_tree.newick",
     log:
         config["output_path"] + "/logs/7_publish_civet_data.log"
     resources: mem_per_cpu=20000
@@ -1251,7 +1251,7 @@ rule postpublish_cp_civet_data:
         cog_metadata_public = "/cephfs/covid/bham/civet-cat/cog_metadata.csv",
         combined_metadata_public = "/cephfs/covid/bham/civet-cat/cog_global_metadata.csv",
         combined_fasta_public = "/cephfs/covid/bham/civet-cat/cog_global_alignment.fasta",
-        tree_public = "/cephfs/covid/bham/civet-cat/cog_global_tree.nexus",
+        tree_public = "/cephfs/covid/bham/civet-cat/cog_global_tree.newick",
     log:
         config["output_path"] + "/logs/7_postpublish_cp_civet_data.log"
     shell:
