@@ -227,6 +227,16 @@ rule gisaid_mask:
           --mask-file \"{input.mask}\"
         """
 
+# TODO: use Julia closest not Python here
+# rule gisaid_distance_to_WH04:
+#     input:
+#     output:
+#     log:
+#     resources: mem_per_cpu=20000
+#     shell:
+#         """
+#         """
+
 
 rule gisaid_distance_QC:
     input:
@@ -430,6 +440,8 @@ rule gisaid_add_del_finder_result_to_metadata:
           --join-on sequence_name \
           --new-columns $columns \
           --out-metadata {output.metadata} &>> {log}
+
+        sed -i.bak '/Italy\/ABR-IZSGC-TE5166\/2020/s/,B.1.5,/,B.1,/g' {output.metadata} 2> {log}
         """
 
 
@@ -756,6 +768,35 @@ rule gisaid_get_collapsed_expanded_metadata:
         """
 
 
+rule check_root_pangolin_lineages:
+    input:
+        metadata = rules.gisaid_add_del_finder_result_to_metadata.output.metadata,
+        lineage_splits = config["lineage_splits"],
+    output:
+        metadata = config["output_path"] + "/0/root_pangolin_lineages.txt",
+    log:
+        config["output_path"] + "/0/check_root_pangolin_lineages.log"
+    resources: mem_per_cpu=20000
+    run:
+        import pandas as pd
+
+        lineage_splits = pd.read_csv(input.lineage_splits)
+
+        roots = []
+        for i,row in lineage_splits.iterrows():
+            roots.append(row["outgroup"])
+
+        df = pd.read_csv(input.metadata)
+
+        with open(str(output.metadata), "w") as f:
+            f.write("root\tlineage\n")
+            for i,row in df.iterrows():
+                if row["sequence_name"] in roots:
+                    f.write(row["sequence_name"] + "\t" + row["lineage"] + "\n")
+
+
+
+
 rule summarize_preprocess_gisaid:
     input:
         latest_fasta = rules.gisaid_process_json.output.fasta,
@@ -773,11 +814,13 @@ rule summarize_preprocess_gisaid:
         collapsed_expanded_metadata = rules.gisaid_get_collapsed_expanded_metadata.output.metadata,
         counts = rules.gisaid_counts_by_country.output.counts,
         variants = rules.gisaid_get_variants.output.variants,
+        root_lineages = rules.check_root_pangolin_lineages.output.metadata,
     params:
         publish_path = config["publish_path"] + "/GISAID/",
         published_counts = config["publish_path"] + "/GISAID/gisaid_counts_by_country.csv",
         published_all_fasta = config["publish_path"] + "/GISAID/gisaid.all.fasta",
         published_all_metadata = config["publish_path"] + "/GISAID/gisaid.all.csv",
+        published_variants = config["publish_path"] + "/GISAID/gisaid.all.variants",
         grapevine_webhook = config["grapevine_webhook"],
         date = config["date"],
     log:
@@ -789,6 +832,7 @@ rule summarize_preprocess_gisaid:
         cp {input.counts} {params.published_counts}
         cp {input.all_fasta} {params.published_all_fasta}
         cp {input.all_metadata} {params.published_all_metadata}
+        cp {input.variants} {params.published_variants}
 
         echo "Number of sequences in latest GISAID download: $(cat {input.latest_fasta} | grep '>' | wc -l)\\n" >> {log}
         echo "Number of sequences after unifying headers: $(cat {input.unify_headers_fasta} | grep '>' | wc -l)\\n" >> {log}
@@ -799,9 +843,13 @@ rule summarize_preprocess_gisaid:
         echo "Number of non-UK sequences: $(cat {input.global_fasta} | grep '>' | wc -l)\\n" >> {log}
         echo "Number of non-UK sequences after collapsing: $(cat {input.collapsed_fasta} | grep '>' | wc -l)\\n" >> {log}
         echo "> \\n" >> {log}
+        echo "pangolin lineages for roots: \\n"
+        cat {input.root_lineages} >> {log}
+        echo "> \\n" >> {log}
         echo "> Counts by country published to {params.published_counts}\\n" >> {log}
         echo "> Full alignment published to {params.published_all_fasta}\\n" >> {log}
         echo "> Matched metadata published to {params.published_all_metadata}\\n" >> {log}
+        echo "> Variants published to {params.published_variants}\\n" >> {log}
         echo '{{"text":"' > 0_data.json
         echo "*Step 0: GISAID processing complete*\\n" >> 0_data.json
         cat {log} >> 0_data.json
