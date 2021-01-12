@@ -44,9 +44,33 @@ rule uk_add_sample_date:
         df.to_csv(output.metadata, index=False, sep = ",")
 
 
-rule uk_make_sequence_name:
+rule uk_add_pillar_2:
     input:
         metadata = rules.uk_add_sample_date.output.metadata,
+    output:
+        metadata = config["output_path"] + "/1/uk_latest.add_pillar_2.csv",
+    log:
+        config["output_path"] + "/logs/1_uk_add_pillar_2.log"
+    resources: mem_per_cpu=20000
+    run:
+        df = pd.read_csv(input.metadata, sep = ",")
+
+        pillar_2 = []
+
+        for i,row in df.iterrows():
+
+            if row['collection_pillar'] == 2 or row['central_sample_id'][0:4] in ["ALDP", "CAMC", "MILK", "QEUH"]:
+                pillar_2.append(True)
+            else:
+                pillar_2.append(False)
+
+        df['pillar_2'] = pillar_2
+        df.to_csv(output.metadata, index=False, sep = ",")
+
+
+rule uk_make_sequence_name:
+    input:
+        metadata = rules.uk_add_pillar_2.output.metadata,
     output:
         metadata = config["output_path"] + "/1/uk_latest.add_sample_date.add_sequence_name.csv",
     log:
