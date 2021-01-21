@@ -38,6 +38,7 @@ dels: /cephfs/covid/bham/raccoon-dog/resources/dels.csv
 
 ##### File of lineages to split by #####
 lineage_splits:
+lineage_aliases:
 
 ##### Guide tree #####
 guide_tree: /cephfs/covid/bham/raccoon-dog/resources/graft_guide.tree
