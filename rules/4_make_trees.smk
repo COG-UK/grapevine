@@ -21,7 +21,8 @@ rule split_based_on_lineages:
         previous_stage = config["output_path"] + "/logs/3_summarize_combine_gisaid_and_cog.log",
         fasta = config["output_path"] + "/3/cog_gisaid.fasta",
         metadata = config["output_path"] + "/3/cog_gisaid.lineages.csv",
-        lineage = config["lineage_splits"]
+        lineage = config["lineage_splits"],
+        aliases = config["lineage_aliases"]
     params:
         prefix = config["output_path"] + "/4/lineage_",
         grapevine_webhook = config["grapevine_webhook"],
@@ -40,6 +41,7 @@ rule split_based_on_lineages:
           --index-column sequence_name \
           --index-field lineage \
           --lineage-csv {input.lineage} \
+          --aliases {input.aliases} \
           --out-folder {params.prefix} &> {log}
 
         echo '{{"text":"' > {params.json_path}/4a_data.json
