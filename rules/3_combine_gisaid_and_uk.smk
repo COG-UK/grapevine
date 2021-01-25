@@ -1,6 +1,7 @@
 rule cog_hash_seqs:
     input:
         fasta = rules.uk_output_lineage_table.output.fasta,
+        lineage_splits = config["lineage_splits"]
     output:
         fasta = config["output_path"] + "/3/uk.hashed.fasta",
         metadata = config["output_path"] + "/3/uk.hashmap.csv",
@@ -9,6 +10,17 @@ rule cog_hash_seqs:
     resources: mem_per_cpu=20000
     run:
         from Bio import SeqIO
+
+        outgroups = []
+        with open(input.lineage_splits, "r") as outgroup_handle:
+            line = outgroup_handle.readline()
+            while line:
+                try:
+                    outgroup = line.strip().split(",")[-1]
+                    outgroups.append(outgroup)
+                except:
+                    continue
+                line = outgroup_handle.readline()
 
         input_fasta = SeqIO.index(str(input.fasta), "fasta")
 
@@ -36,14 +48,23 @@ rule cog_hash_seqs:
                     fasta.write(str(r.seq) + "\n")
 
                 elif len(value) > 1:
+                    r = None
 
-                    r = input_fasta[value[0]]
+                    for id in value:
+                        if id in outgroups:
+                            r = input_fasta[id]
+                            fasta.write(">" + r.id + "\n")
+                            fasta.write(str(r.seq) + "\n")
+                            value.remove(id)
 
-                    fasta.write(">" + r.id + "\n")
-                    fasta.write(str(r.seq) + "\n")
+                    if not r:
+                        r = input_fasta[value[0]]
+                        fasta.write(">" + r.id + "\n")
+                        fasta.write(str(r.seq) + "\n")
+                        value.remove(value[0])
 
                     metadata.write(r.id + ",")
-                    metadata.write("|".join(value[1:]) + "\n")
+                    metadata.write("|".join(value) + "\n")
 
 
 rule uk_output_hashed_lineage_table:
