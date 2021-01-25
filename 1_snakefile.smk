@@ -1,6 +1,6 @@
-import os
+# configfile: workflow.current_basedir + "/config.yaml"
 
-configfile: workflow.current_basedir + "/config.yaml"
+import os
 
 ##### Configuration #####
 
@@ -12,17 +12,20 @@ if config.get("publish_path"):
     config["publish_path"] = config["publish_path"].rstrip('/')
 config["publish_path"] = os.path.abspath(config["publish_path"])
 
+if config.get("export_path"):
+    config["export_path"] = config["export_path"].rstrip('/')
+config["export_path"] = os.path.abspath(config["export_path"])
+
 if not config.get("cwd"):
     config["cwd"] = os.getcwd()
-    
-if not config.get("date"):
-    config["date"] = os.path.basename(config["cwd"])[:10]
+
 
 ##### Target rules #####
 
 rule all:
     input:
-        config["output_path"] + "/logs/0_summarize_preprocess_gisaid.log",
+        config["output_path"] + "/logs/1_summarize_preprocess_uk.log",
+
 
 ##### Modules #####
-include: "rules/0_preprocess_gisaid.smk"
+include: "/cephfs/covid/bham/climb-covid19-jacksonb/git/grapevine/rules/1_preprocess_uk.smk"
