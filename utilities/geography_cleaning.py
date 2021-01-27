@@ -437,7 +437,8 @@ def commonly_used_names():
         "BRACKNELL_FOREST|READING|SLOUGH|WEST_BERKSHIRE|WINDSOR_AND_MAIDENHEAD|WOKINGHAM":"Berkshire",
         'KNOWSLEY|SAINT_HELENS|SEFTON|WIRRAL':"Merseyside",
         "CHESHIRE_EAST|CHESHIRE_WEST_AND_CHESTER":"Cheshire",
-        "CORNWALL|ISLES_OF_SCILLY":"Cornwall and Isles of Scilly"
+        "CORNWALL|ISLES_OF_SCILLY":"Cornwall and Isles of Scilly",
+        "DENBIGHSHIRE|CONWY|FLINTSHIRE|WREXHAM":"Clwyd"
     }
 
     return nice_names
