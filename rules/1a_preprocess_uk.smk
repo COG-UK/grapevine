@@ -4,9 +4,9 @@ rule uk_strip_header_digits:
     input:
         fasta = config["latest_majora_matched_fasta"],
     output:
-        fasta = config["output_path"] + "/1/uk_latest.headerstripped.fasta",
+        fasta = config["output_path"] + "/1a/uk_latest.headerstripped.fasta",
     log:
-        config["output_path"] + "/logs/1_uk_strip_header_digits.log"
+        config["output_path"] + "/logs/1a_uk_strip_header_digits.log"
     run:
         from Bio import SeqIO
 
@@ -22,9 +22,9 @@ rule uk_add_sample_date:
     input:
         metadata = config["latest_majora_matched_metadata"],
     output:
-        metadata = config["output_path"] + "/1/uk_latest.add_sample_date.csv",
+        metadata = config["output_path"] + "/1a/uk_latest.add_sample_date.csv",
     log:
-        config["output_path"] + "/logs/1_uk_add_sample_date.log"
+        config["output_path"] + "/logs/1a_uk_add_sample_date.log"
     run:
         from datetime import datetime
         import csv
@@ -55,9 +55,9 @@ rule uk_update_sample_dates:
         metadata = rules.uk_add_sample_date.output.metadata,
         updated_dates = config["uk_updated_dates"],
     output:
-        metadata = config["output_path"] + "/1/uk_latest.update_sample_date.csv",
+        metadata = config["output_path"] + "/1a/uk_latest.update_sample_date.csv",
     log:
-        config["output_path"] + "/logs/1_uk_update_sample_dates.log"
+        config["output_path"] + "/logs/1a_uk_update_sample_dates.log"
     resources: mem_per_cpu=5000
     run:
         import csv
@@ -93,10 +93,10 @@ rule uk_filter_on_sample_date:
         time_window = config["time_window"],
         date = config["date"],
     output:
-        metadata = config["output_path"] + "/1/uk_latest.filter_on_days.csv",
-        fasta = config["output_path"] + "/1/uk_latest.filter_on_days.fasta",
+        metadata = config["output_path"] + "/1a/uk_latest.filter_on_days.csv",
+        fasta = config["output_path"] + "/1a/uk_latest.filter_on_days.fasta",
     log:
-        config["output_path"] + "/logs/1_uk_filter_on_sample_date.log"
+        config["output_path"] + "/logs/1a_uk_filter_on_sample_date.log"
     run:
         import datetime
         from Bio import SeqIO
@@ -138,10 +138,10 @@ rule uk_filter_omitted_sequences:
         metadata = rules.uk_filter_on_sample_date.output.metadata,
         omissions = config["uk_omissions"]
     output:
-        fasta = config["output_path"] + "/1/uk_latest.filter_on_omitted.fasta",
-        metadata = config["output_path"] + "/1/uk_latest.filter_on_omitted.csv",
+        fasta = config["output_path"] + "/1a/uk_latest.filter_on_omitted.fasta",
+        metadata = config["output_path"] + "/1a/uk_latest.filter_on_omitted.csv",
     log:
-        config["output_path"] + "/logs/1_uk_filter_omitted_sequences.log"
+        config["output_path"] + "/logs/1a_uk_filter_omitted_sequences.log"
     run:
         from Bio import SeqIO
         import csv
@@ -179,10 +179,10 @@ rule uk_add_previous_pangolin_lineages_to_metadata_and_write_lineageless_fasta:
         fasta = rules.uk_filter_omitted_sequences.output.fasta,
         previous_pangolin_lineages = config["uk_previous_pangolin_lineages"],
     output:
-        metadata = config["output_path"] + "/1/uk_latest.with_old_pangolin_lineages.csv",
-        lineageless_fasta = config["output_path"] + "/1/sequences_to_pangolin.fasta",
+        metadata = config["output_path"] + "/1a/uk_latest.with_old_pangolin_lineages.csv",
+        lineageless_fasta = config["output_path"] + "/1a/sequences_to_pangolin.fasta",
     log:
-        config["output_path"] + "/logs/1_uk_add_previous_pangolin_lineages_to_metadata_and_write_lineageless_fasta.log"
+        config["output_path"] + "/logs/1a_uk_add_previous_pangolin_lineages_to_metadata_and_write_lineageless_fasta.log"
     # resources: mem_per_cpu=20000
     resources: mem_per_cpu=1000
     run:
@@ -243,12 +243,12 @@ rule uk_pangolin:
     input:
         fasta = rules.uk_add_previous_pangolin_lineages_to_metadata_and_write_lineageless_fasta.output.lineageless_fasta,
     params:
-        outdir = config["output_path"] + "/1/pangolin",
-        tmpdir = config["output_path"] + "/1/pangolin/tmp"
+        outdir = config["output_path"] + "/1a/pangolin",
+        tmpdir = config["output_path"] + "/1a/pangolin/tmp"
     output:
-        lineages = config["output_path"] + "/1/pangolin/lineage_report.csv"
+        lineages = config["output_path"] + "/1a/pangolin/lineage_report.csv"
     log:
-        config["output_path"] + "/logs/1_uk_add_sample_date.log"
+        config["output_path"] + "/logs/1a_uk_add_sample_date.log"
     shell:
         """
         pangolin {input.fasta} \
@@ -262,9 +262,9 @@ rule uk_add_new_pangolin_lineages_to_metadata:
         metadata = rules.uk_add_previous_pangolin_lineages_to_metadata_and_write_lineageless_fasta.output.metadata,
         lineages = rules.uk_pangolin.output.lineages,
     output:
-        metadata = config["output_path"] + "/1/uk_latest.add_new_pangolin_lineages.csv",
+        metadata = config["output_path"] + "/1a/uk_latest.add_new_pangolin_lineages.csv",
     log:
-        config["output_path"] + "/logs/1_uk_add_new_pangolin_lineages_to_metadata.log"
+        config["output_path"] + "/logs/1a_uk_add_new_pangolin_lineages_to_metadata.log"
     run:
         import csv
 
@@ -307,9 +307,9 @@ rule uk_add_pillar_2:
     input:
         metadata = rules.uk_add_new_pangolin_lineages_to_metadata.output.metadata,
     output:
-        metadata = config["output_path"] + "/1/uk_latest.add_pillar_2.csv",
+        metadata = config["output_path"] + "/1a/uk_latest.add_pillar_2.csv",
     log:
-        config["output_path"] + "/logs/1_uk_add_pillar_2.log"
+        config["output_path"] + "/logs/1a_uk_add_pillar_2.log"
     run:
         import csv
 
@@ -333,13 +333,13 @@ rule uk_make_sequence_name:
     input:
         metadata = rules.uk_add_pillar_2.output.metadata,
     output:
-        metadata = config["output_path"] + "/1/uk_latest.add_sequence_name.csv",
+        metadata = config["output_path"] + "/1a/uk_latest.add_sequence_name.csv",
     log:
-        config["output_path"] + "/logs/1_uk_make_sequence_name.log"
+        config["output_path"] + "/logs/1a_uk_make_sequence_name.log"
     run:
         import csv
 
-        adm1_to_country = {"UK-SCT": "Scotland",
+        adm1a_to_country = {"UK-SCT": "Scotland",
                            "UK-WLS": "Wales",
                            "UK-ENG": "England",
                            "UK-NIR": "Northern_Ireland"}
@@ -352,7 +352,7 @@ rule uk_make_sequence_name:
             writer.writeheader()
 
             for row in reader:
-                country = adm1_to_country[row['adm1']]
+                country = adm1a_to_country[row['adm1']]
                 id = row['central_sample_id']
                 year = str(row['sample_date']).split("-")[0]
                 name = country + "/" + id + "/" + year
@@ -367,9 +367,9 @@ rule uk_add_gisaid_accession:
         metadata = rules.uk_make_sequence_name.output.metadata,
         accessions_table = config["latest_uk_accessions"],
     output:
-        metadata = config["output_path"] + "/1/uk_latest.add_gisaid_accessions.csv"
+        metadata = config["output_path"] + "/1a/uk_latest.add_gisaid_accessions.csv"
     log:
-        config["output_path"] + "/logs/1_uk_add_gisaid_accession.log"
+        config["output_path"] + "/logs/1a_uk_add_gisaid_accession.log"
     run:
         import csv
 
@@ -418,9 +418,9 @@ rule uk_get_unmapped_genome_completeness:
         fasta = rules.uk_filter_on_sample_date.output.fasta,
         metadata = rules.uk_add_gisaid_accession.output.metadata,
     output:
-        metadata = config["output_path"] + "/1/uk_latest.annotate_genome_completeness.csv"
+        metadata = config["output_path"] + "/1a/uk_latest.annotate_genome_completeness.csv"
     log:
-        config["output_path"] + "/logs/1_uk_annotate_to_remove_duplicates.log"
+        config["output_path"] + "/logs/1a_uk_annotate_to_remove_duplicates.log"
     run:
         from Bio import SeqIO
         import csv
@@ -451,10 +451,10 @@ rule uk_remove_duplicates_COGID_by_proportion_N:
         fasta = rules.uk_filter_on_sample_date.output.fasta,
         metadata = rules.uk_get_unmapped_genome_completeness.output.metadata
     output:
-        fasta = config["output_path"] + "/1/uk_latest.deduplicated_cog_id.fasta",
-        metadata = config["output_path"] + "/1/uk_latest.deduplicated_cog_id.csv"
+        fasta = config["output_path"] + "/1a/uk_latest.deduplicated_cog_id.fasta",
+        metadata = config["output_path"] + "/1a/uk_latest.deduplicated_cog_id.csv"
     log:
-        config["output_path"] + "/logs/1_uk_filter_duplicates_bycovid.log"
+        config["output_path"] + "/logs/1a_uk_filter_duplicates_bycovid.log"
     resources: mem_per_cpu=10000
     run:
         from Bio import SeqIO
@@ -514,9 +514,9 @@ rule uk_add_epi_week_and_day:
     input:
         metadata = rules.uk_remove_duplicates_COGID_by_proportion_N.output.metadata
     output:
-        metadata = config["output_path"] + "/1/uk_latest.epi_week.csv",
+        metadata = config["output_path"] + "/1a/uk_latest.epi_week.csv",
     log:
-        config["output_path"] + "/logs/1_uk_add_epi_week_and_day.log"
+        config["output_path"] + "/logs/1a_uk_add_epi_week_and_day.log"
     run:
         import helper
         import csv
@@ -544,10 +544,10 @@ rule uk_remove_duplicates_biosamplesourceid_by_date:
         fasta = rules.uk_remove_duplicates_COGID_by_proportion_N.output.fasta,
         metadata = rules.uk_add_epi_week_and_day.output.metadata
     output:
-        fasta = config["output_path"] + "/1/uk_latest.deduplicated_biosample_source_id.fasta",
-        metadata = config["output_path"] + "/1/uk_latest.deduplicated_biosample_source_id.csv"
+        fasta = config["output_path"] + "/1a/uk_latest.deduplicated_biosample_source_id.fasta",
+        metadata = config["output_path"] + "/1a/uk_latest.deduplicated_biosample_source_id.csv"
     log:
-        config["output_path"] + "/logs/1_uk_filter_duplicates_by_biosample.log"
+        config["output_path"] + "/logs/1a_uk_filter_duplicates_by_biosample.log"
     # resources: mem_per_cpu=10000
     resources: mem_per_cpu=1000
     run:
@@ -612,10 +612,10 @@ rule uk_remove_duplicates_root_biosample_by_gaps:
         fasta = rules.uk_remove_duplicates_biosamplesourceid_by_date.output.fasta,
         metadata = rules.uk_remove_duplicates_biosamplesourceid_by_date.output.metadata
     output:
-        fasta = config["output_path"] + "/1/uk_latest.deduplicated_rootbiosample.fasta",
-        metadata = config["output_path"] + "/1/uk_latest.deduplicated_rootbiosample.csv",
+        fasta = config["output_path"] + "/1a/uk_latest.deduplicated_rootbiosample.fasta",
+        metadata = config["output_path"] + "/1a/uk_latest.deduplicated_rootbiosample.csv",
     log:
-        config["output_path"] + "/logs/1_uk_filter_duplicates_root_biosample_by_gaps.log"
+        config["output_path"] + "/logs/1a_uk_filter_duplicates_root_biosample_by_gaps.log"
     resources: mem_per_cpu=20000
     run:
         from Bio import SeqIO
@@ -678,9 +678,9 @@ rule uk_change_United_Kingdom_to_UK:
     input:
         metadata = rules.uk_remove_duplicates_root_biosample_by_gaps.output.metadata
     output:
-        metadata = config["output_path"] + "/1/uk_latest.united_kingdom_to_uk.csv"
+        metadata = config["output_path"] + "/1a/uk_latest.united_kingdom_to_uk.csv"
     log:
-        config["output_path"] + "/logs/1_uk_change_United_Kingdom_to_UK.log"
+        config["output_path"] + "/logs/1a_uk_change_United_Kingdom_to_UK.log"
     run:
         import csv
 
@@ -701,9 +701,9 @@ rule uk_minimap2_to_reference:
         fasta = rules.uk_remove_duplicates_root_biosample_by_gaps.output.fasta,
         reference = config["reference_fasta"]
     output:
-        sam = config["output_path"] + "/1/alignment.sam"
+        sam = config["output_path"] + "/1a/alignment.sam"
     log:
-        config["output_path"] + "/logs/1_uk_minimap2_to_reference.log"
+        config["output_path"] + "/logs/1a_uk_minimap2_to_reference.log"
     threads: 1
     resources: mem_per_cpu=1000
     shell:
@@ -718,13 +718,13 @@ rule uk_get_variants:
         reference = config["reference_fasta"],
         genbank_anno = config["reference_genbank_annotation"],
     output:
-        variants = config["output_path"] + "/1/uk.variants.csv",
+        variants = config["output_path"] + "/1a/uk.variants.csv",
     log:
-        config["output_path"] + "/logs/1_uk_get_variants.log"
+        config["output_path"] + "/logs/1a_uk_get_variants.log"
     threads: 1
     shell:
         """
-        /cephfs/covid/bham/climb-covid19-jacksonb/programs/gofasta/gofasta sam variants -t {threads} \
+        /cephfs/covid/bham/raccoon-dog/programs/gofasta/gofasta sam variants -t {threads} \
             --samfile {input.sam} \
             --reference {input.reference} \
             --genbank {input.genbank_anno} \
@@ -736,10 +736,10 @@ rule uk_get_indels:
     input:
         sam = rules.uk_minimap2_to_reference.output.sam,
     output:
-        insertions = config["output_path"] + "/1/uk.insertions.txt",
-        deletions = config["output_path"] + "/1/uk.deletions.txt",
+        insertions = config["output_path"] + "/1a/uk.insertions.txt",
+        deletions = config["output_path"] + "/1a/uk.deletions.txt",
     log:
-        config["output_path"] + "/logs/1_uk_get_indels.log"
+        config["output_path"] + "/logs/1a_uk_get_indels.log"
     threads: 1
     shell:
         """
@@ -752,13 +752,13 @@ rule uk_alignment:
         sam = rules.uk_minimap2_to_reference.output.sam,
         reference = config["reference_fasta"]
     output:
-        fasta = config["output_path"] + "/1/alignment.fasta",
+        fasta = config["output_path"] + "/1a/alignment.fasta",
     log:
-        config["output_path"] + "/logs/1_uk_alignment.log"
+        config["output_path"] + "/logs/1a_uk_alignment.log"
     threads: 1
     shell:
         """
-        /cephfs/covid/bham/climb-covid19-jacksonb/programs/gofasta/gofasta sam toMultiAlign -t {threads} \
+        /cephfs/covid/bham/raccoon-dog/programs/gofasta/gofasta sam toMultiAlign -t {threads} \
             --samfile {input.sam} \
             --reference {input.reference} \
             -o {output.fasta} &>> {log}
@@ -770,9 +770,9 @@ rule uk_get_snps:
         alignment = rules.uk_alignment.output.fasta,
         reference = config["reference_fasta"],
     output:
-        snps = config["output_path"] + "/1/uk.snps.csv",
+        snps = config["output_path"] + "/1a/uk.snps.csv",
     log:
-        config["output_path"] + "/logs/1_uk_get_snps.log"
+        config["output_path"] + "/logs/1a_uk_get_snps.log"
     threads: 1
     shell:
         """
@@ -786,9 +786,9 @@ rule uk_type_AAs:
         fasta = rules.uk_alignment.output.fasta,
         AAs = config["AAs"]
     output:
-        metadata = config["output_path"] + "/1/AA_finder.csv",
+        metadata = config["output_path"] + "/1a/AA_finder.csv",
     log:
-        config["output_path"] + "/logs/1_uk_type_AAs.log"
+        config["output_path"] + "/logs/1a_uk_type_AAs.log"
     run:
         from Bio import SeqIO
         import csv
@@ -853,9 +853,9 @@ rule uk_type_dels:
         fasta = rules.uk_alignment.output.fasta,
         dels = config["dels"]
     output:
-        metadata = config["output_path"] + "/1/del_finder.csv",
+        metadata = config["output_path"] + "/1a/del_finder.csv",
     log:
-        config["output_path"] + "/logs/1_uk_type_dels.log"
+        config["output_path"] + "/logs/1a_uk_type_dels.log"
     run:
         from Bio import SeqIO
         import csv
@@ -929,10 +929,10 @@ rule uk_filter_low_coverage_sequences:
     params:
         min_covg = config["min_covg"],
     output:
-        fasta = config["output_path"] + "/1/alignment.low_covg_filtered.fasta",
-        metadata = config["output_path"] + "/1/alignment.low_covg_filtered.csv",
+        fasta = config["output_path"] + "/1a/alignment.low_covg_filtered.fasta",
+        metadata = config["output_path"] + "/1a/alignment.low_covg_filtered.csv",
     log:
-        config["output_path"] + "/logs/1_uk_filter_low_coverage_sequences.log"
+        config["output_path"] + "/logs/1a_uk_filter_low_coverage_sequences.log"
     run:
         from Bio import SeqIO
         import csv
@@ -966,9 +966,9 @@ rule uk_mask_1:
         fasta = rules.uk_filter_low_coverage_sequences.output.fasta,
         mask = config["uk_mask_file"]
     output:
-        fasta = config["output_path"] + "/1/alignment.masked.fasta",
+        fasta = config["output_path"] + "/1a/alignment.masked.fasta",
     log:
-        config["output_path"] + "/logs/1_uk_mask_1.log"
+        config["output_path"] + "/logs/1a_uk_mask_1.log"
     run:
         from Bio import SeqIO
 
@@ -1025,9 +1025,9 @@ rule uk_trim_alignment:
         trim_start = config["trim_start"],
         trim_end = config["trim_end"],
     output:
-        fasta = config["output_path"] + "/1/alignment.trimmed.fasta"
+        fasta = config["output_path"] + "/1a/alignment.trimmed.fasta"
     log:
-        config["output_path"] + "/logs/1_uk_trim_alignment.log"
+        config["output_path"] + "/logs/1a_uk_trim_alignment.log"
     run:
         from Bio import SeqIO
 
@@ -1066,7 +1066,7 @@ rule summarize_preprocess_uk:
         coverage = config["min_covg"],
         time_window = config["time_window"],
     log:
-        config["output_path"] + "/logs/1_summarize_preprocess_uk.log"
+        config["output_path"] + "/logs/1a_summarize_preprocess_uk.log"
     shell:
         """
         echo "> Number of sequences in raw UK fasta: $(cat {input.raw_fasta} | grep ">" | wc -l)\\n" &> {log}
@@ -1078,9 +1078,10 @@ rule summarize_preprocess_uk:
         echo "> Number of sequences after mapping and filtering on {params.coverage}% coverage: $(cat {input.removed_low_covg_fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo ">\\n" >> {log}
 
-        echo '{{"text":"' > {params.json_path}/1_data.json
-        echo "*Step 1: COG-UK processing complete*\\n" >> {params.json_path}/1_data.json
-        cat {log} >> {params.json_path}/1_data.json
-        echo '"}}' >> {params.json_path}/1_data.json
+        mkdir -p {params.json_path}
+        echo '{{"text":"' > {params.json_path}/1a_data.json
+        echo "*DATAPIPE: COG-UK processing complete*\\n" >> {params.json_path}/1a_data.json
+        cat {log} >> {params.json_path}/1a_data.json
+        echo '"}}' >> {params.json_path}/1a_data.json
         """
-        # curl -X POST -H "Content-type: application/json" -d @{params.json_path}/1_data.json {params.grapevine_webhook}
+        # curl -X POST -H "Content-type: application/json" -d @{params.json_path}/1a_data.json {params.grapevine_webhook}

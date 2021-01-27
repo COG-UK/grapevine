@@ -24,8 +24,10 @@ if not config.get("cwd"):
 
 rule all:
     input:
-        config["output_path"] + "/logs/1_summarize_preprocess_uk.log",
+        config["output_path"] + "/logs/1a_summarize_preprocess_uk.log",
+        config["output_path"] + "/logs/1b_summarize_publish.log"
 
 
 ##### Modules #####
-include: "/cephfs/covid/bham/climb-covid19-jacksonb/git/grapevine/rules/1_preprocess_uk.smk"
+include: "rules/1a_preprocess_uk.smk"
+include: "rules/1b_publish.smk"

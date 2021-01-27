@@ -11,7 +11,7 @@ uk_mask_file: input/mask.txt
 output_path: analysis
 publish_path: publish
 export_path: phylogenetics
-json_path:
+json_path: webhook
 
 ##### global lineage definitions #####
 uk_previous_pangolin_lineages: input/previous_pangolin_lineages.csv
