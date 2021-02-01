@@ -356,7 +356,8 @@ rule summarize_define_uk_lineages_and_cut_out_trees:
         sankey_plot = rules.step_5_generate_sankey_plot.output.plot
     params:
         grapevine_webhook = config["grapevine_webhook"],
-        json_path = config["json_path"],
+        json_path = config["json_path"],  
+        date = config["date"]
     log:
         config["output_path"] + "/logs/5_summarize_define_uk_lineages_and_cut_out_trees.log"
     shell:
@@ -364,7 +365,7 @@ rule summarize_define_uk_lineages_and_cut_out_trees:
         echo "5_subroutine complete" &>> {log}
 
         echo '{{"text":"' > {params.json_path}/5b_data.json
-        echo "*Step 5: Generate UK lineage trees is complete*\\n" >> {params.json_path}/5b_data.json
+        echo "*Step 5: Generate {params.date} UK lineage trees is complete*\\n" >> {params.json_path}/5b_data.json
         echo "> _Look at this Sankey plot_: {input.sankey_plot}\\n" >> {params.json_path}/5b_data.json
         echo '"}}' >> {params.json_path}/5b_data.json
         echo "webhook {params.grapevine_webhook}"

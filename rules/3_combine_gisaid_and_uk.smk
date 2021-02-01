@@ -180,6 +180,7 @@ rule summarize_combine_gisaid_and_cog:
     params:
         grapevine_webhook = config["grapevine_webhook"],
         json_path = config["json_path"],
+        date = config["date"]
     log:
         config["output_path"] + "/logs/3_summarize_combine_gisaid_and_cog.log"
     shell:
@@ -189,7 +190,7 @@ rule summarize_combine_gisaid_and_cog:
         echo "> Number of sequences in collapsed COG and GISAID matched files for tree building: $(cat {input.fasta} | grep ">" | wc -l)\\n" &>> {log}
         echo "> \\n" &>> {log}
         echo '{{"text":"' > {params.json_path}/3_data.json
-        echo "*Step 3: Combine COG-UK and GISAID data complete*\\n" >> {params.json_path}/3_data.json
+        echo "*Step 3: Combine {params.date} COG-UK and GISAID data complete*\\n" >> {params.json_path}/3_data.json
         cat {log} >> {params.json_path}/3_data.json
         echo '"}}' >> {params.json_path}/3_data.json
         echo "webhook {params.grapevine_webhook}"

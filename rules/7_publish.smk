@@ -321,7 +321,8 @@ rule combine_cog_gisaid:
           --in-fasta {input.cog_fasta} \
           --in-metadata {input.cog_metadata} \
           --index-column sequence_name \
-          --filter-column covv_accession_id central_sample_id biosample_source_id secondary_identifier \
+          --filter-column covv_accession_id central_sample_id biosample_source_id secondary_identifier root_sample_id \
+                          pillar_2 \
                           sequence_name sample_date epi_week \
                           country adm1 adm2 outer_postcode adm2_raw adm2_source nuts1 region latitude longitude location \
                           submission_org_code is_surveillance is_community is_hcw \
@@ -340,7 +341,8 @@ rule combine_cog_gisaid:
           --in-fasta {input.gisaid_fasta} \
           --in-metadata {input.gisaid_metadata} \
           --index-column sequence_name \
-          --filter-column covv_accession_id central_sample_id biosample_source_id secondary_identifier \
+          --filter-column covv_accession_id central_sample_id biosample_source_id secondary_identifier root_sample_id \
+                          pillar_2 \
                           sequence_name sample_date epi_week \
                           country adm1 adm2 outer_postcode adm2_raw adm2_source nuts1 region latitude longitude location \
                           submission_org_code is_surveillance is_community is_hcw \
@@ -396,7 +398,7 @@ rule make_metadata_dir_outputs:
           --in-fasta {input.combined_fasta} \
           --in-metadata {input.combined_metadata} \
           --index-column sequence_name \
-          --filter-column sequence_name sample_date \
+          --filter-column sequence_name sample_date lineage \
           --out-fasta {output.junkfasta4} \
           --out-metadata {output.variants_metadata_temp} \
           --restrict &>> {log}
@@ -433,11 +435,13 @@ rule make_metadata_dir_outputs:
           --in-fasta {input.combined_fasta} \
           --in-metadata {input.combined_metadata} \
           --index-column sequence_name \
-          --filter-column sequence_name sample_date epi_week \
+          --filter-column sequence_name cog_id gisaid_id sample_date epi_week \
                           country adm1 \
+                          pillar_2 \
                           is_surveillance \
                           is_travel_history travel_history lineage \
                           lineage_support uk_lineage del_lineage del_introduction phylotype \
+          --where-column gisaid_id=covv_accession_id cog_id=central_sample_id \
           --out-fasta {output.junkfasta1} \
           --out-metadata {output.public_metadata} \
           --restrict &>> {log}
@@ -446,16 +450,17 @@ rule make_metadata_dir_outputs:
           --in-fasta {input.combined_fasta} \
           --in-metadata {input.combined_metadata} \
           --index-column sequence_name \
-          --filter-column sequence_name gisaid_id sample_date epi_week submission_org_code \
+          --filter-column sequence_name cog_id gisaid_id sample_date epi_week submission_org_code root_sample_id \
                           country adm1 adm2 outer_postcode adm2_raw adm2_source nuts1 region latitude longitude location \
                           source_age source_sex sample_type_collected sample_type_received swab_site \
                           ct_n_ct_value ct_n_test_kit ct_n_test_platform ct_n_test_target \
+                          pillar_2 \
                           is_surveillance \
                           is_travel_history travel_history \
                           lineage lineage_support \
                           uk_lineage del_lineage del_introduction phylotype \
                           d614g n439k p323l a222v y453f n501y t1001i p681h q27stop del_21765_6 \
-          --where-column gisaid_id=covv_accession_id \
+          --where-column gisaid_id=covv_accession_id cog_id=central_sample_id \
           --out-fasta {output.junkfasta2} \
           --out-metadata {output.consortium_metadata_temp} \
           --restrict &>> {log}
@@ -854,7 +859,7 @@ rule publish_public_cog_data:
           --in-fasta {input.fasta} \
           --in-metadata {input.metadata} \
           --index-column sequence_name \
-          --filter-column sequence_name country adm1 \
+          --filter-column sequence_name country adm1 pillar_2 \
                           sample_date epi_week lineage lineage_support \
                           d614g n439k p323l a222v y453f n501y t1001i p681h q27stop del_21765_6  \
           --where-column epi_week=edin_epi_week country=adm0 \
@@ -915,7 +920,7 @@ rule publish_microreact_specific_output:
           --in-metadata {input.metadata} \
           --index-column sequence_name \
           --filter-column sequence_name sample_date epi_week \
-                          country adm1 adm2 submission_org_code lineage \
+                          country adm1 adm2 submission_org_code pillar_2 lineage \
                           lineage_support uk_lineage primary_uk_lineage \
                           d614g n439k p323l a222v y453f n501y t1001i p681h q27stop del_21765_6 \
           --where-column primary_uk_lineage=microreact_lineage \
@@ -934,7 +939,7 @@ rule publish_microreact_specific_output:
           --in-metadata {input.metadata} \
           --index-column sequence_name \
           --filter-column sequence_name sample_date epi_week \
-                          country adm1 adm2 submission_org_code \
+                          country adm1 adm2 submission_org_code pillar_2 \
                           is_hcw travel_history \
                           lineage lineage_support uk_lineage primary_uk_lineage \
                           d614g n439k p323l a222v y453f n501y t1001i p681h q27stop del_21765_6 \
@@ -966,186 +971,8 @@ rule publish_microreact_specific_output:
 #         """
 
 
-rule publish_full_report:
-    input:
-        metadata = rules.publish_COG_master_metadata.output.metadata_report,
-    params:
-        date = config["date"],
-        template = config["latex_template"],
-        publish_dir = config["export_path"] + "/reports/"
-    output:
-        outdir = directory(config["output_path"] + "/7/full_report/"),
-    log:
-        config["output_path"] + "/logs/7_publish_report_full.log"
-    shell:
-        """
-        generate_report --m {input.metadata} \
-            --w {params.date} \
-            --s UK_report \
-            --od {output.outdir} &>>{log}
-
-        pandoc {output.outdir}UK_report.md \
-            -V linkcolor:blue \
-            -V geometry:a4paper \
-            -V geometry:margin=2cm \
-            -V mainfont="Helvetica Neue" \
-            -V monofont="Helvetica Neue" \
-            -V fontsize=9pt \
-            --template={params.template} \
-            --latex-engine=pdflatex \
-            -o {output.outdir}UK_report.pdf &>> {log}
-
-        sed -i.bak "s/(.*\/figures/(figures/g" {output.outdir}UK_report.md 2>> {log}
-
-        mkdir -p {params.publish_dir} &>> {log}
-        cp {output.outdir}UK_report.pdf {output.outdir}UK_report.md {params.publish_dir} &>> {log}
-        cp -r {output.outdir}figures/ {params.publish_dir} &>> {log}
-        cp -r {output.outdir}summary_files/ {params.publish_dir} &>> {log}
-        """
-
-
-rule publish_full_pillar_2_report:
-    input:
-        metadata = rules.publish_COG_master_metadata.output.metadata_report,
-    params:
-        date = config["date"],
-        template = config["latex_template"],
-        publish_dir = config["export_path"] + "/reports/full_report_pillar_2/"
-    output:
-        outdir = directory(config["output_path"] + "/7/full_report_pillar_2/"),
-    log:
-        config["output_path"] + "/logs/7_publish_report_pillar_2_full.log"
-    shell:
-        """
-        generate_report --m {input.metadata} \
-            --w {params.date} \
-            --s UK_report \
-            --od {output.outdir} \
-            --p2 True &>> {log}
-
-        pandoc {output.outdir}UK_report.md \
-            -V linkcolor:blue \
-            -V geometry:a4paper \
-            -V geometry:margin=2cm \
-            -V mainfont="Helvetica Neue" \
-            -V monofont="Helvetica Neue" \
-            -V fontsize=9pt \
-            --template={params.template} \
-            --latex-engine=pdflatex \
-            -o {output.outdir}UK_report_pillar_2.pdf &>> {log}
-
-        sed -i.bak "s/(.*\/figures/(figures/g" {output.outdir}UK_report.md 2>> {log}
-
-        mkdir -p {params.publish_dir} &>> {log}
-        cp {output.outdir}UK_report_pillar_2.pdf {params.publish_dir} &>> {log}
-        cp {output.outdir}UK_report.md {params.publish_dir}UK_report_pillar_2.md &>> {log}
-        cp -r {output.outdir}figures/ {params.publish_dir} &>> {log}
-        cp -r {output.outdir}summary_files/ {params.publish_dir} &>> {log}
-        """
-
-
-rule publish_adm1_reports:
-    input:
-        metadata = rules.publish_COG_master_metadata.output.metadata_report,
-    params:
-        date = config["date"],
-        template = config["latex_template"],
-        publish_dir = config["export_path"] + "/reports/adm1_reports/"
-    wildcard_constraints:
-        adm1 = "[A-Z][a-z].*"
-    output:
-        outdir = directory(config["output_path"] + "/7/adm1_reports/{adm1}/"),
-    log:
-        config["output_path"] + "/logs/7_publish_report_{adm1}.log",
-    shell:
-        """
-        generate_report --m {input.metadata} \
-            --w {params.date} \
-            --s {wildcards.adm1} \
-            --adm {wildcards.adm1} \
-            --od {output.outdir} &>> {log}
-
-        pandoc {output.outdir}{wildcards.adm1}.md \
-            -V linkcolor:blue \
-            -V geometry:a4paper \
-            -V geometry:margin=2cm \
-            -V mainfont="Helvetica Neue" \
-            -V monofont="Helvetica Neue" \
-            -V fontsize=9pt \
-            --template={params.template} \
-            --latex-engine=pdflatex \
-            -o {output.outdir}{wildcards.adm1}.pdf &>> {log}
-
-        sed -i.bak "s/(.*\/figures/(figures/g" {output.outdir}{wildcards.adm1}.md 2>> {log}
-
-        mkdir -p {params.publish_dir}{wildcards.adm1} &>> {log}
-        cp {output.outdir}{wildcards.adm1}.pdf {output.outdir}{wildcards.adm1}.md {params.publish_dir}{wildcards.adm1}/ &>> {log}
-        cp -r {output.outdir}figures/ {params.publish_dir}{wildcards.adm1}/ &>> {log}
-        cp -r {output.outdir}summary_files/ {params.publish_dir}{wildcards.adm1}/ &>> {log}
-        """
-
-
-rule publish_sc_reports:
-    input:
-        metadata = rules.publish_COG_master_metadata.output.metadata_report,
-    params:
-        date = config["date"],
-        template = config["latex_template"],
-        publish_dir = config["export_path"] + "/reports/regional_reports/"
-    wildcard_constraints:
-        sc = "[A-Z]{4}|[A-Z]{4}_[A-Z]{4}"
-    output:
-        outdir = directory(config["output_path"] + "/7/regional_reports/{sc}/"),
-    log:
-        config["output_path"] + "/logs/7_publish_report_{sc}.log",
-    shell:
-        """
-        generate_report --m {input.metadata} \
-            --w {params.date} \
-            --s report_{wildcards.sc} \
-            --sc {wildcards.sc} \
-            --od {output.outdir} &>> {log}
-
-        pandoc {output.outdir}report_{wildcards.sc}.md \
-            -V linkcolor:blue \
-            -V geometry:a4paper \
-            -V geometry:margin=2cm \
-            -V mainfont="Helvetica Neue" \
-            -V monofont="Helvetica Neue" \
-            -V fontsize=9pt \
-            --template={params.template} \
-            --latex-engine=pdflatex \
-            -o {output.outdir}report_{wildcards.sc}.pdf &>> {log}
-
-        sed -i.bak "s/(.*\/figures/(figures/g" {output.outdir}report_{wildcards.sc}.md 2>> {log}
-
-        mkdir -p {params.publish_dir}results/results_{wildcards.sc} &>> {log}
-        cp {output.outdir}report_{wildcards.sc}.pdf {output.outdir}report_{wildcards.sc}.md {params.publish_dir} &>> {log}
-        cp -r {output.outdir}/figures/ {params.publish_dir}results/results_{wildcards.sc}/ &>> {log}
-        cp -r {output.outdir}summary_files/ {params.publish_dir}results/results_{wildcards.sc}/ &>> {log}
-        """
-
-
-ADM1 = ['England', 'Scotland', 'Wales', 'Northern_Ireland']
-SC = ['BIRM','CAMB','EDIN','EXET','GLAS','GSTT','LIVE','LOND','LOND_BART','LOND_UCLH','NIRE','NORT','NORW','NOTT','OXON','PHEC','PHWC','PORT','SANG','SHEF']
-REPORTS = ['full', 'pillar_2_full'] + ADM1 + SC
-
-rule summarize_publish_reports:
-    input:
-        logs = expand(config["output_path"] + "/logs/7_publish_report_{X}.log", X = REPORTS)
-    log:
-        config["output_path"] + "/logs/7_summarize_publish_reports.log"
-    shell:
-        """
-        echo "Done" > {log}
-        """
-
-
 rule summarize_publish:
     input:
-        reports_log = rules.summarize_publish_reports.log,
-
-        # GISAID_meta_master = rules.publish_gisaid_master_metadata.output.metadata,
         COG_meta_master = rules.publish_COG_master_metadata.output.metadata_master,
         COG_meta_report = rules.publish_COG_master_metadata.output.metadata_report,
 
@@ -1188,15 +1015,10 @@ rule summarize_publish:
         json_path = config["json_path"],
         # uk_trees_path = config["export_path"] + "/trees/uk_lineages/",
         local_civet_path = config["export_path"] + "/civet/",
-        reports_path = config["export_path"] + "/reports/",
-        pillar_2_reports_path = config["export_path"] + "/reports/full_report_pillar_2/"
     log:
         config["output_path"] + "/logs/7_summarize_publish.log"
     shell:
         """
-        echo "> Reports published to {params.reports_path}\\n" >> {log}
-        echo "> Pillar_2 full report published to {params.pillar_2_reports_path}\\n" >> {log}
-        echo "> \\n" >> {log}
         echo "> COG master metadata published to {input.COG_meta_master}\\n" >> {log}
         echo "> \\n" >> {log}
         echo "> Unaligned (deduplicated, clean headers) COG sequences published to {input.COG_seq_all}\\n" >> {log}
@@ -1222,7 +1044,7 @@ rule summarize_publish:
         echo "> \\n" >> {log}
         echo "> Data for Civet published to {params.local_civet_path}\\n" >> {log}
         echo '{{"text":"' > {params.json_path}/7_data.json
-        echo "*Step 7: publish data to {params.export_path} complete*\\n" >> {params.json_path}/7_data.json
+        echo "*Step 7: publish {params.date} data to {params.export_path} complete*\\n" >> {params.json_path}/7_data.json
         cat {log} >> {params.json_path}/7_data.json
         echo '"}}' >> {params.json_path}/7_data.json
         echo 'webhook {params.grapevine_webhook}'
@@ -1316,21 +1138,17 @@ rule summarize_postpublish:
     input:
         civet_log = config["output_path"] + "/logs/7_postpublish_cp_civet_data.log",
         rsync_log = config["output_path"] + "/logs/7_postpublish_rsync_phylogenetics_data.log",
-        s3_log = config["output_path"] + "/logs/7_postpublish_upload_s3_data.log",
+        # s3_log = config["output_path"] + "/logs/7_postpublish_upload_s3_data.log",
     params:
         date = config["date"],
         phylopipe_webhook = config["phylopipe_webhook"],
         phylopipe_token = config["phylopipe_token"],
         json_path = config["json_path"],
-        reports_path = config["export_path"] + "/reports/",
-        report_upload_log = config["output_path"] + "/logs/7_upload_report.log",
     log:
         config["output_path"] + "/logs/7_summarize_postpublish.log"
     shell:
         """
-        echo "> Phylogenetics pipeline output published to \`/cephfs/covid/bham/results/phylogenetics/latest/\`\\n" >> {log}
-        echo "> \\n" >> {log}
-        echo "> Reports published to \`reports/\`\\n" >> {log}
+        echo "> Phylogenetics pipeline output for {params.date} published to \`/cephfs/covid/bham/results/phylogenetics/latest/\`\\n" >> {log}
         echo "> \\n" >> {log}
         echo "> Unaligned (deduplicated, clean headers) COG sequences published to \`alignments/cog_{params.date}_all.fasta\`\\n" >> {log}
         echo "> \\n" >> {log}
@@ -1363,16 +1181,5 @@ rule summarize_postpublish:
         curl -X POST -H "Content-type: application/json" -d @{params.json_path}/publish_data_to_consortium.json {params.phylopipe_webhook}
 
         ln -sfn /cephfs/covid/bham/raccoon-dog/{params.date} /cephfs/covid/bham/raccoon-dog/previous
-        curl -F file=@{params.reports_path}UK_report.pdf -F "initial_comment=UK lineage report for the latest phylogenetics pipeline run" -F channels=CVACDLCKA -H "Authorization: Bearer {params.phylopipe_token}" https://slack.com/api/files.upload &> {params.report_upload_log}
         """
 
-        # THREAD_TS=`grep -oh -E '\"ts\":\"[0-9]+\.[0-9]+\"' {params.report_upload_log} | sed 's/"ts":"//' | sed 's/"//'`
-        #
-        # curl -F file=@{params.reports_path}adm1_reports/England/England.pdf -F channels=CVACDLCKA thread_ts=${{THREAD_TS}} -H "Authorization: Bearer {params.phylopipe_token}" https://slack.com/api/files.upload &>> {params.report_upload_log}
-        # curl -F file=@{params.reports_path}adm1_reports/Northern_Ireland/Northern_Ireland.pdf -F channels=CVACDLCKA thread_ts=${{THREAD_TS}} -H "Authorization: Bearer {params.phylopipe_token}" https://slack.com/api/files.upload &>> {params.report_upload_log}
-        # curl -F file=@{params.reports_path}adm1_reports/Scotland/Scotland.pdf -F channels=CVACDLCKA thread_ts=${{THREAD_TS}} -H "Authorization: Bearer {params.phylopipe_token}" https://slack.com/api/files.upload &>> {params.report_upload_log}
-        # curl -F file=@{params.reports_path}adm1_reports/Wales/Wales.pdf -F channels=CVACDLCKA thread_ts=${{THREAD_TS}} -H "Authorization: Bearer {params.phylopipe_token}" https://slack.com/api/files.upload &>> {params.report_upload_log}
-
-
-
-#
