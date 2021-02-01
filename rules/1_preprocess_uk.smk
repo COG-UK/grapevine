@@ -371,7 +371,7 @@ rule uk_get_variants:
     threads: 12
     shell:
         """
-        /cephfs/covid/bham/climb-covid19-jacksonb/programs/gofasta/gofasta sam variants -t {threads} \
+        /cephfs/covid/bham/raccoon-dog/programs/gofasta/gofasta sam variants -t {threads} \
             --samfile {input.sam} \
             --reference {input.reference} \
             --genbank {input.genbank_anno} \
@@ -738,6 +738,7 @@ rule summarize_preprocess_uk:
     params:
         grapevine_webhook = config["grapevine_webhook"],
         json_path = config["json_path"],
+        date=config["date"]
     log:
         config["output_path"] + "/logs/1_summarize_preprocess_uk.log"
     shell:
@@ -753,7 +754,7 @@ rule summarize_preprocess_uk:
         echo ">\\n" >> {log}
 
         echo '{{"text":"' > {params.json_path}/1_data.json
-        echo "*Step 1: COG-UK preprocessing complete*\\n" >> {params.json_path}/1_data.json
+        echo "*Step 1: {params.date} COG-UK preprocessing complete*\\n" >> {params.json_path}/1_data.json
         cat {log} >> {params.json_path}/1_data.json
         echo '"}}' >> {params.json_path}/1_data.json
         echo "webhook {params.grapevine_webhook}"

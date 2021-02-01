@@ -27,6 +27,7 @@ rule split_based_on_lineages:
         prefix = config["output_path"] + "/4/lineage_",
         grapevine_webhook = config["grapevine_webhook"],
         json_path = config["json_path"],
+        date = config["date"]
     output:
         done=temp(config["output_path"] + "/4/split_done"),
         lineage_fastas = [config["output_path"] + "/4/lineage_%s.fasta" % l for l in LINEAGES],
@@ -45,7 +46,7 @@ rule split_based_on_lineages:
           --out-folder {params.prefix} &> {log}
 
         echo '{{"text":"' > {params.json_path}/4a_data.json
-        echo "*Step 4: Ready for tree building*\\n" >> {params.json_path}/4a_data.json
+        echo "*Step 4: Ready for {params.date} tree building*\\n" >> {params.json_path}/4a_data.json
         num_lineages=$(cat {input.lineage} | wc -l)
         range={{$num_lineages..1}}
         for i in $(eval echo ${{range}})
@@ -98,10 +99,9 @@ rule root_tree:
         """
         echo "{params.lineage} {params.outgroup}"
 
-        clusterfunk root \
-          --in-format newick \
+        jclusterfunk reroot \
+          --format newick \
           -i {input.tree} \
-          --out-format newick \
           -o {output.tree} \
           --outgroup {params.outgroup} &>> {log}
         """
@@ -155,7 +155,7 @@ rule insert_cog_seqs:
         """
         sed -i.bak "s/'//g" {input.grafted_tree} 2> {log}
 
-        /cephfs/covid/bham/climb-covid19-jacksonb/programs/jclusterfunk_v0.0.4pre/jclusterfunk insert \
+        jclusterfunk insert \
             -i {input.grafted_tree} \
             --metadata {input.metadata} \
             --unique-only \
@@ -346,6 +346,7 @@ rule summarize_make_trees:
         expanded_tree = rules.insert_cog_seqs.output.grafted_tree_expanded_cog,
     params:
         grapevine_webhook = config["grapevine_webhook"],
+        date = config["date"]
     log:
         config["output_path"] + "/logs/4_summarize_make_trees.log"
     shell:
@@ -356,7 +357,7 @@ rule summarize_make_trees:
         echo "> Number of UK sequences in tree after expanding: $(gotree stats tips -i {input.expanded_tree} | tail -n+2 | grep -E "England|Wales|Scotland|Northern_Ireland" | wc -l)\\n" >> {log}
 
         echo '{{"text":"' > 4b_data.json
-        echo "*Step 4: Construct and annotate lineage trees completed*\\n" >> 4b_data.json
+        echo "*Step 4: Construct and annotate {params.date} lineage trees completed*\\n" >> 4b_data.json
         cat {log} >> 4b_data.json
         echo '"}}' >> 4b_data.json
         echo "webhook {params.grapevine_webhook}"
