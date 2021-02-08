@@ -218,7 +218,7 @@ rule publish_full_aligned_cog_data:
               source_age source_sex start_time \
               submission_org submission_org_code submission_user swab_site \
               header sequence_name length missing gaps cov_id sample_date subsample_omit epi_week \
-              d614g n439k p323l a222v y453f n501y t1001i p681h q27stop del_21765_6 del_1605_3 \
+              d614g n439k p323l a222v y453f e484k n501y t1001i p681h q27stop del_21765_6 del_1605_3 \
           --where-column epi_week=edin_epi_week country=adm0 outer_postcode=adm2_private \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
@@ -329,7 +329,7 @@ rule combine_cog_gisaid:
                           is_travel_history travel_history \
                           lineage lineage_support lineages_version \
                           uk_lineage microreact_lineage del_lineage del_introduction phylotype \
-                          d614g n439k p323l a222v y453f n501y t1001i p681h q27stop del_21765_6 del_1605_3 \
+                          d614g n439k p323l a222v y453f e484k n501y t1001i p681h q27stop del_21765_6 del_1605_3 \
                           source_age source_sex sample_type_collected sample_type_received swab_site \
                           ct_n_ct_value ct_n_test_kit ct_n_test_platform ct_n_test_target \
           --where-column epi_week=edin_epi_week country=adm0 outer_postcode=adm2_private \
@@ -349,7 +349,7 @@ rule combine_cog_gisaid:
                           is_travel_history travel_history \
                           lineage lineage_support lineages_version \
                           uk_lineage microreact_lineage del_lineage del_introduction phylotype \
-                          d614g n439k p323l a222v y453f n501y t1001i p681h q27stop del_21765_6 del_1605_3 \
+                          d614g n439k p323l a222v y453f e484k n501y t1001i p681h q27stop del_21765_6 del_1605_3 \
                           source_age source_sex sample_type_collected sample_type_received swab_site \
                           ct_n_ct_value ct_n_test_kit ct_n_test_platform ct_n_test_target \
           --where-column adm1=edin_admin_1 travel_history=edin_travel \
@@ -459,7 +459,7 @@ rule make_metadata_dir_outputs:
                           is_travel_history travel_history \
                           lineage lineage_support \
                           uk_lineage del_lineage del_introduction phylotype \
-                          d614g n439k p323l a222v y453f n501y t1001i p681h q27stop del_21765_6 \
+                          d614g n439k p323l a222v y453f e484k n501y t1001i p681h q27stop del_21765_6 \
           --where-column gisaid_id=covv_accession_id cog_id=central_sample_id \
           --out-fasta {output.junkfasta2} \
           --out-metadata {output.consortium_metadata_temp} \
@@ -620,6 +620,8 @@ rule publish_civet_data:
         combined_metadata = config["export_path"] + "/civet/cog/cog_global_" + config["date"] + '_metadata.csv',
         combined_fasta = config["export_path"] + "/civet/cog/cog_global_" + config["date"] + '_alignment.fasta',
         tree = config["export_path"] + "/civet/cog_global_"  + config["date"] +  "_tree.newick",
+        cog_all_fasta2 =  config["export_path"] + "/civet/cog/cog_" + config["date"] + '_alignment_all.fasta',
+        cog_all_metadata2 = config["export_path"] + "/civet/cog/cog_" + config["date"] + '_metadata_all.csv',
 
         combined_metadata_public = config["export_path"] + "/civet/cog_global_" + config["date"] + '_metadata.csv',
         combined_fasta_public = config["export_path"] + "/civet/cog_global_" + config["date"] + '_alignment.fasta',
@@ -646,6 +648,8 @@ rule publish_civet_data:
           --out-fasta {output.cog_all_fasta} \
           --out-metadata {output.cog_all_metadata} \
           --restrict &>> {log}
+        cp {output.cog_all_fasta} {output.cog_all_fasta2}
+        cp {output.cog_all_metadata} {output.cog_all_metadata2}
 
         fastafunk fetch \
           --in-fasta {input.cog_all_fasta} \
@@ -861,7 +865,7 @@ rule publish_public_cog_data:
           --index-column sequence_name \
           --filter-column sequence_name country adm1 pillar_2 \
                           sample_date epi_week lineage lineage_support \
-                          d614g n439k p323l a222v y453f n501y t1001i p681h q27stop del_21765_6  \
+                          d614g n439k p323l a222v y453f e484k n501y t1001i p681h q27stop del_21765_6  \
           --where-column epi_week=edin_epi_week country=adm0 \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
@@ -922,7 +926,7 @@ rule publish_microreact_specific_output:
           --filter-column sequence_name sample_date epi_week \
                           country adm1 adm2 submission_org_code pillar_2 lineage \
                           lineage_support uk_lineage primary_uk_lineage \
-                          d614g n439k p323l a222v y453f n501y t1001i p681h q27stop del_21765_6 \
+                          d614g n439k p323l a222v y453f e484k n501y t1001i p681h q27stop del_21765_6 \
           --where-column primary_uk_lineage=microreact_lineage \
           --out-fasta {output.fasta1} \
           --out-metadata {output.temp_public_metadata} \
@@ -942,7 +946,7 @@ rule publish_microreact_specific_output:
                           country adm1 adm2 submission_org_code pillar_2 \
                           is_hcw travel_history \
                           lineage lineage_support uk_lineage primary_uk_lineage \
-                          d614g n439k p323l a222v y453f n501y t1001i p681h q27stop del_21765_6 \
+                          d614g n439k p323l a222v y453f e484k n501y t1001i p681h q27stop del_21765_6 \
           --where-column primary_uk_lineage=microreact_lineage \
           --out-fasta {output.fasta2} \
           --out-metadata {output.private_metadata} \
@@ -1138,7 +1142,7 @@ rule summarize_postpublish:
     input:
         civet_log = config["output_path"] + "/logs/7_postpublish_cp_civet_data.log",
         rsync_log = config["output_path"] + "/logs/7_postpublish_rsync_phylogenetics_data.log",
-        # s3_log = config["output_path"] + "/logs/7_postpublish_upload_s3_data.log",
+        s3_log = config["output_path"] + "/logs/7_postpublish_upload_s3_data.log",
     params:
         date = config["date"],
         phylopipe_webhook = config["phylopipe_webhook"],
