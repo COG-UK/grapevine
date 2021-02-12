@@ -43,4 +43,4 @@ dependencies:
     - descartes==1.1.0
     - joypy==0.2.2
     - pytools==2020.1
-    - dendropy>=4.4.0
+    - dendropy=>4.5.2
