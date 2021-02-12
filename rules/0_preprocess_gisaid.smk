@@ -478,6 +478,7 @@ rule gisaid_output_all_matched_metadata:
                          p323l \
                          a222v \
                          y453f \
+                         e484k \
                          n501y \
                          t1001i \
                          p681h \
@@ -560,6 +561,7 @@ rule gisaid_output_global_matched_metadata:
                          p323l \
                          a222v \
                          y453f \
+                         e484k \
                          n501y \
                          t1001i \
                          p681h \
@@ -596,7 +598,7 @@ rule gisaid_collapse:
         redundant_to_tips = config["output_path"] + "/0/redundant_to_tips.csv",
     log:
         config["output_path"] + "/logs/0_gisaid_collapse.log"
-    resources: mem_per_cpu=8000
+    resources: mem_per_cpu=12000
     threads: 8
     shell:
         """
@@ -679,6 +681,7 @@ rule gisaid_get_collapsed_metadata:
                          p323l \
                          a222v \
                          y453f \
+                         e484k \
                          n501y \
                          t1001i \
                          p681h \
@@ -742,6 +745,7 @@ rule gisaid_get_collapsed_expanded_metadata:
                          p323l \
                          a222v \
                          y453f \
+                         e484k \
                          n501y \
                          t1001i \
                          p681h \
