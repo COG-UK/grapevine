@@ -324,7 +324,7 @@ rule combine_cog_gisaid:
           --filter-column covv_accession_id central_sample_id biosample_source_id secondary_identifier root_sample_id \
                           pillar_2 \
                           sequence_name sample_date epi_week \
-                          country adm1 adm2 outer_postcode adm2_raw adm2_source nuts1 region latitude longitude location \
+                          country adm1 adm2 outer_postcode adm2_raw adm2_source NUTS1 region latitude longitude location \
                           submission_org_code is_surveillance is_community is_hcw \
                           is_travel_history travel_history \
                           lineage lineage_support lineages_version \
@@ -344,7 +344,7 @@ rule combine_cog_gisaid:
           --filter-column covv_accession_id central_sample_id biosample_source_id secondary_identifier root_sample_id \
                           pillar_2 \
                           sequence_name sample_date epi_week \
-                          country adm1 adm2 outer_postcode adm2_raw adm2_source nuts1 region latitude longitude location \
+                          country adm1 adm2 outer_postcode adm2_raw adm2_source NUTS1 region latitude longitude location \
                           submission_org_code is_surveillance is_community is_hcw \
                           is_travel_history travel_history \
                           lineage lineage_support lineages_version \
@@ -426,10 +426,8 @@ rule make_metadata_dir_outputs:
           --in-data {input.clean_COG_geography} \
           --index-column sequence_name \
           --join-on sequence_name \
-          --new-columns adm1 adm2 outer_postcode adm2_raw adm2_source nuts1 region latitude longitude location \
-          --out-metadata {output.geography_metadata_temp2} 2>> {log}
-
-        sed '1s/nuts1/NUTS1/' {output.geography_metadata_temp2} > {output.geography_metadata} 2>> {log}
+          --new-columns adm1 adm2 outer_postcode adm2_raw adm2_source NUTS1 region latitude longitude location \
+          --out-metadata {output.geography_metadata} 2>> {log}
 
         fastafunk fetch \
           --in-fasta {input.combined_fasta} \
@@ -451,7 +449,7 @@ rule make_metadata_dir_outputs:
           --in-metadata {input.combined_metadata} \
           --index-column sequence_name \
           --filter-column sequence_name cog_id gisaid_id sample_date epi_week submission_org_code root_sample_id \
-                          country adm1 adm2 outer_postcode adm2_raw adm2_source nuts1 region latitude longitude location \
+                          country adm1 adm2 outer_postcode adm2_raw adm2_source NUTS1 region latitude longitude location \
                           source_age source_sex sample_type_collected sample_type_received swab_site \
                           ct_n_ct_value ct_n_test_kit ct_n_test_platform ct_n_test_target \
                           pillar_2 \
@@ -470,10 +468,8 @@ rule make_metadata_dir_outputs:
           --in-data {input.clean_COG_geography} \
           --index-column sequence_name \
           --join-on sequence_name \
-          --new-columns adm1 adm2 adm2_raw adm2_source nuts1 outer_postcode region latitude longitude location \
-          --out-metadata {output.consortium_metadata_temp2} &>> {log}
-
-        sed '1s/nuts1/NUTS1/' {output.consortium_metadata_temp2} > {output.consortium_metadata} 2>> {log}
+          --new-columns adm1 adm2 adm2_raw adm2_source NUTS1 outer_postcode region latitude longitude location \
+          --out-metadata {output.consortium_metadata} &>> {log}
         """
 
 
@@ -560,7 +556,6 @@ rule publish_full_annotated_tree_and_metadata:
         metadata = config["export_path"] + "/trees/cog_global_" + config["date"] + '_metadata.csv',
         junkfasta = temp(config["output_path"] + "/7/cog_global.fasta"),
         temp_metadata = config["output_path"] + "/7/tree_temp_meta.csv",
-        temp_metadata2 = config["output_path"] + "/7/tree_temp_meta2.csv",
         # jclust_lineages = config["export_path"] + "/trees/TODO",
     log:
         config["output_path"] + "/logs/7_publish_full_annotated_tree_and_metadata.log"
@@ -589,10 +584,9 @@ rule publish_full_annotated_tree_and_metadata:
           --in-data {input.published_geog_metadata} \
           --index-column sequence_name \
           --join-on sequence_name \
-          --new-columns adm2 nuts1 \
-          --out-metadata {output.temp_metadata2} &>> {log}
+          --new-columns adm2 NUTS1 \
+          --out-metadata {output.metadata} &>> {log}
 
-        sed '1s/nuts1/NUTS1/' {output.temp_metadata2} > {output.metadata} 2>> {log}
         """
 
 
@@ -616,7 +610,6 @@ rule publish_civet_data:
         cog_metadata_public = config["publish_path"] + "/civet/cog_" + config["date"] + '_metadata.csv',
 
         temp_combined_metadata = config["output_path"] + "/7/civet_cog_global_" + config["date"] + '_temp_metadata.csv',
-        temp_combined_metadata_2 = config["output_path"] + "/7/civet_cog_global_" + config["date"] + '_temp_metadata_2.csv',
         combined_metadata = config["export_path"] + "/civet/cog/cog_global_" + config["date"] + '_metadata.csv',
         combined_fasta = config["export_path"] + "/civet/cog/cog_global_" + config["date"] + '_alignment.fasta',
         tree = config["export_path"] + "/civet/cog_global_"  + config["date"] +  "_tree.newick",
@@ -701,7 +694,7 @@ rule publish_civet_data:
           --in-metadata {input.combined_metadata} \
           --index-column sequence_name \
           --filter-column sequence_name central_sample_id gisaid_id sample_date epi_week submission_org_code \
-                          country adm1 adm2 outer_postcode adm2_raw adm2_source nuts1 region latitude longitude location \
+                          country adm1 adm2 outer_postcode adm2_raw adm2_source NUTS1 region latitude longitude location \
                           source_age source_sex sample_type_collected sample_type_received swab_site \
                           ct_n_ct_value ct_n_test_kit ct_n_test_platform ct_n_test_target \
                           is_surveillance \
@@ -718,10 +711,8 @@ rule publish_civet_data:
           --in-data {input.published_geog_metadata} \
           --index-column sequence_name \
           --join-on sequence_name \
-          --new-columns adm1 adm2 adm2_raw adm2_source nuts1 outer_postcode region latitude longitude location \
-          --out-metadata {output.temp_combined_metadata_2} &>> {log}
-
-        sed '1s/nuts1/NUTS1/' {output.temp_combined_metadata_2} > {output.combined_metadata} 2>> {log}
+          --new-columns adm1 adm2 adm2_raw adm2_source NUTS1 outer_postcode region latitude longitude location \
+          --out-metadata {output.combined_metadata} &>> {log}
 
         fastafunk fetch \
           --in-fasta {input.combined_fasta} \
