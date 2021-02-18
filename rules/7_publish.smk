@@ -375,14 +375,12 @@ rule make_metadata_dir_outputs:
     output:
         geography_metadata = config["export_path"] + "/metadata/cog_global_" + config["date"] + "_geography.csv",
         geography_metadata_temp = temp(config["output_path"] + "/7/make_metadata_dir_geog.junkcsv1"),
-        geography_metadata_temp2 = temp(config["output_path"] + "/7/make_metadata_dir_geog.junkcsv2"),
         junkfasta3 = temp(config["output_path"] + "/7/make_metadata_dir_consort.junkfasta3"),
 
         public_metadata = config["export_path"] + "/metadata/cog_global_" + config["date"] + "_public.csv",
 
         consortium_metadata = config["export_path"] + "/metadata/cog_global_" + config["date"] + "_consortium.csv",
         consortium_metadata_temp = temp(config["output_path"] + "/7/make_metadata_dir_consort.junkcsv1"),
-        consortium_metadata_temp2 = temp(config["output_path"] + "/7/make_metadata_dir_consort.junkcsv2"),
         junkfasta1 = temp(config["output_path"] + "/7/make_metadata_dir_consort.junkfasta1"),
         junkfasta2 = temp(config["output_path"] + "/7/make_metadata_dir_consort.junkfasta2"),
 
