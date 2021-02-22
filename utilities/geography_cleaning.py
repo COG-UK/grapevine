@@ -278,7 +278,7 @@ def make_geography_csv(metadata_file, country_col, outer_postcode_col, adm1_col,
 
     nice_names = commonly_used_names()
 
-    not_mappable = ["NA","WALES", "YORKSHIRE", "OTHER", "UNKNOWN", "UNKNOWN_SOURCE", "NOT_FOUND", "GIBRALTAR", "FALKLAND_ISLANDS", "CITY_CENTRE"]
+    not_mappable = ["NA","WALES", "YORKSHIRE", "OTHER", "UNKNOWN", "UNKNOWN_SOURCE", "NOT_FOUND", "GIBRALTAR", "FALKLAND_ISLANDS", "CITY_CENTRE", "NONE"]
     missing_postcodes = ["ZZ9", "UNKNOWN", "FIQQ", "ZZ99", "99ZZ", "BF1", "BF10"]
 
     already_checked_discreps = ["LOND-12508C8", "LOND-1263D3C", "LOND-1263622", "NORT-29A8E3", "PORT-2D7668"]
