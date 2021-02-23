@@ -83,7 +83,7 @@ def process_adm2(outer_postcode, adm2, metadata_multi_loc, straight_map, not_map
                 conflict = True
         else:
             if not any([i for i in pc_adm2.split("|") if i in processed_adm2.split("|")]) and not any([i for i in processed_adm2.split("|") if i in pc_adm2.split("|")]):
-                conflict = True
+                conflict = True    
 
         if conflict:
             processed_adm2 = pc_adm2
@@ -250,6 +250,23 @@ def get_nuts_list(nuts_file):
 
     return nuts_to_constituents
 
+def generate_adm2_to_utla(lookup_file):
+    adm2_to_utla = defaultdict(set)
+    utla_codes = {}
+    suggested_grouping = {}
+    with open(lookup_file) as f:
+        data = csv.DictReader(f)
+        for l in data:
+            utla_code = l["UTLA_code"]
+            utla_name = l["UTLA_name"]
+            adm2 = l['adm2']
+            sug_adm2 = l['aggregated_adm2']
+
+            adm2_to_utla[adm2].add(utla_name)
+            utla_codes[utla_name] = utla_code
+            suggested_grouping[adm2] = sug_adm2
+
+    return adm2_to_utla, utla_codes, suggested_grouping
 
 def make_geography_csv(metadata_file, country_col, outer_postcode_col, adm1_col, adm2_col, map_utils_dir, outdir):
 
@@ -266,6 +283,7 @@ def make_geography_csv(metadata_file, country_col, outer_postcode_col, adm1_col,
 
     incompatible_locations.write(f'name,input_postcode,input_adm2,adm2_from_postcode,adm2_from_input_adm2\n')
 
+    adm2_to_utla, utla_codes, suggested_groupings = generate_adm2_to_utla(os.path.join(map_utils_dir, "LAD_UTLA_adm2.csv"))
 
     already_found = []
     done_postcodes = []
@@ -280,19 +298,19 @@ def make_geography_csv(metadata_file, country_col, outer_postcode_col, adm1_col,
 
     not_mappable = ["NA","WALES", "YORKSHIRE", "OTHER", "UNKNOWN", "UNKNOWN_SOURCE", "NOT_FOUND", "GIBRALTAR", "FALKLAND_ISLANDS", "CITY_CENTRE", "NONE"]
     missing_postcodes = ["ZZ9", "UNKNOWN", "FIQQ", "ZZ99", "99ZZ", "BF1", "BF10"]
+    NI_counties = ['TYRONE', 'ANTRIM', 'ARMAGH', 'FERMANAGH', 'LONDONDERRY', 'DOWN']
 
     already_checked_discreps = ["LOND-12508C8", "LOND-1263D3C", "LOND-1263622", "NORT-29A8E3", "PORT-2D7668"]
 
     fixed_seqs = {"NORT-289270": "DL12"}
 
     with open(os.path.join(outdir,"geography.csv"), 'w') as fw:
-        fieldnames = ["sequence_name","id","adm2_raw","adm2","adm2_source","NUTS1","adm1","outer_postcode","region","latitude","longitude", "location"]
+        fieldnames = ["sequence_name","id","adm2_raw","adm2","adm2_source","NUTS1","adm1","outer_postcode","region","latitude","longitude", "location", "utla", "utla_code", "suggested_adm2_grouping"]
         writer = csv.DictWriter(fw, fieldnames=fieldnames)
         writer.writeheader()
 
         with open(metadata_file) as f:
-            d = csv.DictReader(f)
-            data = [r for r in d]
+            data = csv.DictReader(f)
             for sequence in data:
                 conflict = False
                 country = sequence[country_col]
@@ -381,8 +399,6 @@ def make_geography_csv(metadata_file, country_col, outer_postcode_col, adm1_col,
                         if "|" in processed_adm2:
                             if processed_adm2 in nice_names:
                                 location = nice_names[processed_adm2]
-                            # elif "conflict" in source and "|" not in adm2:
-                            #     location = adm2
                             elif NUTS1 != "":
                                 location = NUTS1
                             elif processed_adm1 != "":
@@ -400,6 +416,43 @@ def make_geography_csv(metadata_file, country_col, outer_postcode_col, adm1_col,
                     if conflict and name not in already_checked_discreps:
                         incompatible_locations.write(f'{sequence["central_sample_id"]},{outer_postcode},{adm2},{postcode_to_adm2[outer_postcode]},{processed_adm2}\n')
                         conflict_count += 1
+
+                    utla = ""
+                    code = ""
+                    grouping = ""
+      
+                    if type(processed_adm2) != bool and processed_adm2 != "" and processed_adm2 not in NI_counties:
+                        if "|" in processed_adm2:
+                            utlas = set()
+                            bits = processed_adm2.split("|")
+                            for i in bits:
+                                for j in adm2_to_utla[i]:
+                                    utlas.add(j)
+                            utla = "|".join(utlas)
+                        else:
+                            utla = "|".join(adm2_to_utla[processed_adm2])
+
+                        if "|" in utla:
+                            codes = set()
+                            bits = utla.split("|")
+                            for i in bits:
+                                codes.add(utla_codes[i])
+                            code = "|".join(codes)
+                        else:
+                            code = utla_codes[utla]
+
+                        if "|" in processed_adm2:
+                            groupings = set()
+                            bits = processed_adm2.split("|")
+                            for i in bits:
+                                groupings.add(suggested_groupings[i])
+                            grouping = "|".join(groupings)
+                        else:
+                            grouping = suggested_groupings[processed_adm2]
+
+                    geog_dict["utla"] = utla 
+                    geog_dict["utla_code"] = code
+                    geog_dict["suggested_adm2_grouping"] = grouping
 
                     writer.writerow(geog_dict)
 
