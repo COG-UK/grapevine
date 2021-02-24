@@ -1,6 +1,45 @@
-rule cog_hash_seqs:
+rule filter_by_date:
     input:
         fasta = rules.uk_output_lineage_table.output.fasta,
+        metadata = rules.uk_output_lineage_table.output.metadata,
+    params:
+        date = config["date"]
+        time_window = config["time_window"]
+    output:
+        fasta = config["output_path"] + "/3/uk.filter_by_date.fasta",
+    log:
+        config["output_path"] + "/logs/3_filter_by_date.log",
+    run:
+        import datetime
+        from Bio import SeqIO
+        import csv
+
+        indexed_fasta = SeqIO.index("${input.fasta}", "fasta")
+
+        window = datetime.timedelta(int("${params.time_window}"))
+        todays_date = datetime.datetime.strptime("${params.date}", '%Y-%m-%d').date()
+
+        with open"${input.metadata}", 'r', newline = '') as csv_in, \
+             open("${output.fasta}", "w") as fasta_out:
+
+            reader = csv.DictReader(csv_in, delimiter=",", quotechar='\"', dialect = "unix")
+
+            for row in reader:
+                try:
+                    date = datetime.datetime.strptime(row["sample_date"], '%Y-%m-%d').date()
+                except:
+                    continue
+
+                 if (todays_date - window) > date:
+                     continue
+
+                 seq_rec = indexed_fasta[row["fasta_header"]]
+                 fasta_out.write(">" + seq_rec.id + "\\n")
+                 fasta_out.write(str(seq_rec.seq) + "\\n")
+
+rule cog_hash_seqs:
+    input:
+        fasta = rules.filter_by_date.output.fasta,
         lineage_splits = config["lineage_splits"]
     output:
         fasta = config["output_path"] + "/3/uk.hashed.fasta",

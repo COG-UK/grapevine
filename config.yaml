@@ -45,6 +45,7 @@ guide_tree: /cephfs/covid/bham/raccoon-dog/resources/graft_guide.tree
 
 ##### Date #####
 date:
+time_window: 180
 
 ##### Working directory #####
 cwd:
