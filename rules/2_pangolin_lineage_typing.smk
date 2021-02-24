@@ -14,7 +14,6 @@ rule uk_normal_pangolin:
     shell:
         """
         pangolin {input.fasta} \
-        -p \
         --outdir {params.outdir} \
         --tempdir {params.tmpdir}  >> {log} 2>&1
         """
