@@ -2,7 +2,7 @@ rule filter_by_date:
     input:
         fasta = rules.uk_output_lineage_table.output.fasta,
         metadata = rules.uk_output_lineage_table.output.metadata,
-        lineage = config["lineage_splits"],
+        lineage_splits = config["lineage_splits"],
     params:
         date = config["date"]
         time_window = config["time_window"]
@@ -16,12 +16,15 @@ rule filter_by_date:
         import csv
 
         outgroups = []
-        with open(${input.lineage}, 'r') as lineage_splits:
-            for i, line in enumerate(lineage_fh):
-                lineage, outgroup = line.strip().split(',')
-                if i == 0:
-                    continue
+        with open(input.lineage_splits, "r") as outgroup_handle:
+            line = outgroup_handle.readline()
+            while line:
+            try:
+                outgroup = line.strip().split(",")[-1]
                 outgroups.append(outgroup)
+            except:
+                continue
+            line = outgroup_handle.readline()
 
         indexed_fasta = SeqIO.index("${input.fasta}", "fasta")
 
