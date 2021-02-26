@@ -2,6 +2,7 @@ rule filter_by_date:
     input:
         fasta = rules.uk_output_lineage_table.output.fasta,
         metadata = rules.uk_output_lineage_table.output.metadata,
+        lineage = config["lineage_splits"],
     params:
         date = config["date"]
         time_window = config["time_window"]
@@ -14,6 +15,14 @@ rule filter_by_date:
         from Bio import SeqIO
         import csv
 
+        outgroups = []
+        with open(${input.lineage}, 'r') as lineage_splits:
+            for i, line in enumerate(lineage_fh):
+                lineage, outgroup = line.strip().split(',')
+                if i == 0:
+                    continue
+                outgroups.append(outgroup)
+
         indexed_fasta = SeqIO.index("${input.fasta}", "fasta")
 
         window = datetime.timedelta(int("${params.time_window}"))
@@ -25,6 +34,12 @@ rule filter_by_date:
             reader = csv.DictReader(csv_in, delimiter=",", quotechar='\"', dialect = "unix")
 
             for row in reader:
+                seq_rec = indexed_fasta[row["fasta_header"]]
+                if seq_rec in outgroups:
+                    fasta_out.write(">" + seq_rec.id + "\\n")
+                    fasta_out.write(str(seq_rec.seq) + "\\n")
+                    continue
+
                 try:
                     date = datetime.datetime.strptime(row["sample_date"], '%Y-%m-%d').date()
                 except:
@@ -33,7 +48,6 @@ rule filter_by_date:
                  if (todays_date - window) > date:
                      continue
 
-                 seq_rec = indexed_fasta[row["fasta_header"]]
                  fasta_out.write(">" + seq_rec.id + "\\n")
                  fasta_out.write(str(seq_rec.seq) + "\\n")
 
