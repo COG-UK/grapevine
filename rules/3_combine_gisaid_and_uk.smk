@@ -4,8 +4,8 @@ rule filter_by_date:
         metadata = rules.uk_output_lineage_table.output.metadata,
         lineage_splits = config["lineage_splits"],
     params:
-        date = config["date"]
-        time_window = config["time_window"]
+        date = config["date"],
+        time_window = config["time_window"],
     output:
         fasta = config["output_path"] + "/3/uk.filter_by_date.fasta",
     log:
