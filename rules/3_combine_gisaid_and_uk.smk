@@ -31,7 +31,7 @@ rule filter_by_date:
         window = datetime.timedelta(int("${params.time_window}"))
         todays_date = datetime.datetime.strptime("${params.date}", '%Y-%m-%d').date()
 
-        with open"${input.metadata}", 'r', newline = '') as csv_in, \
+        with open("${input.metadata}", 'r', newline = '') as csv_in, \
              open("${output.fasta}", "w") as fasta_out:
 
             reader = csv.DictReader(csv_in, delimiter=",", quotechar='\"', dialect = "unix")
