@@ -19,12 +19,12 @@ rule filter_by_date:
         with open(input.lineage_splits, "r") as outgroup_handle:
             line = outgroup_handle.readline()
             while line:
-            try:
-                outgroup = line.strip().split(",")[-1]
-                outgroups.append(outgroup)
-            except:
-                continue
-            line = outgroup_handle.readline()
+                try:
+                    outgroup = line.strip().split(",")[-1]
+                    outgroups.append(outgroup)
+                except:
+                    continue
+                line = outgroup_handle.readline()
 
         indexed_fasta = SeqIO.index("${input.fasta}", "fasta")
 
