@@ -16,7 +16,7 @@ rule filter_by_date:
         import csv
 
         outgroups = []
-        with open(input.lineage_splits, "r") as outgroup_handle:
+        with open(str(input.lineage_splits), "r") as outgroup_handle:
             line = outgroup_handle.readline()
             while line:
                 try:
@@ -26,13 +26,13 @@ rule filter_by_date:
                     continue
                 line = outgroup_handle.readline()
 
-        indexed_fasta = SeqIO.index("${input.fasta}", "fasta")
+        indexed_fasta = SeqIO.index(str(input.fasta)", "fasta")
 
-        window = datetime.timedelta(int("${params.time_window}"))
-        todays_date = datetime.datetime.strptime("${params.date}", '%Y-%m-%d').date()
+        window = datetime.timedelta(int(params.time_window))
+        todays_date = datetime.datetime.strptime(params.date, '%Y-%m-%d').date()
 
-        with open("${input.metadata}", 'r', newline = '') as csv_in, \
-             open("${output.fasta}", "w") as fasta_out:
+        with open(str(input.metadata), 'r', newline = '') as csv_in, \
+             open(str(output.fasta), "w") as fasta_out:
 
             reader = csv.DictReader(csv_in, delimiter=",", quotechar='\"', dialect = "unix")
 
