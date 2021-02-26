@@ -39,8 +39,8 @@ rule filter_by_date:
             for row in reader:
                 seq_rec = indexed_fasta[row["fasta_header"]]
                 if seq_rec in outgroups:
-                    fasta_out.write(">" + seq_rec.id + "\\n")
-                    fasta_out.write(str(seq_rec.seq) + "\\n")
+                    fasta_out.write(">" + seq_rec.id + "\n")
+                    fasta_out.write(str(seq_rec.seq) + "\n")
                     continue
 
                 try:
@@ -51,8 +51,8 @@ rule filter_by_date:
                  if (todays_date - window) > date:
                      continue
 
-                 fasta_out.write(">" + seq_rec.id + "\\n")
-                 fasta_out.write(str(seq_rec.seq) + "\\n")
+                 fasta_out.write(">" + seq_rec.id + "\n")
+                 fasta_out.write(str(seq_rec.seq) + "\n")
 
 rule cog_hash_seqs:
     input:
