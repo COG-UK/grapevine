@@ -26,7 +26,7 @@ rule filter_by_date:
                     continue
                 line = outgroup_handle.readline()
 
-        indexed_fasta = SeqIO.index(str(input.fasta)", "fasta")
+        indexed_fasta = SeqIO.index(str(input.fasta), "fasta")
 
         window = datetime.timedelta(int(params.time_window))
         todays_date = datetime.datetime.strptime(params.date, '%Y-%m-%d').date()
