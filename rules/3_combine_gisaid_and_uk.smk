@@ -48,11 +48,11 @@ rule filter_by_date:
                 except:
                     continue
 
-                 if (todays_date - window) > date:
-                     continue
+                if (todays_date - window) > date:
+                    continue
 
-                 fasta_out.write(">" + seq_rec.id + "\n")
-                 fasta_out.write(str(seq_rec.seq) + "\n")
+                fasta_out.write(">" + seq_rec.id + "\n")
+                fasta_out.write(str(seq_rec.seq) + "\n")
 
 rule cog_hash_seqs:
     input:
