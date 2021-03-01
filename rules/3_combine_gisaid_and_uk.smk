@@ -29,7 +29,7 @@ rule filter_by_date:
         
 
         indexed_fasta = SeqIO.index(str(input.fasta), "fasta")
-        print(len(indexed_fasta)
+        print(len(indexed_fasta))
 
         window = datetime.timedelta(int(params.time_window))
         todays_date = datetime.datetime.strptime(params.date, '%Y-%m-%d').date()
@@ -41,10 +41,10 @@ rule filter_by_date:
             reader = csv.DictReader(csv_in, delimiter=",", quotechar='\"', dialect = "unix")
 
             for row in reader:
-                if row["fasta_header"] not in indexed_fasta:
-                    print("%s not in fasta" %row["fasta_header"])
+                if row["sequence_name"] not in indexed_fasta:
+                    print("%s not in fasta" %row["sequence_name"])
                     continue
-                seq_rec = indexed_fasta[row["fasta_header"]]
+                seq_rec = indexed_fasta[row["sequence_name"]]
                 if seq_rec in outgroups:
                     fasta_out.write(">" + seq_rec.id + "\n")
                     fasta_out.write(str(seq_rec.seq) + "\n")
