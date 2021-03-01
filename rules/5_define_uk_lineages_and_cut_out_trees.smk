@@ -53,7 +53,6 @@ rule five_update_global_lineage_metadata:
         metadata = config["output_path"] + "/5/cog_gisaid.global.lineages.with_all_traits.csv"
     log:
         config["output_path"] + "/logs/5_five_update_global_lineage_metadata.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk add_columns \
@@ -86,7 +85,6 @@ rule update_lineage_metadata:
         all_metadata = config["output_path"] + "/5/cog_gisaid.lineages.with_all_traits.csv"
     log:
         config["output_path"] + "/logs/5_update_metadata.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk add_columns \
@@ -316,7 +314,6 @@ rule merge_with_metadata:
         metadata = config["output_path"] + "/5/cog_gisaid.lineages.with_all_traits.with_phylotype_traits.csv"
     log:
         config["output_path"] + "/logs/5_merge_with_metadata.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk add_columns \

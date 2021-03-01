@@ -63,7 +63,6 @@ rule gisaid_add_previous_lineages:
         metadata = config["output_path"] + "/0/gisaid.lineages.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_add_previous_lineages.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk add_columns \
@@ -310,7 +309,6 @@ rule gisaid_add_AA_finder_result_to_metadata:
         metadata = config["output_path"] + "/0/gisaid.RD.UH.AAfinder.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_add_AA_finder_result_to_metadata.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         columns=$(head -n1 {input.new_data} | cut -d',' -f2- | tr ',' ' ')
@@ -389,7 +387,6 @@ rule gisaid_add_pangolin_lineages_to_metadata:
         metadata = config["output_path"] + "/0/gisaid.RD.UH.SNPfinder.lineages.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_add_pangolin_lineages_to_metadata.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk add_columns \
@@ -429,7 +426,6 @@ rule gisaid_add_del_finder_result_to_metadata:
         metadata = config["output_path"] + "/0/gisaid.RD.UH.SNPfinder.lineages.del_finder.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_add_del_finder_result_to_metadata.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         columns=$(head -n1 {input.new_data} | cut -d',' -f2- | tr ',' ' ')
@@ -454,7 +450,6 @@ rule gisaid_output_all_matched_metadata:
         metadata = config["output_path"] + "/0/gisaid.all.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_output_all_matched_metadata.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -501,6 +496,7 @@ rule gisaid_output_all_matched_metadata:
                                  epi_week=edin_epi_week country=edin_admin_0 \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
+          --low-memory \
           --log-file {log} \
           --restrict
         """
@@ -537,7 +533,6 @@ rule gisaid_output_global_matched_metadata:
         metadata = config["output_path"] + "/0/gisaid.global.csv"
     log:
         config["output_path"] + "/logs/0_gisaid_output_global_matched_metadata.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -585,6 +580,7 @@ rule gisaid_output_global_matched_metadata:
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --log-file {log} \
+          --low-memory \
           --restrict
         """
 
@@ -657,7 +653,6 @@ rule gisaid_get_collapsed_metadata:
         metadata = config["output_path"] + "/0/gisaid.global.collapsed.csv",
     log:
         config["output_path"] + "/logs/0_gisaid_get_collapsed_metadata.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -705,6 +700,7 @@ rule gisaid_get_collapsed_metadata:
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --log-file {log} \
+          --low-memory \
           --restrict
         """
 
@@ -719,7 +715,6 @@ rule gisaid_get_collapsed_expanded_metadata:
         metadata = config["output_path"] + "/0/gisaid.global.collapsed.unique_expanded.csv",
     log:
         config["output_path"] + "/logs/0_gisaid_get_collapsed_expanded_metadata.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         cat {input.collapsed_fasta} {input.unique_fasta} > {output.fasta} 2> {log}
@@ -768,6 +763,7 @@ rule gisaid_get_collapsed_expanded_metadata:
                          epi_week=edin_epi_week country=edin_admin_0 \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
+          --low-memory \
           --restrict 2>> {log}
         """
 

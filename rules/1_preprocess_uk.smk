@@ -543,7 +543,6 @@ rule add_AA_finder_result_to_metadata:
         metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.with_AA_finder.csv"
     log:
         config["output_path"] + "/logs/1_add_AA_finder_result_to_metadata.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         columns=$(head -n1 {input.new_data} | cut -d',' -f2- | tr ',' ' ')
@@ -583,7 +582,6 @@ rule uk_add_del_finder_result_to_metadata:
         metadata = config["output_path"] + "/1/uk_latest.unify_headers.epi_week.deduplicated.with_AA_finder.with_del_finder.csv"
     log:
         config["output_path"] + "/logs/1_add_del_finder_result_to_metadata.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         columns=$(head -n1 {input.new_data} | cut -d',' -f2- | tr ',' ' ')
@@ -612,7 +610,6 @@ rule uk_add_previous_lineages_to_metadata:
         metadata = config["output_path"] + "/1/uk.with_previous_lineages.csv",
     log:
         config["output_path"] + "/logs/1_uk_add_previous_lineages_to_metadata.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk add_columns \

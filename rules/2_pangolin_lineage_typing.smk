@@ -27,7 +27,6 @@ rule uk_add_pangolin_lineages_to_metadata:
         metadata = config["output_path"] + "/2/uk.with_new_lineages.csv",
     log:
         config["output_path"] + "/logs/2_uk_add_normal_pangolin_lineages_to_metadata.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk add_columns \
@@ -49,7 +48,6 @@ rule uk_output_lineage_table:
         metadata = config["output_path"] + "/2/uk.matched.lineages.csv"
     log:
         config["output_path"] + "/logs/2_uk_output_full_lineage_table.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -63,6 +61,7 @@ rule uk_output_lineage_table:
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --log-file {log} \
+          --low-memory \
           --restrict
         """
 

@@ -13,7 +13,6 @@ rule uk_add_lineage_information_back_to_master_metadata:
         metadata = config["output_path"] + "/7/uk.master.csv",
     log:
         config["output_path"] + "/logs/7_uk_add_lineage_information_back_to_master_metadata.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk add_columns \
@@ -61,7 +60,6 @@ rule clean_and_publish_cog_geography:
         bad_seqs = config["output_path"] + "/7/geography/sequences_with_incompatible_locs.csv",
         junkfasta = temp(config["output_path"] + "/7/geography/junk.fasta"),
         metadata_temp = config["output_path"] + "/7/geography/metadata.junkcsv",
-    resources: mem_per_cpu=20000
     log:
         config["output_path"] + "/logs/7_clean_and_publish_cog_geography.log",
     shell:
@@ -76,6 +74,7 @@ rule clean_and_publish_cog_geography:
                           adm0 adm1 adm2 adm2_private \
           --out-fasta {output.junkfasta} \
           --out-metadata {output.metadata_temp} \
+          --low-memory \
           --restrict &>> {log}
 
         python {params.geog_script} \
@@ -109,7 +108,6 @@ rule publish_COG_master_metadata:
         fasta = temp(config["output_path"] + "/7/7_publish_COG_master_metadata.temp.fasta")
     log:
         config["output_path"] + "/logs/7_publish_COG_master_metadata.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         cp {input.metadata} {output.metadata_master} &> {log}
@@ -124,7 +122,8 @@ rule publish_COG_master_metadata:
                           sequencing_org_code sequencing_submission_date \
           --where-column epi_week=edin_epi_week country=adm0 \
           --out-fasta {output.fasta} \
-         --out-metadata {output.metadata_report_temp} \
+          --out-metadata {output.metadata_report_temp} \
+          --low-memory \
           --restrict &>> {log}
 
         fastafunk add_columns \
@@ -193,7 +192,6 @@ rule publish_full_aligned_cog_data:
         metadata = config["export_path"] + "/alignments/cog_" + config["date"] + '_all_metadata.csv'
     log:
         config["output_path"] + "/logs/7_publish_full_aligned_cog_data.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -222,6 +220,7 @@ rule publish_full_aligned_cog_data:
           --where-column epi_week=edin_epi_week country=adm0 outer_postcode=adm2_private \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
+          --low-memory \
           --restrict &> {log}
         """
 
@@ -235,7 +234,6 @@ rule publish_filtered_aligned_cog_data:
         metadata = config["export_path"] + "/alignments/cog_" + config["date"] + '_metadata.csv'
     log:
         config["output_path"] + "/logs/7_publish_filtered_aligned_cog_data.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -250,6 +248,7 @@ rule publish_filtered_aligned_cog_data:
           --where-column epi_week=edin_epi_week country=adm0 outer_postcode=adm2_private \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
+          --low-memory \
           --restrict &> {log}
         """
 
@@ -314,7 +313,6 @@ rule combine_cog_gisaid:
         metadata = config["output_path"] + "/7/gisaid.combine_cog_gisaid.combined.csv",
     log:
         config["output_path"] + "/logs/7_combine_cog_gisaid.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -335,6 +333,7 @@ rule combine_cog_gisaid:
           --where-column epi_week=edin_epi_week country=adm0 outer_postcode=adm2_private \
           --out-fasta {params.intermediate_cog_fasta} \
           --out-metadata {params.intermediate_cog_metadata} \
+          --low-memory \
           --restrict &>> {log}
 
         fastafunk fetch \
@@ -355,6 +354,7 @@ rule combine_cog_gisaid:
           --where-column adm1=edin_admin_1 travel_history=edin_travel \
           --out-fasta {params.intermediate_gisaid_fasta} \
           --out-metadata {params.intermediate_gisaid_metadata} \
+          --low-memory \
           --restrict &>> {log}
 
         fastafunk merge \
@@ -362,6 +362,7 @@ rule combine_cog_gisaid:
           --in-metadata {params.intermediate_gisaid_metadata} {params.intermediate_cog_metadata} \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
+          --low-memory \
           --index-column sequence_name &>> {log}
         """
 
@@ -389,7 +390,6 @@ rule make_metadata_dir_outputs:
         junkfasta4 = temp(config["output_path"] + "/7/make_metadata_dir_variants.junkfasta4"),
     log:
         config["output_path"] + "/logs/7_make_metadata_dir_outputs.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -399,6 +399,7 @@ rule make_metadata_dir_outputs:
           --filter-column sequence_name sample_date lineage \
           --out-fasta {output.junkfasta4} \
           --out-metadata {output.variants_metadata_temp} \
+          --low-memory \
           --restrict &>> {log}
 
         fastafunk add_columns \
@@ -417,6 +418,7 @@ rule make_metadata_dir_outputs:
                           country adm1 adm2 \
           --out-fasta {output.junkfasta3} \
           --out-metadata {output.geography_metadata_temp} \
+          --low-memory \
           --restrict &>> {log}
 
         fastafunk add_columns \
@@ -440,6 +442,7 @@ rule make_metadata_dir_outputs:
           --where-column gisaid_id=covv_accession_id cog_id=central_sample_id \
           --out-fasta {output.junkfasta1} \
           --out-metadata {output.public_metadata} \
+          --low-memory \
           --restrict &>> {log}
 
         fastafunk fetch \
@@ -459,6 +462,7 @@ rule make_metadata_dir_outputs:
           --where-column gisaid_id=covv_accession_id cog_id=central_sample_id \
           --out-fasta {output.junkfasta2} \
           --out-metadata {output.consortium_metadata_temp} \
+          --low-memory \
           --restrict &>> {log}
 
         fastafunk add_columns \
@@ -523,7 +527,6 @@ rule publish_updated_global_lineages:
         metadata = config["publish_path"] + "/COG_GISAID/global_lineages.csv",
     log:
         config["output_path"] + "/logs/7_publish_updated_global_lineages.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -533,6 +536,7 @@ rule publish_updated_global_lineages:
           --filter-column sequence_name lineage lineage_support lineages_version \
           --out-fasta {output.fasta} \
           --out-metadata {output.temp_metadata_1} \
+          --low-memory \
           --restrict &>> {log}
 
         sed '1s/sequence_name/taxon/' {output.temp_metadata_1} > {output.temp_metadata_2}
@@ -557,7 +561,6 @@ rule publish_full_annotated_tree_and_metadata:
         # jclust_lineages = config["export_path"] + "/trees/TODO",
     log:
         config["output_path"] + "/logs/7_publish_full_annotated_tree_and_metadata.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         cp {input.annotated_tree} {output.annotated_tree} &> {log}
@@ -575,6 +578,7 @@ rule publish_full_annotated_tree_and_metadata:
           --where-column gisaid_id=covv_accession_id \
           --out-fasta {output.junkfasta} \
           --out-metadata {output.temp_metadata} \
+          --low-memory \
           --restrict &>> {log}
 
         fastafunk add_columns \
@@ -619,7 +623,6 @@ rule publish_civet_data:
         tree_public = config["export_path"] + "/civet/cog/cog_global_"  + config["date"] +  "_tree.newick",
     log:
         config["output_path"] + "/logs/7_publish_civet_data.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         cp {input.tree} {output.tree} &>> {log}
@@ -638,6 +641,7 @@ rule publish_civet_data:
           --where-column epi_week=edin_epi_week country=adm0 \
           --out-fasta {output.cog_all_fasta} \
           --out-metadata {output.cog_all_metadata} \
+          --low-memory \
           --restrict &>> {log}
         cp {output.cog_all_fasta} {output.cog_all_fasta2}
         cp {output.cog_all_metadata} {output.cog_all_metadata2}
@@ -655,6 +659,7 @@ rule publish_civet_data:
           --where-column epi_week=edin_epi_week country=adm0 \
           --out-fasta {output.cog_all_fasta_public} \
           --out-metadata {output.cog_all_metadata_public} \
+          --low-memory \
           --restrict &>> {log}
 
         fastafunk fetch \
@@ -670,6 +675,7 @@ rule publish_civet_data:
           --where-column epi_week=edin_epi_week country=adm0 \
           --out-fasta {output.cog_fasta} \
           --out-metadata {output.cog_metadata} \
+          --low-memory \
           --restrict &>> {log}
 
         fastafunk fetch \
@@ -685,6 +691,7 @@ rule publish_civet_data:
           --where-column epi_week=edin_epi_week country=adm0 \
           --out-fasta {output.cog_fasta_public} \
           --out-metadata {output.cog_metadata_public} \
+          --low-memory \
           --restrict &>> {log}
 
         fastafunk fetch \
@@ -702,6 +709,7 @@ rule publish_civet_data:
           --where-column gisaid_id=covv_accession_id \
           --out-fasta {output.combined_fasta} \
           --out-metadata {output.temp_combined_metadata} \
+          --low-memory \
           --restrict &>> {log}
 
         fastafunk add_columns \
@@ -725,6 +733,7 @@ rule publish_civet_data:
           --where-column epi_week=edin_epi_week \
           --out-fasta {output.combined_fasta_public} \
           --out-metadata {output.combined_metadata_public} \
+          --low-memory \
           --restrict &>> {log}
          """
         # --out-metadata {output.temp_combined_metadata} \
@@ -812,7 +821,6 @@ rule publish_cog_gisaid_data_for_lineage_release_work:
         metadata = config["publish_path"] + "/lineage_release/cog_gisaid.csv",
     log:
         config["output_path"] + "/logs/7_publish_cog_gisaid_data_for_lineage_release_work.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -822,6 +830,7 @@ rule publish_cog_gisaid_data_for_lineage_release_work:
           --filter-column covv_accession_id sequence_name country travel_history sample_date epi_week \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
+          --low-memory \
           --restrict &>> {log}
         """
 
@@ -841,7 +850,6 @@ rule publish_public_cog_data:
         unmasked_alignment = config["export_path"] + "/public/cog_" + config["date"] + "_unmasked_alignment.fasta",
     log:
         config["output_path"] + "/logs/7_publish_public_cog_data.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         cp {input.public_tree} {output.public_tree} &> {log}
@@ -858,6 +866,7 @@ rule publish_public_cog_data:
           --where-column epi_week=edin_epi_week country=adm0 \
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
+          --low-memory \
           --restrict &>> {log}
         """
 
@@ -877,7 +886,6 @@ rule publish_make_s3_public_cog_data:
         unmasked_alignment = config["output_path"] + "/7/s3dir/cog_unmasked_alignment.fasta",
     log:
         config["output_path"] + "/logs/7_publish_make_s3_public_cog_data.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         cp {input.public_tree} {output.public_tree} &> {log}
@@ -903,7 +911,6 @@ rule publish_microreact_specific_output:
         fasta2 = temp(config["output_path"] + "/7/cog_global_microreact2.fasta")
     log:
         config["output_path"] + "/logs/7_publish_microreact_specific_output.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         cp {input.newick_tree} {output.private_tree} &>> {log}
@@ -919,6 +926,7 @@ rule publish_microreact_specific_output:
           --where-column primary_uk_lineage=microreact_lineage \
           --out-fasta {output.fasta1} \
           --out-metadata {output.temp_public_metadata} \
+          --low-memory \
           --restrict &>> {log}
 
         python /cephfs/covid/bham/raccoon-dog/phylopipe/anonymize_microreact.py \
@@ -939,6 +947,7 @@ rule publish_microreact_specific_output:
           --where-column primary_uk_lineage=microreact_lineage \
           --out-fasta {output.fasta2} \
           --out-metadata {output.private_metadata} \
+          --low-memory \
           --restrict &>> {log}
         """
 

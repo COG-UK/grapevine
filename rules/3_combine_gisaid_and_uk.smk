@@ -25,11 +25,15 @@ rule filter_by_date:
                 except:
                     continue
                 line = outgroup_handle.readline()
+        print(outgroups)
+        
 
         indexed_fasta = SeqIO.index(str(input.fasta), "fasta")
+        print(len(indexed_fasta)
 
         window = datetime.timedelta(int(params.time_window))
         todays_date = datetime.datetime.strptime(params.date, '%Y-%m-%d').date()
+        print(window, todays_date)
 
         with open(str(input.metadata), 'r', newline = '') as csv_in, \
              open(str(output.fasta), "w") as fasta_out:
@@ -37,6 +41,9 @@ rule filter_by_date:
             reader = csv.DictReader(csv_in, delimiter=",", quotechar='\"', dialect = "unix")
 
             for row in reader:
+                if row["fasta_header"] not in indexed_fasta:
+                    print("%s not in fasta" %row["fasta_header"])
+                    continue
                 seq_rec = indexed_fasta[row["fasta_header"]]
                 if seq_rec in outgroups:
                     fasta_out.write(">" + seq_rec.id + "\n")
@@ -63,7 +70,7 @@ rule cog_hash_seqs:
         metadata = config["output_path"] + "/3/uk.hashmap.csv",
     log:
         config["output_path"] + "/logs/3_cog_hash_seqs.log",
-    resources: mem_per_cpu=20000
+    resources: mem_per_cpu=8000
     run:
         from Bio import SeqIO
 
@@ -132,7 +139,6 @@ rule uk_output_hashed_lineage_table:
         metadata = config["output_path"] + "/3/uk.hashed.lineages.csv"
     log:
         config["output_path"] + "/logs/3_uk_output_hashed_lineage_table.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -145,6 +151,7 @@ rule uk_output_hashed_lineage_table:
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --log-file {log} \
+          --low-memory \
           --restrict
         """
 
@@ -158,7 +165,6 @@ rule gisaid_output_lineage_table:
         metadata = config["output_path"] + "/3/gisaid.matched.lineages.csv",
     log:
         config["output_path"] + "/logs/3_gisaid_output_lineage_table.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk fetch \
@@ -172,6 +178,7 @@ rule gisaid_output_lineage_table:
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --log-file {log} \
+          --low-memory \
           --restrict
         """
 
@@ -188,7 +195,6 @@ rule combine_gisaid_and_cog:
         metadata = config["output_path"] + "/3/cog_gisaid.lineages.csv"
     log:
         config["output_path"] + "/logs/3_combine_gisaid_and_cog.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk merge \
@@ -197,6 +203,7 @@ rule combine_gisaid_and_cog:
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --index-column sequence_name \
+          --low-memory \
           --log-file {log}
         """
 
@@ -213,7 +220,6 @@ rule combine_gisaid_and_cog_expanded:
         metadata = config["output_path"] + "/3/cog_gisaid.lineages.expanded.csv"
     log:
         config["output_path"] + "/logs/3_combine_gisaid_and_cog.log"
-    resources: mem_per_cpu=20000
     shell:
         """
         fastafunk merge \
@@ -222,6 +228,7 @@ rule combine_gisaid_and_cog_expanded:
           --out-fasta {output.fasta} \
           --out-metadata {output.metadata} \
           --index-column sequence_name \
+          --low-memory \
           --log-file {log}
         """
 
