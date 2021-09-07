@@ -1,5 +1,5 @@
 # grapevine
-Phylogenetic pipeline for the COG-UK project
+Original phylogenetic pipeline for the COG-UK project. Warning: This is not being maintained, but most rules have an equivalently named process in the current pipelines https://github.com/COG-UK/datapipe and https://github.com/cov-ert/phylopipe.
 
 ## Install
 ```
